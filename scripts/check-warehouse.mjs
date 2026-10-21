@@ -70,6 +70,25 @@ try {
   await page.screenshot({ path: 'test-results/warehouse-mobile.png', fullPage: true });
   console.log('PASS demo receipt persistence, stock filters, keyboard dialog and mobile layout');
 
+  await page.goto(`${origin}/demo/warehouse/exceptions`);
+  await page.getByLabel('Issue type', { exact: true }).selectOption('courier_delay');
+  await page.getByLabel('Handling mode', { exact: true }).selectOption('human');
+  await page.getByRole('link', { name: 'courier delay', exact: true }).waitFor();
+  await page.getByLabel('Priority', { exact: true }).selectOption('critical');
+  await page.getByText('No cases match these filters on this page.', { exact: false }).waitFor();
+  await page.getByLabel('Priority', { exact: true }).selectOption('normal');
+  await page.getByRole('link', { name: 'courier delay', exact: true }).click();
+  await page.getByRole('heading', { name: 'Case facts', exact: false }).waitFor();
+  await page.getByText('No AI analysis supplied.', { exact: false }).waitFor();
+  assert.ok(await page.getByText('Reference only; availability unconfirmed', { exact: true }).count());
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Case panels overflow mobile viewport');
+  await page.screenshot({ path: 'test-results/warehouse-case-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: 'test-results/warehouse-case-desktop.png', fullPage: true });
+  await page.goto(`${origin}/demo/warehouse/exceptions/00000000-0000-4000-8000-999999999999`);
+  await page.getByRole('heading', { name: 'Record unavailable', exact: true }).waitFor();
+  console.log('PASS case queue filters, shared read-only panels, unavailable details and mobile layout');
+
   // Live route: verify password exchange -> server membership -> operational API,
   // including pending-submit recovery, 401/403/error/empty states. No real provider calls.
   const live = await context.newPage(); live.on('pageerror', err => errors.push(err.message));

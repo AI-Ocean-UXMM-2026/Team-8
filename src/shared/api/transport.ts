@@ -2,11 +2,12 @@ import type { components } from '../../../contracts/generated/api';
 
 export type Schemas = components['schemas'];
 export type ApiRequest = {
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PUT';
   path: string;
   body?: unknown;
   idempotencyKey?: string;
   signal?: AbortSignal;
+  rawBody?: Blob;
 };
 export type Transport = <T>(request: ApiRequest) => Promise<T>;
 
@@ -74,15 +75,16 @@ export function createLiveTransport({ baseUrl, getAccessToken, fetcher = fetch, 
         response = await abortable(() => fetcher(new URL(request.path, base), {
           method: request.method, credentials: 'omit', redirect: 'error', cache: 'no-store', signal,
           headers: { Accept: 'application/json', Authorization: `Bearer ${token}`,
-            ...(request.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+            ...(request.rawBody ? { 'Content-Type': request.rawBody.type } : request.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
             ...(request.idempotencyKey ? { 'Idempotency-Key': request.idempotencyKey } : {}) },
-          ...(request.body !== undefined ? { body: JSON.stringify(request.body) } : {}),
+          ...(request.rawBody ? { body: request.rawBody } : request.body !== undefined ? { body: JSON.stringify(request.body) } : {}),
         }), signal);
       } catch {
         signal.throwIfAborted();
         throw new ApiError(0, 'NETWORK_ERROR', 'Unable to reach the API.');
       }
       correlationId = response.headers.get('X-Correlation-ID');
+      if (response.status === 204) return undefined as T;
       let data: unknown;
       try { data = await abortable(() => response.json(), signal); }
       catch {

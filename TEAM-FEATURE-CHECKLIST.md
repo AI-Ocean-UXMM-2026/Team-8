@@ -6,6 +6,20 @@ Checkboxes track completed, verified V4 implementation. Prototype resemblance or
 
 Database progress (21 October 2026): migrations, RLS, private evidence policies, fictitious seeds, and receipt/decision/tracking RPCs now exist in [supabase/](supabase/README.md), with an isolated SQL integration suite. They have not been applied to hosted Supabase. DB-02/03/04/07/08/09 have database-layer implementation/test evidence but remain unchecked pending team review, native Supabase/Auth/Storage testing, and the remaining API/worker work. SET-08 adds configured Supabase Auth verification and `/api/me`; DB-01 remains unchecked pending native Auth integration acceptance. The demo UI still uses fictitious data.
 
+## Five-feature follow-up — 22 October 2026
+
+Completed and locally verified: **SMEUI-01, SMEUI-03, SMEUI-04, SMEAPI-04 and CASE-11**. Current count: **41 of 116 checked; 75 open**. See [implementation and acceptance evidence](docs/SME-FIVE-FEATURES.md). This follow-up uses the user's subsequent authorization to edit backend code and supersedes the initial read-only audit for these five tasks. Other in-progress features keep their checklist status.
+
+Validation: 40 backend tests pass (four additional native Supabase tests explicitly skipped), 21 frontend tests, 12 contract fixtures/drift checks, all fresh SQL workflow suites, native PostgreSQL 17 concurrency/seed tests, portal and warehouse browser suites, typecheck and production build pass. No hosted migration or deployment was performed.
+
+## Initial audit — 22 October 2026 (historical)
+
+The [task-by-task audit](docs/CHECKLIST-AUDIT-2026-10-22.md) supersedes historical status notes below. Checkmarks record locally implemented behavior with passing relevant isolated checks; they do not certify hosted Supabase acceptance, a real-model call, remote CI, team agreement or a pilot. During that initial audit, backend source and SQL were inspected without modification under the earlier no-backend-edits rule. The five-feature follow-up above uses the later backend authorization.
+
+Initial audit findings: DB-01/02/04/05/07/09, CASE-05/06/08, SMEAPI-03 and GPS-01/04/05. GPS-12 simulation isolation/labeling and WH-10 shared read-only panels are also verified. DB-06 remains partial (no complete upload flow); DB-08 remains partial (no rider assignments in the baseline seed). OPS-07 remains open: native PostgreSQL execution fails in the historical smoke test because it hard-codes 28 RLS tables while all current 30 public tables enable RLS. The concurrency scenarios are not reached by that command. Backend test SQL was not edited or bypassed.
+
+Initial audit frontend additions: queue type/priority/handling/state filters on the current page, warehouse case detail route and reusable read-only case panels. WH-10 is checked after 21 frontend tests and the extended warehouse browser suite pass. WH-08 remains partial because owner filtering/server-wide filtering are unavailable; WH-09 remains partial because command/verification controls are absent. WH-11 through WH-14 and SME/rider/GPS React flows still need implementation. No legacy simulation counts as live GPS or authenticated SME functionality.
+
 ## Owner register
 
 M0 SET-01–06 implementation: see [foundation handoff](docs/M0-FOUNDATION.md), [planned OpenAPI](contracts/openapi.json), [fixtures](contracts/fixtures/operations), and React preview at `/foundation`. SET-01–03 await real names, write-access verification and team agreement. SET-04–06 are implemented and verified locally; their boxes are checked. Live operational APIs, hosted deployment and team setup remain separate tasks.
@@ -40,8 +54,8 @@ SET-01–11 working evidence (21 October 2026):
 | Task | Implementation status | Evidence / remaining work |
 | --- | --- | --- |
 | SET-01 | Awaiting team | V4 scope documented in docs/M0-FOUNDATION.md; real names and ratification pending. |
-| SET-02 | Awaiting access verification | Separate clone/task-branch procedure documented; each teammate must prove write access. |
-| SET-03 | Proposed, awaiting team | Path owners, review pairs, check commands and staging operator role documented; agreement pending. |
+| SET-02 | Prepared; remote access unverified | docs/SET-02-GITHUB-ACCESS.md includes access recovery, independent role clones/branches, small push/PR verification and evidence register. Local docs/SET-02-team-access branch created; previous push denial remains unresolved until each role proves access. |
+| SET-03 | Prepared, awaiting ratification | Detailed agreement in docs/SET-03-TEAM-AGREEMENT.md and PR template added: path owners, review pairs, four CI jobs, branch conventions and BE1 staging procedure. Real handles, FE1/BE1 acceptance, staging access and remote branch rules pending. |
 | SET-04 | Complete; verified locally | Pydantic models, planned OpenAPI, generated TypeScript and contract conventions published; live routes remain later work. |
 | SET-05 | Complete; verified locally | Eleven deterministic schema-validated fixtures, including 100/90 shortage, both delivery modes, pending/forbidden/stale/error. |
 | SET-06 | Complete; verified locally | React `/foundation`, shared layout and Tailwind/shadcn-style primitives; legacy files frozen under FE1. |
@@ -55,15 +69,15 @@ Validation (21 October 2026): typecheck, production build, legacy regression sui
 
 ## BE1 — identity, tenancy, schema (M0; PRD 4, 8, 16)
 
-- [ ] DB-01 — Implement Supabase Auth verification and `/api/me` membership/role contract; never accept client-selected role/SME as permission.
-- [ ] DB-02 — Create warehouses, SMEs, profiles/memberships, riders, products, shipments/items/events with scoped FKs/constraints and indexes.
+- [x] DB-01 — Implement Supabase Auth verification and `/api/me` membership/role contract; never accept client-selected role/SME as permission.
+- [x] DB-02 — Create warehouses, SMEs, profiles/memberships, riders, products, shipments/items/events with scoped FKs/constraints and indexes.
 - [ ] DB-03 — Add operational delivery/tracking/evidence tables in domain migrations. Review BE2 case/approval joins for tenant consistency.
-- [ ] DB-04 — Implement RLS for warehouse staff, own-SME users, and assigned riders, including nested relations and direct database access.
-- [ ] DB-05 — Separate user-scoped and trusted-worker database access; explicitly authorize any privileged service client path.
+- [x] DB-04 — Implement RLS for warehouse staff, own-SME users, and assigned riders, including nested relations and direct database access.
+- [x] DB-05 — Separate user-scoped and trusted-worker database access; explicitly authorize any privileged service client path.
 - [ ] DB-06 — Implement private evidence storage/metadata, allowed file types/size, upload ownership, download authorization/expiry, and no public evidence bucket.
-- [ ] DB-07 — Provide shared audit and durable outbox interfaces with actor/time/correlation IDs; mutations and their audit/events commit consistently.
+- [x] DB-07 — Provide shared audit and durable outbox interfaces with actor/time/correlation IDs; mutations and their audit/events commit consistently.
 - [ ] DB-08 — Seed fictitious one warehouse/five SMEs/10–20 shipments/rider assignments, plus a separate second warehouse fixture for isolation tests.
-- [ ] DB-09 — Test unauthenticated access, forged scope, SME A→B ID substitution, cross-warehouse staff, inactive rider, and private evidence access.
+- [x] DB-09 — Test unauthenticated access, forged scope, SME A→B ID substitution, cross-warehouse staff, inactive rider, and private evidence access.
 
 Gate: same-tenant authorized actions work; unauthorized direct API/database/storage reads and writes fail. Auth is mandatory before a shared real-data pilot, not a later optional polish task.
 
@@ -119,13 +133,13 @@ Validation: 19 backend tests, 35 foundation database checks plus nine operations
 - [ ] CASE-02 — Implement case create/match/get APIs for inbound mismatch/damage, warehouse observations, delivery failure/delay, and handover dispute.
 - [ ] CASE-03 — Deduplicate active cases by shipment + stage + issue type with a concurrency-safe rule. Append repeated evidence instead of losing it or merging unrelated problems.
 - [ ] CASE-04 — Agree and enforce state transitions; keep priority, human handling, approval, action progress, and shipment state independent.
-- [ ] CASE-05 — Implement deterministic action allowlist and priority policy. Document which prototype rules/thresholds survive V4 and why.
-- [ ] CASE-06 — Create timeline/action events with actor, time, evidence and policy reference; scope sensitive fields for SME vs staff.
+- [x] CASE-05 — Implement deterministic action allowlist and priority policy. Document which prototype rules/thresholds survive V4 and why.
+- [x] CASE-06 — Create timeline/action events with actor, time, evidence and policy reference; scope sensitive fields for SME vs staff.
 - [ ] CASE-07 — Implement audited escalation, information requests, internal safe status updates, proposed correction, and actionable staff tasks.
-- [ ] CASE-08 — Implement verified closure command, required evidence/decision checks, and invalid/stale action rejection. Notify only after the authoritative transaction commits.
+- [x] CASE-08 — Implement verified closure command, required evidence/decision checks, and invalid/stale action rejection. Notify only after the authoritative transaction commits.
 - [ ] CASE-09 — For disputed loss/damage default to UNDETERMINED; store responsibility basis and operational suggestions separately from verified attribution.
 - [ ] CASE-10 — Test concurrent same-issue reports, same-shipment different issues, stale policies/decisions, unauthorized actions, and closure before confirmation.
-- [ ] CASE-11 — Add a separate deterministic seed file for 2–3 representative cases/approvals/notifications linked to BE1's five-SME/10–20-shipment seed; coordinate IDs and seed order without editing BE1's seed file.
+- [x] CASE-11 — Add a separate deterministic seed file for 2–3 representative cases/approvals/notifications linked to BE1's five-SME/10–20-shipment seed; coordinate IDs and seed order without editing BE1's seed file.
 
 Dependencies: BE1 identity/evidence/events contracts. Work with seeded fixtures until actual operations integrate.
 
@@ -145,7 +159,7 @@ Gate: real OpenAI output is persisted and useful, while policy enforcement remai
 
 - [ ] WH-08 — Build exception queue with type, priority, human mode, owner and state filters; no conflation of urgency with manager approval.
 - [ ] WH-09 — Build `/warehouse/exceptions/[id]` with evidence, factual AI summary, missing information, timeline, allowed actions, and verification controls.
-- [ ] WH-10 — Export shared read-only case panels for FE2's SME screen; keep action controls role-specific.
+- [x] WH-10 — Export shared read-only case panels for FE2's SME screen; keep action controls role-specific.
 - [ ] WH-11 — Wire analyze/propose/escalate/verify-close actions and pending/failure states to BE2 APIs.
 - [ ] WH-12 — Build in-house rider assignment and confirmed capacity controls; embed FE2's tracking component without duplicating it.
 - [ ] WH-13 — Build external courier handover form with carrier, waybill, HTTPS tracking URL, accepted timestamp, package condition/count and evidence.
@@ -156,18 +170,18 @@ Gate: real OpenAI output is persisted and useful, while policy enforcement remai
 
 - [ ] SMEAPI-01 — Implement scoped `/api/sme/overview` by composing BE1 authorized read services with case/approval feeds.
 - [ ] SMEAPI-02 — Implement approval requests/options and `/api/approvals/{id}/decision`; bind actor to correct SME and immutable request context.
-- [ ] SMEAPI-03 — Persist `accept_partial` / `await_remainder`, reject/note, timestamps, and downstream case effects. An approval is not automatic physical completion.
-- [ ] SMEAPI-04 — Implement `/api/notifications`, read/unread command, links, and persisted recipient scope. Use in-app delivery only for P0.
+- [x] SMEAPI-03 — Persist `accept_partial` / `await_remainder`, reject/note, timestamps, and downstream case effects. An approval is not automatic physical completion.
+- [x] SMEAPI-04 — Implement `/api/notifications`, read/unread command, links, and persisted recipient scope. Use in-app delivery only for P0.
 - [ ] SMEAPI-05 — Couple request/notification/timeline through transaction/outbox and deduplicate retry delivery; prevent duplicate or conflicting decisions.
 - [ ] SMEAPI-06 — Implement preferred retry-time proposal and pending reschedule; invoke BE1 capacity workflow rather than promising availability.
 - [ ] SMEAPI-07 — Refresh scoped feeds through agreed polling/private realtime; test approval persists and warehouse updates after SME decision.
 
 ## FE2 — SME dashboard, evidence, decisions (M0–M3; PRD 4–5, 7)
 
-- [ ] SMEUI-01 — Build authenticated `/sme` own-stock/shipment/case dashboard with shared primitives and fixtures.
+- [x] SMEUI-01 — Build authenticated `/sme` own-stock/shipment/case dashboard with shared primitives and fixtures.
 - [ ] SMEUI-02 — Build `/sme/shipments/[id]` using shared tracking component for active in-house delivery, external tracking link for third-party mode.
-- [ ] SMEUI-03 — Build `/sme/exceptions/[id]` from FE1 public case panels plus SME-specific information/decision controls.
-- [ ] SMEUI-04 — Implement accept-partial/await-remainder/reject/note; show pending, persisted, rejected and superseded request states.
+- [x] SMEUI-03 — Build `/sme/exceptions/[id]` from FE1 public case panels plus SME-specific information/decision controls.
+- [x] SMEUI-04 — Implement accept-partial/await-remainder/reject/note; show pending, persisted, rejected and superseded request states.
 - [ ] SMEUI-05 — Implement preferred retry time and distinguish proposed vs capacity-confirmed instruction.
 - [ ] SMEUI-06 — Add notification feed/read state, evidence download, and verified receiver confirmation where required.
 - [ ] SMEUI-07 — Test cross-SME URLs, expired sessions, conflicting decisions, and phone/desktop loading/error/empty states. UI hiding is not authorization.
@@ -185,18 +199,18 @@ Gate: real OpenAI output is persisted and useful, while policy enforcement remai
 
 ## FE2 + BE1 — real foreground GPS and private map (M2; PRD 5C, 8–9, 16)
 
-- [ ] GPS-01 — BE1: implement start/stop/session state tied to shipment/rider with explicit consent evidence, assignment and pickup prerequisites.
+- [x] GPS-01 — BE1: implement start/stop/session state tied to shipment/rider with explicit consent evidence, assignment and pickup prerequisites.
 - [ ] GPS-02 — FE2: implement clear start/stop location controls, browser permission handling, and consent per delivery; never silently start sharing.
 - [ ] GPS-03 — FE2: send timestamped coordinates/accuracy at configured bounded frequency; handle denial/offline/foreground pauses and clear watch/subscriptions on stop/logout.
-- [ ] GPS-04 — BE1: implement location endpoint validation, authentication, bounds, timestamps/replays, deduplication and rate limits.
-- [ ] GPS-05 — BE1: implement latest-live read contract with timestamp/status/accuracy and warehouse/own-SME authorization against active session.
+- [x] GPS-04 — BE1: implement location endpoint validation, authentication, bounds, timestamps/replays, deduplication and rate limits.
+- [x] GPS-05 — BE1: implement latest-live read contract with timestamp/status/accuracy and warehouse/own-SME authorization against active session.
 - [ ] GPS-06 — FE2: export one reusable map/status component with last-updated/stale/unavailable indicators for FE1 warehouse and FE2 SME views; no guaranteed ETA.
 - [ ] GPS-07 — BE1: configure private Realtime policy/channel access; FE2: implement reconnect/subscription cleanup. Authorized polling is an initial fallback, not a claim that Realtime is already complete.
 - [ ] GPS-08 — BE1: end access on stop/delivery/cancel/reassign and reject late packets; FE2: clear old markers and stop new location disclosure/subscriptions.
 - [ ] GPS-09 — BE1: audit authorized live-view sessions and implement configured raw-location purge. Exclude coordinates/tokens from general-purpose logs.
 - [ ] GPS-10 — All: test on an actual rider phone plus two authenticated viewers; a different SME must fail via direct API and realtime attempts.
 - [ ] GPS-11 — FE2 + BE1: test stale/offline/permission denied, stop during reconnect, canceled assignment, browser restart, and session revocation. Document foreground-only limitations.
-- [ ] GPS-12 — FE2: isolate and visibly label simulation when used in a demo. Never substitute simulated coordinates into real delivered evidence.
+- [x] GPS-12 — FE2: isolate and visibly label simulation when used in a demo. Never substitute simulated coordinates into real delivered evidence.
 
 Gate: assignment → consent → authorized live updates → exception → approved retry → verified POD → ended sharing. Foreground GPS requires a secure context; use HTTPS for actual cross-device testing.
 

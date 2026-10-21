@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Request
 from ...core.auth import AuthContext, current_identity
 from ..operations.service import call
-from .models import CaseAction, CaseCommand, CaseDetail, CaseReport, Decision, Verification
+from .models import CaseAction, CaseCommand, CaseDetail, CaseReport, CaseReview, Decision, Verification
 
 router = APIRouter(prefix='/api', tags=['Cases and decisions'])
 Identity = Annotated[AuthContext, Depends(current_identity)]
@@ -34,6 +34,12 @@ def action(case_id: UUID, body: CaseAction, request: Request, identity: Identity
 @router.post('/exceptions/{case_id}/verifications', response_model=CaseDetail, operation_id='verifyExceptionFact')
 def verify(case_id: UUID, body: Verification, request: Request, identity: Identity, key: Key):
     return mutate(request, identity, 'verify', case_id, key, body)
+
+
+@router.post('/exceptions/{case_id}/review', response_model=CaseDetail, operation_id='reviewException')
+def review(case_id: UUID, body: CaseReview, request: Request, identity: Identity, key: Key):
+    return call(request, identity, 'review_case', {'p_case': str(case_id), 'p_key': str(key),
+        'p_body': body.model_dump(mode='json'), 'p_correlation': str(request.state.correlation_id)})
 
 
 @router.post('/exceptions/{case_id}/close', response_model=CaseDetail, operation_id='closeException')
@@ -69,3 +75,8 @@ def notifications(request: Request, identity: Identity, sme_id: UUID | None = No
 @router.post('/notifications/{notification_id}/read', status_code=204, operation_id='readNotification')
 def read_notification(notification_id: UUID, request: Request, identity: Identity):
     call(request, identity, 'mark_notification_read', {'p_notification': str(notification_id)})
+
+
+@router.post('/notifications/{notification_id}/unread', status_code=204, operation_id='unreadNotification')
+def unread_notification(notification_id: UUID, request: Request, identity: Identity):
+    call(request, identity, 'mark_notification_unread', {'p_notification': str(notification_id)})

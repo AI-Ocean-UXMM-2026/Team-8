@@ -294,6 +294,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/exceptions/{case_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review */
+        post: operations["reviewException"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/exceptions/{case_id}/close": {
         parameters: {
             query?: never;
@@ -390,6 +407,23 @@ export interface paths {
         put?: never;
         /** Read Notification */
         post: operations["readNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notification_id}/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unread Notification */
+        post: operations["unreadNotification"];
         delete?: never;
         options?: never;
         head?: never;
@@ -639,6 +673,8 @@ export interface components {
         };
         /** CaseSummary */
         CaseSummary: {
+            /** Owner Id */
+            owner_id?: string | null;
             /**
              * Id
              * Format: uuid
@@ -1214,6 +1250,16 @@ export interface components {
             }[];
             /** Job Id */
             job_id?: string | null;
+            /**
+             * Policy Version
+             * @default 1
+             */
+            policy_version: number;
+            /**
+             * Allowed Actions
+             * @default []
+             */
+            allowed_actions: string[];
         };
         /** CaseReport */
         CaseReport: {
@@ -1239,6 +1285,38 @@ export interface components {
              * @default []
              */
             evidence_ids: string[];
+        };
+        /** CaseReview */
+        CaseReview: {
+            /** Expected Version */
+            expected_version: number;
+            /** Source Version */
+            source_version: string;
+            /** Note */
+            note: string;
+            /**
+             * Evidence Ids
+             * @default []
+             */
+            evidence_ids: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "owner" | "responsibility";
+            /** Owner Id */
+            owner_id?: string | null;
+            /**
+             * Responsible Party
+             * @default UNDETERMINED
+             * @enum {string}
+             */
+            responsible_party: "WAREHOUSE" | "THIRD_PARTY_COURIER" | "UNDETERMINED";
+            /**
+             * Basis
+             * @default
+             */
+            basis: string;
         };
         /** CreateLine */
         CreateLine: {
@@ -1280,6 +1358,8 @@ export interface components {
             note: string;
             /** Preferred At */
             preferred_at?: string | null;
+            /** Request Version */
+            request_version?: number | null;
         };
         /** DeliveryCommand */
         DeliveryCommand: {
@@ -2111,6 +2191,11 @@ export interface operations {
                 cursor?: string | null;
                 limit?: number;
                 status?: "open" | "all";
+                issue_type?: string | null;
+                priority?: ("low" | "normal" | "high" | "critical") | null;
+                handling_mode?: ("ai" | "human") | null;
+                state?: string | null;
+                owner_id?: string | "unassigned" | null;
             };
             header?: never;
             path?: never;
@@ -2685,6 +2770,43 @@ export interface operations {
             };
         };
     };
+    reviewException: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     closeException: {
         parameters: {
             query?: never;
@@ -2863,6 +2985,35 @@ export interface operations {
         };
     };
     readNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unreadNotification: {
         parameters: {
             query?: never;
             header?: never;

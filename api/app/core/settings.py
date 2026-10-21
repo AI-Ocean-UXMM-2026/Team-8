@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ''
     openai_model: str = ''
     supabase_worker_key: str = ''
+    location_retention_hours: int = Field(default=24, ge=1, le=720)
+    maintenance_interval_seconds: int = Field(default=60, ge=10, le=3600)
 
     @field_validator('supabase_public_key')
     @classmethod

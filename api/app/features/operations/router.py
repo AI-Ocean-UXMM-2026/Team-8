@@ -58,8 +58,12 @@ def stock(product_id: UUID, request: Request, identity: Identity, warehouse_id: 
 @router.get('/exceptions', response_model=CasePage, operation_id='listExceptions')
 def cases(request: Request, identity: Identity, warehouse_id: UUID | None = None,
           sme_id: UUID | None = None, cursor: UUID | None = None,
-          limit: Annotated[int, Query(ge=1, le=100)] = 25, status: Literal['open', 'all'] = 'open'):
-    return read(request, identity, warehouse_id, 'cases', sme_id=sme_id, cursor=cursor, limit=limit, status=status)
+          limit: Annotated[int, Query(ge=1, le=100)] = 25, status: Literal['open', 'all'] = 'open',
+          issue_type: str | None = None, priority: Literal['low', 'normal', 'high', 'critical'] | None = None,
+          handling_mode: Literal['ai', 'human'] | None = None, state: str | None = None,
+          owner_id: UUID | Literal['unassigned'] | None = None):
+    return read(request, identity, warehouse_id, 'cases', sme_id=sme_id, cursor=cursor, limit=limit, status=status,
+                issue_type=issue_type, priority=priority, handling_mode=handling_mode, state=state, owner_id=owner_id)
 
 
 @router.get('/shipments/{shipment_id}', response_model=ShipmentDetail, operation_id='getShipment')

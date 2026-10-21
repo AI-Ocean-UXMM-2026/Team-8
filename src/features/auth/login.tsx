@@ -21,7 +21,8 @@ export function Login() {
       if (result.error) throw new Error('Unable to sign in. Check your details and try again.');
       // Start a fresh authenticated tree after the SDK has persisted the session.
       // Keep submission locked until navigation so a second login cannot race it.
-      window.location.replace('/warehouse');
+      const destination = String(data.get('workspace') || 'warehouse');
+      window.location.replace(['warehouse', 'sme', 'rider'].includes(destination) ? `/${destination}` : '/warehouse');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Try again.');
       lock.current = false; setBusy(false);
@@ -31,6 +32,7 @@ export function Login() {
     <Link href="/" className="text-2xl font-bold text-brand">ParcelCare</Link>
     <h1 className="mt-6 text-2xl font-semibold">Warehouse sign in</h1><p lang="my" className="mt-2 text-sm text-muted">အကောင့်ဝင်ရန်</p>
     <form onSubmit={submit} className="mt-6" aria-busy={busy}><fieldset disabled={!ready || busy} className="space-y-4">
+      <div><label htmlFor="workspace" className="mb-2 block text-sm">Workspace / အသုံးပြုမည့်နေရာ</label><select id="workspace" name="workspace" className="w-full rounded-lg border border-slate-300 p-3"><option value="warehouse">Warehouse</option><option value="sme">SME</option><option value="rider">Rider</option></select></div>
       <div><label htmlFor="email" className="mb-2 block text-sm">Email</label><Input id="email" name="email" type="email" autoComplete="username" required disabled={busy} /></div>
       <div><label htmlFor="password" className="mb-2 block text-sm">Password</label><Input id="password" name="password" type="password" autoComplete="current-password" required disabled={busy} /></div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

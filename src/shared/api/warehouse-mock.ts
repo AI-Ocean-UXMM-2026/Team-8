@@ -46,7 +46,15 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     else if (request.method === 'GET' && url.pathname === '/api/warehouse/overview') result = { warehouse_id: data.directory.warehouse_id, unique_skus: data.inventory.length, inbound_shipments: data.shipments.filter(s => s.direction === 'inbound').length, outbound_shipments: data.shipments.filter(s => s.direction === 'outbound').length, open_cases: data.cases.filter(c => !['resolved', 'closed'].includes(c.status)).length, as_of: new Date().toISOString() };
     else if (request.method === 'GET' && url.pathname === '/api/inventory') result = page(scoped(data.inventory).filter(i => url.searchParams.get('stock_status') === 'available' ? i.available_qty > 0 : url.searchParams.get('stock_status') === 'quarantined' ? i.quarantined_qty > 0 : true));
     else if (request.method === 'GET' && url.pathname === '/api/shipments') result = page(scoped(data.shipments).filter(s => (!url.searchParams.get('direction') || s.direction === url.searchParams.get('direction')) && (!url.searchParams.get('status') || s.status === url.searchParams.get('status'))).map(toShipment));
-    else if (request.method === 'GET' && url.pathname === '/api/exceptions') result = page(data.cases.filter(c => url.searchParams.get('status') !== 'open' || !['resolved', 'closed'].includes(c.status)));
+    else if (request.method === 'GET' && url.pathname === '/api/exceptions') result = page(data.cases.filter(c => (url.searchParams.get('status') !== 'open' || !['resolved', 'closed'].includes(c.status)) &&
+      (!url.searchParams.get('issue_type') || c.type === url.searchParams.get('issue_type')) && (!url.searchParams.get('priority') || c.priority === url.searchParams.get('priority')) &&
+      (!url.searchParams.get('handling_mode') || c.handling_mode === url.searchParams.get('handling_mode')) && (!url.searchParams.get('state') || c.status === url.searchParams.get('state')) &&
+      (!url.searchParams.get('owner_id') || (url.searchParams.get('owner_id') === 'unassigned' ? !c.owner_id : c.owner_id === url.searchParams.get('owner_id')))));
+    else if (request.method === 'GET' && /^\/api\/exceptions\/[0-9a-f-]+$/i.test(url.pathname)) {
+      const item = data.cases.find(c => c.id === url.pathname.split('/').pop());
+      if (!item) fail(404, 'NOT_FOUND', 'Case not found.');
+      result = item;
+    }
     else {
       const match = url.pathname.match(/^\/api\/(shipments|receipts)\/([0-9a-f-]+)(\/events)?$/i);
       const shipment = data.shipments.find(s => s.id === match?.[2]);

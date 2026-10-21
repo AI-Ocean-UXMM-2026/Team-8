@@ -28,16 +28,16 @@ export function useFilters() {
     window.history.replaceState(null, '', `${path}${next.size ? `?${next}` : ''}`);
   } };
 }
-export function PageTitle({ title, my, description }: { title: string; my: string; description?: string }) { return <div className="mb-6"><h1 className="text-2xl font-semibold md:text-3xl">{title}</h1><p lang="my" className="mt-2 text-sm text-muted">{my}</p>{description && <p className="mt-3 text-sm text-muted">{description}</p>}</div>; }
+export function PageTitle({ title, my, description }: { title: string; my: string; description?: string }) { return <div className="mb-6"><h1 className="text-2xl font-semibold md:text-3xl">{title}</h1><p lang="my" className="mt-2 text-sm text-muted-foreground">{my}</p>{description && <p className="mt-3 text-sm text-muted-foreground">{description}</p>}</div>; }
 export function Loading() { return <Card><p role="status">Loading workspace… <span lang="my">ခဏစောင့်ပါ</span></p></Card>; }
 export function ErrorPanel({ error, retry }: { error: unknown; retry: () => void }) {
   const code = error instanceof ApiError ? error.status : 0;
-  return <Card><div role="alert"><h2 className="font-semibold">{code === 403 ? 'Access denied' : code === 401 ? 'Session expired' : code === 404 ? 'Record unavailable' : 'Unable to load this view'}</h2><p className="mt-2 text-sm text-muted">{error instanceof ApiError ? error.message : 'Please check your connection and try again.'}</p></div><div className="mt-4 flex gap-3"><Button onClick={retry}>Try again</Button>{code === 401 && <Button asChild variant="outline"><Link href="/login">Sign in</Link></Button>}</div></Card>;
+  return <Card><div role="alert"><h2 className="font-semibold">{code === 403 ? 'Access denied' : code === 401 ? 'Session expired' : code === 404 ? 'Record unavailable' : 'Unable to load this view'}</h2><p className="mt-2 text-sm text-muted-foreground">{error instanceof ApiError ? error.message : 'Please check your connection and try again.'}</p></div><div className="mt-4 flex gap-3"><Button onClick={retry}>Try again</Button>{code === 401 && <Button asChild variant="outline"><Link href="/login">Sign in</Link></Button>}</div></Card>;
 }
 export const dateTime = (value: string) => new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Yangon' }).format(new Date(value));
 export const human = (value: string) => value.replaceAll('_', ' ');
 export const tableClass = 'w-full min-w-[650px] border-collapse';
-export function Empty({ text = 'No records match these filters.' }: { text?: string }) { return <p role="status" className="p-6 text-sm text-muted">{text} <span lang="my">စာရင်းမရှိသေးပါ</span></p>; }
+export function Empty({ text = 'No records match these filters.' }: { text?: string }) { return <p role="status" className="p-6 text-sm text-muted-foreground">{text} <span lang="my">စာရင်းမရှိသေးပါ</span></p>; }
 export function Pagination({ cursor, nextCursor, set }: { cursor: string; nextCursor: string | null; set: (key: string, value: string) => void }) {
   return <div className="flex gap-3 border-t border-slate-100 p-4">{cursor && <Button variant="outline" onClick={() => set('cursor', '')}>First page</Button>}{nextCursor && <Button variant="outline" onClick={() => set('cursor', nextCursor)}>Next page</Button>}</div>;
 }

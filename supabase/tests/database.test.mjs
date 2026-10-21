@@ -5,6 +5,7 @@ import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { testOperations } from './operations.test.mjs';
 import { testCases } from './cases.test.mjs';
+import { testWorkflows } from './workflows.test.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const db = new PGlite();
@@ -283,6 +284,7 @@ try {
       assert.equal((await one('select count(*)::int n from public.outbox_events')).n,0);
     });
   });
+  await testWorkflows(db);
   let claimed;
   await test('SQL worker has scoped lease/ack capability without arbitrary table access',()=>asUser(null,async()=>{
     await rejected(()=>query('select * from public.outbox_events'),'42501');

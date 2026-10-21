@@ -50,7 +50,9 @@ try {
     }
     assert.equal(await pages[1].locator('#title').innerText(), await pages[0].locator('#title').innerText(), `${role}: title differs`);
     assert.equal(await pages[1].locator('#nav').innerText(), await pages[0].locator('#nav').innerText(), `${role}: navigation differs`);
-    // The new shadcn theme intentionally differs visually; retain both for inspection.
+    if (role === 'rider') assert.equal(await pages[1].locator('#riderMap').getAttribute('aria-label'), await pages[0].locator('#riderMap').getAttribute('aria-label'));
+    // Preserve the upstream branding change; remote Leaflet tiles are nondeterministic.
+
     if (role !== 'rider') {
       await pages[0].screenshot({ path: `test-results/${role}-original.png`, fullPage: true, animations: 'disabled' });
       await pages[1].screenshot({ path: `test-results/${role}-next.png`, fullPage: true, animations: 'disabled' });

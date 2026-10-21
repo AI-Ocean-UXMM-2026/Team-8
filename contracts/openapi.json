@@ -1146,6 +1146,101 @@
               "default": "open",
               "title": "Status"
             }
+          },
+          {
+            "name": "issue_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Issue Type"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "normal",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "handling_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ai",
+                    "human"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Mode"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "unassigned",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
           }
         ],
         "responses": {
@@ -2003,6 +2098,75 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/exceptions/{case_id}/review": {
+      "post": {
+        "tags": [
+          "Cases and decisions"
+        ],
+        "summary": "Review",
+        "operationId": "reviewException",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/exceptions/{case_id}/close": {
       "post": {
         "tags": [
@@ -2329,6 +2493,48 @@
         ],
         "summary": "Read Notification",
         "operationId": "readNotification",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/notifications/{notification_id}/unread": {
+      "post": {
+        "tags": [
+          "Cases and decisions"
+        ],
+        "summary": "Unread Notification",
+        "operationId": "unreadNotification",
         "security": [
           {
             "HTTPBearer": []
@@ -3088,6 +3294,18 @@
       },
       "CaseSummary": {
         "properties": {
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
@@ -4484,6 +4702,19 @@
               }
             ],
             "title": "Job Id"
+          },
+          "policy_version": {
+            "type": "integer",
+            "title": "Policy Version",
+            "default": 1
+          },
+          "allowed_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Actions",
+            "default": []
           }
         },
         "additionalProperties": false,
@@ -4578,6 +4809,82 @@
           "note"
         ],
         "title": "CaseReport"
+      },
+      "CaseReview": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "source_version": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Version"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Evidence Ids",
+            "default": []
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "responsibility"
+            ],
+            "title": "Kind"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "responsible_party": {
+            "type": "string",
+            "enum": [
+              "WAREHOUSE",
+              "THIRD_PARTY_COURIER",
+              "UNDETERMINED"
+            ],
+            "title": "Responsible Party",
+            "default": "UNDETERMINED"
+          },
+          "basis": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Basis",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "source_version",
+          "note",
+          "kind"
+        ],
+        "title": "CaseReview"
       },
       "CreateLine": {
         "properties": {
@@ -4687,6 +4994,18 @@
               }
             ],
             "title": "Preferred At"
+          },
+          "request_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Version"
           }
         },
         "additionalProperties": false,

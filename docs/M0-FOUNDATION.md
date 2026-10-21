@@ -4,6 +4,10 @@ Scope: PRD V4 replaces the legacy customer/courier and universal SME-only closur
 
 ## SET-01–03: team setup
 
+SET-02 has a dedicated [GitHub access recovery and separate-clone runbook](SET-02-GITHUB-ACCESS.md), with per-role verification evidence. A local task branch exists; shared write access remains unverified after the earlier denied push.
+
+SET-03 now has a dedicated [ownership, review, checks and staging agreement](SET-03-TEAM-AGREEMENT.md) and `.github/pull_request_template.md`. Role-level preparation is complete; named team ratification and remote enforcement remain pending.
+
 Names and GitHub usernames remain unassigned. Use FE1, FE2, BE1, BE2 from the checklist until the team supplies them. Do not invent assignments or claim write access from a successful clone.
 
 Each teammate clones the repository separately, runs `git switch -c feat/SET-xx-short-description`, and opens a PR against the default branch. Use `fix/` for fixes and `docs/` for documentation. Never share a working directory or commit credentials. Each developer verifies their GitHub invitation and opens a small task PR to prove write access. No remote push, invitations, branch protection, or team approval was performed by this implementation.

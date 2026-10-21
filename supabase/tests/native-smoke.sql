@@ -3,7 +3,8 @@
 begin;
 do $$
 begin
-  if (select count(*) from pg_tables where schemaname='public' and rowsecurity) <> 28 then
+  if not exists(select 1 from pg_tables where schemaname='public') or
+     exists(select 1 from pg_tables where schemaname='public' and not rowsecurity) then
     raise exception 'Every application table must enable RLS';
   end if;
   if has_table_privilege('anon','public.products','SELECT') or

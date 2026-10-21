@@ -7,7 +7,7 @@ from .features.ai.service import OpenAIInvestigator, run_job
 
 
 class WorkerDatabase:
-    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_finish'}
+    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_finish', 'run_retention'}
 
     def __init__(self, client):
         self.client = client
@@ -26,11 +26,16 @@ def main():
     if not settings.supabase_url or not settings.supabase_worker_key:
         raise SystemExit('Configure SUPABASE_URL and server-only SUPABASE_WORKER_KEY')
     database = WorkerDatabase(create_client(settings.supabase_url, settings.supabase_worker_key))
-    provider = OpenAIInvestigator(settings)
+    provider = OpenAIInvestigator(settings) if settings.openai_api_key and settings.openai_model else None
+    maintenance_at = 0.0
     while True:
         # No raw coordinates, tokens, complaint text or provider errors are logged.
-        for job in database.rpc('analysis_pending', {}):
-            run_job(database, provider, job)
+        if time.monotonic() >= maintenance_at:
+            database.rpc('run_retention', {'p_hours': settings.location_retention_hours})
+            maintenance_at = time.monotonic() + settings.maintenance_interval_seconds
+        if provider is not None:
+            for job in database.rpc('analysis_pending', {}):
+                run_job(database, provider, job)
         if args.once:
             return
         time.sleep(5)

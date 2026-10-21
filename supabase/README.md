@@ -14,6 +14,7 @@ Developer setup and shared staging runbook: [DATABASE-WORKFLOW.md](../docs/DATAB
 - `...00600_be1_tracking.sql`: consented tracking commands, latest-location access audit, termination backstops, and retention purge function.
 - `...00700_be1_invariants.sql`: delivery-mode guards and pending approval uniqueness.
 - `seed.sql`: fictitious one warehouse/five SMEs/15 shipments/two cases plus one isolated warehouse/SME/shipment for permission tests. No Auth users, credentials, rider identities, or real GPS are seeded into a hosted system.
+- `seeds/cases.sql`: BE2's optional, separate CASE-11 fixture for two cases, timelines, approvals and notifications; run after `seed.sql` and `seeds/operations.sql` only in an isolated database. Repeatable inserts preserve recorded decisions. These fictitious Auth rows have no sign-in passwords. See [five-feature evidence](../docs/SME-FIVE-FEATURES.md).
 - `tests/`: isolated PGlite PostgreSQL integration suite. Its test-only Auth/Storage stand-ins never belong in hosted migrations.
 
 Migration timestamps are stable ordering identifiers. Do not edit these files after the team has applied them to a shared environment: add a new uniquely named migration instead. Database setup is BE1-owned; author additive BE2 domain migrations separately and review cross-table dependencies together.

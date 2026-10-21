@@ -1,22 +1,25 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFile, readdir, mkdtemp, mkdir } from 'node:fs/promises';
+import { readFile, readdir, mkdtemp, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { testOperations } from './operations.test.mjs';
 import { testCases } from './cases.test.mjs';
+import { testWorkflows } from './workflows.test.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 let embedded;
+let embeddedDirectory;
 let config;
 if(process.argv.includes('--embedded')) {
  const {default:EmbeddedPostgres}=await import('embedded-postgres');
  await mkdir(path.resolve(root,'../test-results'),{recursive:true});
  const directory=await mkdtemp(path.resolve(root,'../test-results/postgres-'));
+ embeddedDirectory=directory;
  config={host:'127.0.0.1',port:55439,user:'postgres',password:randomUUID(),database:'postgres'};
  embedded=new EmbeddedPostgres({databaseDir:directory,port:config.port,user:config.user,password:config.password,
-  persistent:false,initdbFlags:['--no-sync'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:message=>{if(String(message).includes('FATAL'))console.error(String(message));}});
+  persistent:true,initdbFlags:['--no-sync'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:message=>{if(String(message).includes('FATAL'))console.error(String(message));}});
  console.log('Initializing disposable native PostgreSQL (test-only --no-sync).');
  await embedded.initialise();
  console.log('Starting loopback native PostgreSQL.');
@@ -44,6 +47,7 @@ try {
  await admin.query(await readFile(path.join(root,'tests/native-smoke.sql'),'utf8'));
  await testOperations(admin);
  await testCases(admin);
+ await testWorkflows(admin);
  const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
  const actor=randomUUID(),product=randomUUID(),corr=randomUUID();
  await admin.query('insert into auth.users(id,email) values($1,$2)',[actor,'race@example.test']);
@@ -57,11 +61,11 @@ try {
  const invoke=async(kind,id,body,key)=>{await begin(clients[0]);try{const r=(await clients[0].query(sql,args(kind,id,body,key))).rows[0].result;await clients[0].query('commit');return r;}catch(e){await clients[0].query('rollback');throw e;}};
  const create=async(direction='inbound',qty=100)=>invoke('create',null,{sme_id:sme,reference:randomUUID(),direction,delivery_mode:direction==='inbound'?null:'in_house',lines:[{product_id:product,expected_qty:qty}]});
  const receipt=(qty,version=1)=>({expected_version:version,final:true,lines:[{product_id:product,received_qty:qty,damaged_qty:0}],evidence_ids:[],notes:'Verified race count'});
- async function race(a,b) {
+ async function race(a,b,statement=sql) {
   await begin(clients[0]);await begin(clients[1]);
   try {
-   const first=(await clients[0].query(sql,a)).rows[0].result;
-   const second=clients[1].query(sql,b).then(r=>({result:r.rows[0].result}),e=>({error:e}));
+   const first=(await clients[0].query(statement,a)).rows[0].result;
+   const second=clients[1].query(statement,b).then(r=>({result:r.rows[0].result}),e=>({error:e}));
    // Prove the second real server connection is blocked on our transaction.
    const deadline=Date.now()+5000;let waiting=false;
    while(Date.now()<deadline){
@@ -108,7 +112,20 @@ try {
  assert.equal((await admin.query('select available_qty from public.products where id=$1',[product])).rows[0].available_qty,70);
  await assert.rejects(()=>invoke('event',outbound2.id,body),e=>e.message==='stock_unavailable');
  console.log('PASS NATIVE: concurrent dispatch retries debit once; another shipment cannot oversell');
+ const caseShipment=await create();
+ const caseSQL='select public.case_command($1,$2,$3,$4::jsonb,$5) result';
+ const report={stage:'inbound',type:'quantity_mismatch',note:'Concurrent recorded count issue',evidence_ids:[]};
+ [first,next]=await race(['report',caseShipment.id,randomUUID(),JSON.stringify(report),corr],['report',caseShipment.id,randomUUID(),JSON.stringify(report),corr],caseSQL);
+ assert.equal(first.id,next.result.id);
+ assert.equal((await admin.query('select count(*)::int n from public.exception_cases where shipment_id=$1',[caseShipment.id])).rows[0].n,1);
+ assert.equal((await admin.query('select count(*)::int n from public.case_events where case_id=$1',[first.id])).rows[0].n,2);
+ console.log('PASS NATIVE: simultaneous same-issue reports match one active case and append both reports');
  console.log('Native concurrency and operations passed on '+(await admin.query('select version()')).rows[0].version);
 } finally {
  await Promise.all(clients.map(c=>c.end()));await admin.end();if(embedded)await embedded.stop();
+ if(embeddedDirectory){
+  const allowed=path.resolve(root,'../test-results')+path.sep+'postgres-';
+  if(!path.resolve(embeddedDirectory).startsWith(allowed))throw Error('Refusing cleanup outside the disposable test directory');
+  await rm(embeddedDirectory,{recursive:true,force:true,maxRetries:10,retryDelay:300});
+ }
 }

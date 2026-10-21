@@ -6,12 +6,44 @@ import { receiptRequest } from '../../src/features/warehouse/validation';
 import fixture from '../../contracts/fixtures/warehouse/initial.json';
 import { canReleaseCommand } from '../../src/features/warehouse/command-policy';
 import { savedReceipt, savedEvent } from '../../src/features/warehouse/saved-results';
+import { caseView, filterCases } from '../../src/features/exceptions/case-view';
 
 const inbound = fixture.body.shipments[0].id;
 const warehouseId = fixture.body.directory.warehouse_id;
 const key = () => crypto.randomUUID();
 function storage() { const saved = new Map<string, string>(); return { getItem: (k: string) => saved.get(k) ?? null, setItem: (k: string, value: string) => { saved.set(k, value); } }; }
 const api = (store = storage()) => createApiClient(createMockTransport({ dataset: 'warehouse', storage: store }));
+
+test('case details are isolated to the demo dataset; unknown IDs fail without a fabricated record', async () => {
+  const client = api();
+  const summary = (await client.listCases()).items[0];
+  const view = caseView(await client.getCase(summary.id));
+  assert.equal(view.id, summary.id);
+  assert.deepEqual(view.evidence_ids, summary.evidence_ids);
+  assert.equal(view.owner_id, undefined);
+  assert.deepEqual(view.analyses, []);
+  await assert.rejects(client.getCase('00000000-0000-4000-8000-999999999999'), (e: unknown) => e instanceof ApiError && e.status === 404);
+});
+
+test('case projection preserves supplied facts without inventing evidence verification or owner', () => {
+  const summary = fixture.body.cases[0];
+  const { evidence_ids: _ids, ...base } = summary;
+  const view = caseView({ ...base, owner_id: null, evidence: [{ id: 'evidence-1', uploaded: true }],
+    events: [{ type: 'information', payload: { note: 'Recorded note' } }], analyses: [], required_facts: ['outcome_verified', null] });
+  assert.equal(view.owner_id, null);
+  assert.deepEqual(view.evidence_ids, ['evidence-1']);
+  assert.deepEqual(view.required_facts, ['outcome_verified']);
+  assert.deepEqual(view.analyses, []);
+  assert.throws(() => caseView({ id: summary.id }), /incomplete/);
+});
+
+test('case filters combine priority, handling and state independently', async () => {
+  const items = (await api().listCases()).items;
+  assert.equal(filterCases(items, { priority: 'normal', mode: 'human', state: 'awaiting_courier_confirmation' }).length, 1);
+  assert.equal(filterCases(items, { priority: 'critical', mode: 'human' }).length, 0);
+  assert.equal(filterCases(items, { mode: 'ai' }).length, 0);
+  assert.equal(filterCases(items, { type: 'damaged_goods' }).length, 0);
+});
 
 test('warehouse overview counts linkable collections; SME/stock/direction filters and paging agree', async () => {
   const client = api();

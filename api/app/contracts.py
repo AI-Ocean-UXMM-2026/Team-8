@@ -49,6 +49,7 @@ class ErrorDetail(DTO):
 
 
 class CaseSummary(DTO):
+    owner_id: UUID | None = None
     id: UUID
     shipment_id: UUID
     stage: Literal['inbound', 'warehouse', 'outbound']

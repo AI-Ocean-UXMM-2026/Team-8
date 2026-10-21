@@ -18,7 +18,8 @@
     "typecheck": "npm run prepare:ui && tsc --noEmit",
     "test": "node scripts/check-migration.mjs && node check-reports.cjs && node check-maker.cjs && node check-rules.cjs && node check-autofill.cjs && node check-priority.cjs && node check-priority-reports.cjs",
     "test:browser": "node scripts/check-browser.mjs",
-    "test:office": "node scripts/check-office.mjs"
+    "test:office": "node scripts/check-office.mjs",
+    "test:portals": "node scripts/check-portals.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

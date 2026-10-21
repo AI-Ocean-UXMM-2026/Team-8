@@ -41,6 +41,14 @@ class Decision(DTO):
     decision: Literal['accept_partial', 'await_remainder', 'reject', 'propose_retry', 'accept']
     note: Note
     preferred_at: AwareDatetime | None = None
+    request_version: Version | None = None
+
+
+class CaseReview(CaseCommand):
+    kind: Literal['owner', 'responsibility']
+    owner_id: UUID | None = None
+    responsible_party: Literal['WAREHOUSE', 'THIRD_PARTY_COURIER', 'UNDETERMINED'] = 'UNDETERMINED'
+    basis: Annotated[str, Field(max_length=4000)] = ''
 
 
 class CaseDetail(DTO):
@@ -74,3 +82,5 @@ class CaseDetail(DTO):
     actions: list[dict]
     evidence: list[dict]
     job_id: UUID | None = None
+    policy_version: int = 1
+    allowed_actions: list[str] = []
