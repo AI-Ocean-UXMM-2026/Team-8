@@ -1,19 +1,24 @@
 import type { Metadata } from 'next';
-import './foundation.css';
-import Script from 'next/script';
-import { styles } from '../features/workspace/generated';
+import './globals.css';
+import { GeistSans } from "geist/font/sans";
+import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: 'ParcelCare · Operations workspace' };
+export const metadata: Metadata = {
+  title: 'ParcelCare',
+  applicationName: 'ParcelCare',
+  icons: {
+    icon: { url: '/brand/parcelcare-icon.png', type: 'image/png' },
+    apple: '/brand/parcelcare-icon.png',
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", GeistSans.variable)}>
       <head>
-        <Script src="/vendor/browser-css-runtime.js" strategy="beforeInteractive" />
-        <style dangerouslySetInnerHTML={{ __html: styles }} />
         <link rel="stylesheet" href="/vendor/leaflet.css" />
       </head>
-      <body>{children}</body>
+      <body style={{ fontFamily: 'var(--font-sans)', background: 'var(--background)', color: 'var(--foreground)' }}>{children}</body>
     </html>
   );
 }

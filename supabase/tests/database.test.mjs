@@ -232,5 +232,79 @@ try {
   }
   await testOperations(db);
   await testCases(db);
+  await test('audit and outbox share actor, correlation and transaction time',async()=>{
+    await query("select set_config('request.jwt.claim.sub',$1,false)",[staff]);
+    let event;
+    try { event=await one("select private.emit_domain_event($1,$2,'context_test',$3,'context-test') id",[uid(1,1),uid(2,1),uid(4,1)]); }
+    finally { await query("select set_config('request.jwt.claim.sub','',false)"); }
+    const a=await one("select * from public.audit_records where action='context_test'");
+    const e=await one('select * from public.outbox_events where id=$1',[event.id]);
+    assert.equal(a.actor_id,staff); assert.equal(e.actor_id,staff);
+    assert.ok(a.correlation_id); assert.equal(a.correlation_id,e.correlation_id);
+    assert.equal(String(a.created_at),String(e.created_at));
+  });
+  await test('inactive rider record blocks shipment/evidence despite active membership',async()=>{
+    await query('update public.riders set active=false where id=$1',[uid(6,1)]);
+    await asUser(rider,async()=>{
+      assert.equal((await one('select count(*)::int n from public.shipments')).n,0);
+      await rejected(()=>query("select public.register_evidence($1,'image/png',12)",[uid(4,6)]),'42501');
+    });
+    await query('update public.riders set active=true where id=$1',[uid(6,1)]);
+  });
+  await test('request correlation is propagated and invalid values safely replaced',async()=>{
+    for (const value of [uid(0,800),'invalid']) {
+      await query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-correlation-id':value})]);
+      const result=await asUser(smeA,()=>one("select public.register_evidence($1,'image/png',12) e",[uid(4,1)]));
+      const audit=await one('select correlation_id,actor_id from public.audit_records where entity_id=$1',[result.e.id]);
+      assert.equal(audit.actor_id,smeA); assert.ok(audit.correlation_id);
+      if(value!=='invalid') assert.equal(audit.correlation_id,value);
+    }
+    await query("select set_config('request.headers','',false)");
+  });
+  await test('domain event helper commits audit/outbox together and deduplicates',async()=>{
+    const before=(await one('select count(*)::int n from public.audit_records')).n;
+    const args=[uid(1,1),uid(2,1),'test_event',uid(4,1),'test-event-once'];
+    const first=await one("select private.emit_domain_event($1,$2,$3,$4,$5) id",args);
+    assert.ok(first.id);
+    assert.equal((await one("select private.emit_domain_event($1,$2,$3,$4,$5) id",args)).id,null);
+    await rejected(()=>query("select private.emit_domain_event($1,$2,$3,$4,$5,'{\"changed\":true}')",args),'22023');
+    assert.equal((await one('select count(*)::int n from public.audit_records')).n,before+1);
+    await query('begin');
+    await query("select private.emit_domain_event($1,$2,'rollback_event',$3,'rollback-key')",[uid(1,1),uid(2,1),uid(4,1)]);
+    await query('rollback');
+    assert.equal((await one("select count(*)::int n from public.outbox_events where idempotency_key='rollback-key'")).n,0);
+    assert.equal((await one("select count(*)::int n from public.audit_records where action='rollback_event'")).n,0);
+  });
+  await test('users cannot emit, claim or acknowledge privileged events',async()=>{
+    for(const user of [staff,smeA,rider]) await asUser(user,async()=>{
+      await rejected(()=>query('select private.claim_outbox($1)',[uid(1,1)]),'42501');
+      await rejected(()=>query('select private.ack_outbox($1,$2,$3)',[uid(1,1),uid(0,1),uid(0,2)]),'42501');
+      await rejected(()=>query("select private.emit_domain_event($1,$2,'forged',$3,'forged')",[uid(1,1),uid(2,1),uid(4,1)]),'42501');
+      assert.equal((await one('select count(*)::int n from public.outbox_events')).n,0);
+    });
+  });
+  let claimed;
+  await test('SQL worker has scoped lease/ack capability without arbitrary table access',()=>asUser(null,async()=>{
+    await rejected(()=>query('select * from public.outbox_events'),'42501');
+    assert.equal((await query('select * from private.claim_outbox($1)',[uid(1,999)])).rows.length,0);
+    claimed=(await query('select * from private.claim_outbox($1,100)',[uid(1,1)])).rows;
+    assert.ok(claimed.length>0);
+    assert.ok(claimed.every(e=>e.warehouse_id===uid(1,1) && e.attempts===1 && e.lease_token));
+    assert.equal((await query('select * from private.claim_outbox($1)',[uid(1,1)])).rows.length,0);
+    const event=claimed[0];
+    assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,2),event.id,event.lease_token])).ok,false);
+    assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,1),event.id,uid(0,1)])).ok,false);
+    assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,1),event.id,event.lease_token])).ok,true);
+    assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,1),event.id,event.lease_token])).ok,false);
+  },'parcelcare_worker'));
+  await test('expired worker leases retry and stale lease tokens cannot acknowledge',async()=>{
+    const old=claimed[1]; assert.ok(old);
+    await query("update public.outbox_events set leased_until=now()-interval '1 second' where id=$1",[old.id]);
+    await asUser(null,async()=>{
+      const retry=(await one('select * from private.claim_outbox($1,1)',[uid(1,1)]));
+      assert.equal(retry.id,old.id); assert.equal(retry.attempts,2); assert.notEqual(retry.lease_token,old.lease_token);
+      assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,1),old.id,old.lease_token])).ok,false);
+    },'parcelcare_worker');
+  });
   console.log(`\n${passed} historical foundation tests plus warehouse operation tests passed. Engine: ${JSON.stringify((await one('select version()')).version)}.`);
 } finally { await db.close(); }

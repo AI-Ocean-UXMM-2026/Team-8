@@ -2,9 +2,11 @@
 
 ## Current scope
 
+Design update (21 October 2026): the application now uses shadcn/ui preset `b5JNedagS` (Vega / Neutral / Geist / Phosphor / Small), customized with primary-400 teal and secondary-400 yellow from the supplied brand palette. Tailwind v4 is compiled through PostCSS; the browser CSS runtime is no longer loaded. React primitives live in `src/components/ui`, with an interactive reference at `/design-system`. Legacy screens consume the same tokens through `src/features/workspace/theme.css`; their original base CSS is scoped to the workspace. This supersedes the old visual-preservation statements below. The grayscale low-fidelity preview remains a wireframe. See [the current design system](ParcelCare_Design_System_v2_Brand_Aligned.md).
+
 The deployable frontend runs on Next.js, React, and TypeScript. The existing markup, CSS, Burmese/English text, fixtures, interactions, and localStorage keys are preserved. Next.js renders the workspace directly; there is no iframe or redirect to the old HTML page.
 
-This is a compatibility migration: jQuery interactions and the bundled Tailwind runtime remain to preserve the interface. It is not a complete rewrite of every widget into React components. Feature owners can replace implementations incrementally, checking screenshots and workflows. Do not let React and jQuery both manage the same DOM subtree.
+The workspace still uses its compatibility jQuery interactions beneath the shared shadcn theme. It is not a complete rewrite of every widget into React components. Feature owners can replace implementations incrementally, checking screenshots and workflows. Do not let React and jQuery both manage the same DOM subtree.
 
 Editable frontend code lives in `src/features/` under workspace, reports, deliveries, policies, priority, and exceptions. `scripts/prepare-ui.mjs` generates the ordered browser bundle and markup module before development/build. Preserve script ordering: features decorate earlier renderers and share classic-script lexical scope. Restart development after editing those legacy feature scripts so the bundle regenerates. Original `dist/` is a frozen comparison baseline, not the deployed application source.
 

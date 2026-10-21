@@ -1,6 +1,6 @@
 # ParcelCare V4 implementation plan — four-person team
 
-Source of truth: [ParcelCare PRD V4](ParcelCare_PRD_v4_B2B_Live_GPS.md), particularly sections 2–10 and 16. Prepared 21 October 2026. This supersedes plans derived from the original PRD. Deployment is deferred at the user's request. This document proposes architecture and delivery order; it does not implement the features.
+Source of truth: [ParcelCare PRD V4](ParcelCare%20PRD.md), particularly sections 2–10 and 16. Prepared 21 October 2026. This supersedes plans derived from the original PRD. Deployment is deferred at the user's request. This document proposes architecture and delivery order; it does not implement the features.
 
 ## 1. Scope and current starting point
 
@@ -214,7 +214,7 @@ Deployment work remains on the checklist for later. Before a pilot: migrations s
 
 ## 11. References
 
-- Product requirements: [local PRD V4](ParcelCare_PRD_v4_B2B_Live_GPS.md). Market/cost figures in it remain assumptions; this plan does not validate vendor pricing or legal liability.
+- Product requirements: [local PRD V4](ParcelCare%20PRD.md). Market/cost figures in it remain assumptions; this plan does not validate vendor pricing or legal liability.
 - [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security): database authorization and privileged credential considerations.
 - [Supabase Realtime authorization](https://supabase.com/docs/guides/realtime/authorization): private Broadcast/Presence use their own authorization policies.
 - [MDN watchPosition](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/watchPosition): browser geolocation requires a secure context and explicit permission.

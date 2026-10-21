@@ -1,6 +1,6 @@
 # ParcelCare V4 team implementation checklist
 
-Source: [PRD V4](ParcelCare_PRD_v4_B2B_Live_GPS.md). Architecture and collaboration details: [IMPLEMENTATION-PLAN-V4.md](IMPLEMENTATION-PLAN-V4.md). Four people: two frontend, two backend. Deployment deferred. This checklist replaces earlier PRD-based scope; no customer portal is planned.
+Source: [PRD V4](ParcelCare%20PRD.md). Architecture and collaboration details: [IMPLEMENTATION-PLAN-V4.md](IMPLEMENTATION-PLAN-V4.md). Four people: two frontend, two backend. Deployment deferred. This checklist replaces earlier PRD-based scope; no customer portal is planned.
 
 Checkboxes track completed, verified V4 implementation. Prototype resemblance or partial implementation does not count as completion. Use task IDs as issue titles. For each issue record owner, branch/PR, dependency, acceptance evidence, and status (todo/in progress/blocked/review/done). Tick a box only when its implementation is fully finished, integrated locally, and relevant checks pass. Leave partial work and unresolved external dependencies unchecked. Team approvals and live deployment remain separate where required. Developer aliases below need actual names at kickoff.
 
@@ -249,3 +249,5 @@ Gate: assignment → consent → authorized live updates → exception → appro
 4. Integrate scenario A first; add real in-house tracking second; add external handover/dispute third. Keep deployment deferred until the team resumes it.
 
 The owner split and small PRs reduce conflicts; no folder structure can guarantee zero conflicts. If two owners need the same file, stop duplicate edits and route the change through its named owner.
+
+Integration update (22 October 2026): retained the remote operational/Auth foundations and added the local evidence transfer/profile adapters, branded shadcn system and Office Staff demo at `/office`. The additional audit/outbox migration is `20261022000100_be1_foundation.sql`, following remote migrations 008?012. Review/native gates remain as documented.

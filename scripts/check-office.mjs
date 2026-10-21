@@ -1,0 +1,82 @@
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+
+const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '-H', '127.0.0.1', '-p', '3102'], { stdio: 'pipe' });
+let output = '';
+server.stdout.on('data', chunk => output += chunk);
+server.stderr.on('data', chunk => output += chunk);
+let browser;
+try {
+  let ready = false;
+  for (let i = 0; i < 100; i++) {
+    try { if ((await fetch('http://127.0.0.1:3102/api/health')).ok) { ready = true; break; } } catch {}
+    if (server.exitCode !== null) throw Error(output);
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  assert.ok(ready, 'Production server starts');
+  browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1500, height: 1080 } });
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('http://127.0.0.1:3102/office');
+  await page.getByRole('heading', { name: 'A clearer view of your day.' }).waitFor();
+  await page.evaluate(() => document.fonts.ready);
+  await mkdir('test-results', { recursive: true });
+  await page.screenshot({ path: 'test-results/office-desktop.png', fullPage: true });
+  await page.getByLabel('Search exceptions').fill('PC-1048');
+  assert.equal(await page.locator('tbody tr').count(), 1);
+  await page.getByLabel('Search exceptions').fill('');
+  await page.getByLabel('Filter by priority').selectOption('Critical');
+  assert.equal(await page.locator('tbody tr').count(), 2);
+  await page.getByLabel('Filter by priority').selectOption('All priorities');
+  await page.getByRole('button', { name: 'Open EX-1048', exact: true }).click();
+  await page.getByRole('dialog').waitFor();
+  await page.getByRole('button', { name: 'Assign to me', exact: true }).click();
+  assert.ok(await page.getByText('Owner: Thiri Hnin', { exact: true }).isVisible());
+  await page.getByRole('button', { name: 'Escalate', exact: true }).click();
+  await page.getByLabel('Reason for escalation').fill('Need manager confirmation of the partial receipt handling.');
+  await page.getByRole('button', { name: 'Confirm escalation' }).click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden' });
+  await page.reload();
+  await page.getByRole('button', { name: 'Open EX-1048', exact: true }).click();
+  assert.ok(await page.getByRole('dialog').getByText('High', { exact: true }).isVisible(), 'Escalation does not alter priority');
+  assert.ok(await page.getByText('Owner: Warehouse manager', { exact: true }).isVisible(), 'Escalation persists');
+  assert.ok(await page.getByRole('button', { name: 'Request verification' }).isDisabled(), 'Escalated case cannot bypass manager');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Report exception', exact: true }).click();
+  await page.getByLabel('Shipment', { exact: true }).selectOption('PC-1048');
+  await page.getByLabel('Issue type').selectOption('Missing stock');
+  await page.getByLabel('What happened?').fill('Sample recount is needed for the inbound staging shelf.');
+  await page.getByRole('button', { name: 'Save demo exception' }).click();
+  await page.getByRole('dialog').waitFor();
+  assert.ok(await page.getByRole('dialog').getByText('EX-1049', { exact: true }).isVisible());
+  await page.getByRole('button', { name: 'Request verification' }).click();
+  assert.ok(await page.getByRole('button', { name: 'Request verification' }).isDisabled());
+  assert.ok(await page.getByRole('dialog').getByText(/Awaiting verification/).count() > 0);
+  await page.keyboard.press('Escape');
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('parcelcare-office-demo-v1')).cases.length);
+  await page.getByRole('button', { name: 'Report exception', exact: true }).click();
+  await page.getByLabel('Shipment', { exact: true }).selectOption('PC-1048');
+  await page.getByLabel('Issue type').selectOption('Missing stock');
+  await page.getByLabel('What happened?').fill('Second sample observation for the same shipment and issue.');
+  await page.getByRole('button', { name: 'Save demo exception' }).click();
+  await page.getByRole('dialog').waitFor();
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('parcelcare-office-demo-v1')).cases.length), before, 'Same active issue matches instead of duplicating');
+  await page.screenshot({ path: 'test-results/office-case-detail.png', fullPage: true });
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({ state: 'hidden' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No mobile page overflow');
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Overview', exact: true }).click();
+  await page.screenshot({ path: 'test-results/office-mobile.png', fullPage: true, animations: 'disabled' });
+  assert.ok(await page.getByRole('button', { name: 'Open navigation' }).isVisible());
+  assert.ok(await page.evaluate(() => [...document.images].every(i => i.complete && i.naturalWidth > 0)), 'Brand images load');
+  assert.deepEqual(errors, []);
+  console.log('PASS: office search/filter, assignment, persistent escalation, independent priority, report matching, verification guard, mobile navigation and rendering.');
+} finally {
+  await browser?.close();
+  server.kill();
+}

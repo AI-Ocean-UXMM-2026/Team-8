@@ -1,0 +1,55 @@
+flowchart TB
+  ROOT["/ - membership redirect"] --> A01["A01 Login /login"]
+  A01 --> AUTH{"Validated memberships"}
+  ROOT --> AUTH
+  AUTH -->|Multiple - conditional| A02["A02 /select-workspace"]
+  A02 --> ROLE{"Authorized selected role"}
+  AUTH -->|Single| ROLE
+  AUTH -->|None or disabled| BLOCK["Access unavailable state / sign out"]
+  ROLE -->|Warehouse Staff or Admin| W01
+  ROLE -->|SME Business User| S01
+  ROLE -->|In-house Rider| R01
+
+  subgraph WH["Warehouse shell - five sidebar destinations"]
+    W01["W01 Overview /warehouse"]
+    W02["W02 Shipments /warehouse/shipments"]
+    W04["W04 Inventory /warehouse/inventory"]
+    W05["W05 Exceptions /warehouse/exceptions"]
+    W07["W07 Deliveries /warehouse/deliveries"]
+    W02 --> W03["W03 /warehouse/shipments/[id]"]
+    W05 --> W06["W06 /warehouse/exceptions/[id]"]
+    W07 -->|Canonical shipment detail| W03
+    W03 -.-> WFORMS["Embedded: receipt, pick/pack, assignment, handover, issue, POD verification"]
+    W06 -.-> WCASE["Embedded: evidence, AI, decisions/actions, retry confirmation, verification, audit"]
+    W04 -.-> WSKU["Embedded SKU reference panel"]
+    W01 -.-> WMAP["Embedded active in-house map preview"]
+    W07 -.-> WDMAP["Embedded in-house map / third-party handover list"]
+  end
+
+  subgraph SME["SME shell - four sidebar destinations / own organization only"]
+    S01["S01 Overview /sme"]
+    S02["S02 Inventory /sme/inventory"]
+    S03["S03 Shipments /sme/shipments"]
+    S05["S05 Exceptions /sme/exceptions"]
+    S03 --> S04["S04 /sme/shipments/[id]"]
+    S05 --> S06["S06 /sme/exceptions/[id]"]
+    S03 -.-> SREQ["Embedded New delivery request"]
+    S02 -.-> SSKU["Embedded read-only SKU panel"]
+    S04 -.-> STRACK["Embedded in-house live map OR external courier link; POD; issue"]
+    S06 -.-> SDECIDE["Embedded evidence, timeline, information and decision form"]
+    S01 -->|Own delivery link| S04
+  end
+
+  subgraph RIDER["Rider mobile - one destination / assigned tasks only"]
+    R01["R01 My Deliveries /rider"] --> R02["R02 /rider/deliveries/[id]"]
+    R02 -.-> RSTEPS["Embedded: accept, pickup, GPS consent/start/stop, issue, POD"]
+  end
+
+  W03 -->|Related case| W06
+  W06 -->|Affected shipment| W03
+  S04 -->|Related case| S06
+  S06 -->|Affected shipment| S04
+  W01 -.-> WNOTIFY["Shell notification drawer / scoped case links"]
+  S01 -.-> SNOTIFY["Shell notification drawer / scoped case links"]
+  STRACK -->|Third-party only - leaves ParcelCare| EXT["Courier website - external; no ParcelCare courier dashboard or GPS"]
+  LEGEND["Solid: redirect, hierarchy or labeled navigation. Dotted: embedded surface, not a page. Sidebar siblings share shell; homes are not their route parents. All routes and object reads require authorization."]

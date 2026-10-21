@@ -114,3 +114,5 @@ Auth verification, `/api/me`, user-scoped clients and warehouse operations APIs 
 Do not mark all DB checklist items complete simply because migrations exist. Use this package as the reviewed schema foundation and implement domain API behavior in the owning backend feature folders.
 
 References: [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage access control](https://supabase.com/docs/guides/storage/security/access-control), [database functions](https://supabase.com/docs/guides/database/functions), [migration workflow](https://supabase.com/docs/guides/local-development/database-migrations).
+
+Integration update (22 October 2026): retained the remote operational/Auth foundations and added the local evidence transfer/profile adapters, branded shadcn system and Office Staff demo at `/office`. The additional audit/outbox migration is `20261022000100_be1_foundation.sql`, following remote migrations 008?012. Review/native gates remain as documented.

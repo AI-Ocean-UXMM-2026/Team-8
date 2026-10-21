@@ -23,7 +23,7 @@ def create_app(settings: Settings | None = None, authenticator: Authenticator | 
     app.state.database_factory = database_factory
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
-                           allow_methods=['GET', 'POST'], allow_headers=['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Correlation-ID'],
+                           allow_methods=['GET', 'POST', 'PUT'], allow_headers=['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Correlation-ID'],
                            expose_headers=['X-Correlation-ID'], allow_credentials=False)
 
     @app.middleware('http')
@@ -35,8 +35,14 @@ def create_app(settings: Settings | None = None, authenticator: Authenticator | 
         request.state.correlation_id = correlation_id
         response = await call_next(request)
         response.headers['X-Correlation-ID'] = str(correlation_id)
+        if request.url.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store'
         return response
 
     install_error_handlers(app)
     app.include_router(router)
+    from ..evidence import router as evidence_router
+    from ..identity import router as profile_router
+    app.include_router(evidence_router)
+    app.include_router(profile_router)
     return app

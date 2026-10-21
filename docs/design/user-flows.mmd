@@ -1,0 +1,104 @@
+flowchart TB
+  subgraph INBOUND["1. Normal inbound receipt / discrepancy"]
+    I1["Warehouse W02 to W03: expected receipt"] --> I2["Staff records actual SKU quantity, condition, evidence"]
+    I2 --> I3{"Deterministic discrepancy?"}
+    I3 -->|No| I4["Staff confirms receipt; verified event/basic quantities; own SME visibility"]
+    I3 -->|Yes| X1
+  end
+
+  subgraph OUTBOUND["2. Normal outbound: Warehouse to SME"]
+    O1["SME S03 request: SKU/quantity/SME destination/date"] --> O2{"Warehouse validates details and stock"}
+    O2 -->|Missing or rejected| O3["Reason/information request to SME"]
+    O3 --> O1
+    O2 -->|Shortage / damage / wrong pick| X1
+    O2 -->|Valid| O4["Staff physically verifies Picking then Packed"]
+    O4 --> O5{"Delivery mode"}
+    O5 -->|In-house| O6["Warehouse W03 assigns authorized employed rider"]
+    O6 --> O7{"Rider R02 accepts?"}
+    O7 -->|Unavailable / decline| O6
+    O7 -->|Yes| O8["Rider confirms physical pickup"]
+    O8 --> G1
+    G2 -->|Granted and session valid| O9["Rider starts delivery; record In Transit event"]
+    G3 --> GPOL{"Warehouse policy permits no-GPS dispatch?"}
+    GPOL -->|No| O10["Hold and resolve permission/device issue"]
+    O10 --> G1
+    GPOL -->|Yes| O9
+    O9 --> O11{"Delivery attempt outcome"}
+    O11 -->|Issue / shop closed| X1
+    O11 -->|Arrived| O12["Rider uploads POD and receiver confirmation"]
+    O12 --> O13{"Backend verifies required evidence"}
+    O13 -->|Incomplete / disputed| O14["Warehouse review; pending proof is not Delivered"]
+    O14 --> O12
+    O13 -->|Verified| O15["Delivered; notify own SME; end tracking; retain proof/events"]
+    O15 --> GEND
+    O15 -->|Related case only if verified outcome| XVERIFY
+    O5 -->|Third-party| T1
+  end
+
+  subgraph GPS["3. In-house GPS / scoped Warehouse and SME visibility"]
+    G1["Rider explicit delivery-specific consent and device permission"] --> G2{"Permission and active assignment valid?"}
+    G2 -->|No| G3["Permission Denied / unavailable; no fabricated position"]
+    G2 -->|Yes| G4["Server creates active shipment/rider session; Updating until fix"]
+    G4 --> G5["Timestamped valid fixes at bounded interval"]
+    G5 --> G6{"Fresh coordinate and authorized session?"}
+    G6 -->|Yes| G7["Warehouse W01/W07/W03 and associated SME S04: Live + last updated"]
+    G6 -->|No fresh fix / network / background pause| G8["Stale or Offline; last known label / unavailable"]
+    G8 -->|Connection and valid fix recover| G5
+    G7 -->|Next fix while active| G5
+    G7 -->|Explicit stop| GEND["Ended: revoke live reads/subscription; enforce retention policy"]
+    G8 -->|Stop / cancel / expiry| GEND
+    G4 -->|Cancel / logout / reassignment / revocation| GEND
+    GEND -->|New rider start only if assignment remains active| G1
+    GBOUND["No unrelated SME access, public links, guaranteed ETA or third-party GPS. Simulation always labeled."]
+  end
+
+  subgraph EXCEPTION["4. AI investigation, SME decisions and verified resolution"]
+    X1["Observed discrepancy, warehouse issue, rider failure or staff courier report"] --> X2["Backend validates and creates/matches active case; duplicates append evidence"]
+    X2 --> X3["Open to AI Investigating; retrieve tenant-scoped facts/evidence/policy"]
+    X3 --> X4{"Structured findings and policy check valid?"}
+    X4 -->|No / timeout / insufficient facts| XFAIL["Warehouse W06 manual review or retry; no fabricated findings"]
+    XFAIL -->|Retry with evidence| X3
+    XFAIL -->|Manual next step| XHUMAN
+    X4 -->|Yes| X5["Publish analysis with evidence/uncertainty; permitted backend notification/status/request"]
+    X5 --> X6{"Next action / escalation - independent of priority"}
+    X6 -->|Needs SME| XSME["In-app notification opens S06: proposal, evidence, consequences"]
+    XSME --> XDEC{"SME verified decision"}
+    XDEC -->|Accept partial / await remainder / approve| XHUMAN["Warehouse verifies physical handling and allowed action"]
+    XDEC -->|Reject / clarification| XREVIEW["Human review / collect information / revise proposal; stays open"]
+    XREVIEW --> X3
+    XDEC -->|Propose retry time| XRETRY["Pending reschedule; Warehouse/rider confirms capacity"]
+    XRETRY -->|Cannot confirm| XREVIEW
+    XRETRY -->|Confirmed| XINSTR["Action Scheduled; approved instruction on rider task"]
+    XINSTR -->|Retry; new explicit consent if sharing ended| G1
+    X6 -->|Needs Warehouse| XHUMAN
+    X6 -->|Needs Courier| XCOURIER["Staff contacts courier outside app; awaiting verified response, ETA unknown"]
+    XCOURIER -->|Recorded response/evidence| XHUMAN
+    X6 -->|Permitted internal non-financial action| XACTION["Policy-checked backend action; actor/time/evidence audit"]
+    XHUMAN --> XACTION
+    XACTION --> XVERIFY{"Actual outcome and required evidence verified?"}
+    XVERIFY -->|No / failed / disputed| XREVIEW
+    XVERIFY -->|Yes| XRES["Resolved; Warehouse confirms Closed; immutable case history"]
+    XGUARD["AI never autonomously edits stock, dispatches, promises compensation, starts GPS or declares final legal liability."]
+  end
+
+  subgraph THIRD["5. Third-party handover, external tracking and claims"]
+    T1["Warehouse W03: company, waybill, optional HTTPS URL, expected date, count/condition/evidence"] --> T2{"Courier acceptance/time/evidence verified?"}
+    T2 -->|No| TWAIT["Packed / Awaiting handover; collect missing proof"]
+    TWAIT --> T1
+    T2 -->|Yes| T3["Record verified Handed over and attributed events"]
+    T3 --> T4["Warehouse W03 / own SME S04: reference, last verified time; no internal GPS"]
+    T4 --> TURL{"Valid external URL available?"}
+    TURL -->|Yes| T5["Open courier website; external navigation does not update internal status"]
+    TURL -->|No| TNOLINK["Reference + ask Warehouse; no invented tracking page"]
+    T5 --> T6["Staff records verified courier response or SME confirms receipt"]
+    TNOLINK --> T6
+    T6 --> T7{"Verified delivery or issue?"}
+    T7 -->|Verified delivery evidence| TDEL["Delivered; retain handover and outcome proof"]
+    T7 -->|Delay| X1
+    T7 -->|Damage / loss| TDIS["Responsibility UNDETERMINED; suspected carrier custody only if supported"]
+    TDIS --> X1
+    TDIS --> TREV["Staff reviews packing, handover, SME and courier evidence"]
+    TREV -->|Verified carrier-caused transit issue| TCL["Operational THIRD_PARTY_COURIER; coordinate external claim, no compensation promise"]
+    TREV -->|Packaging / pre-handover / disputed| XREVIEW
+    TCL --> XCOURIER
+  end
