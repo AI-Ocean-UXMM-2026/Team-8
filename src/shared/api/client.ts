@@ -1,3 +1,4 @@
+import { checkedWarehouseCase, type WarehouseCaseAction } from './case-workflow';
 import { type Transport, type Schemas, ApiError, isUUID } from './transport';
 
 const entity = (id: string) => {
@@ -34,6 +35,14 @@ export function createApiClient(transport: Transport) {
     listCases(options: ListOptions & { status?: 'open' | 'all' } = {}) { return transport<Schemas['CasePage']>({ method: 'GET', path: `/api/exceptions${query(options)}`, signal: options.signal }); },
     getShipment(id: string, signal?: AbortSignal, warehouseId?: string) { return transport<Schemas['ShipmentDetail']>({ method: 'GET', path: `/api/shipments/${entity(id)}${query({ warehouseId })}`, signal }); },
     recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events${query({ warehouseId: options.warehouseId })}`, body, ...options }); },
+    async getWarehouseCase(id: string, warehouseId: string, signal?: AbortSignal) {
+      const value = await transport<unknown>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal });
+      return checkedWarehouseCase(value, id, entity(warehouseId));
+    },
+    async recordCaseAction(id: string, body: WarehouseCaseAction, options: Mutation & { warehouseId: string }) {
+      const value = await transport<unknown>({ method: 'POST', path: `/api/exceptions/${entity(id)}/actions`, body, idempotencyKey: options.idempotencyKey, signal: options.signal });
+      return checkedWarehouseCase(value, id, entity(options.warehouseId), body.expected_version);
+    },
     getCase(id: string, signal?: AbortSignal) { return transport<Schemas['CaseSummary']>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal }); },
     getApproval(id: string, signal?: AbortSignal) { return transport<Schemas['ApprovalSummary']>({ method: 'GET', path: `/api/approvals/${entity(id)}`, signal }); },
     postReceipt(id: string, body: Schemas['ReceiptRequest'], options: Mutation) {

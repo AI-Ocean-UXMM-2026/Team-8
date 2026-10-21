@@ -1,4 +1,7 @@
-# ParcelCare warehouse reporting prototype
+# ParcelCare — Team-8
+
+Project repository: **AI-Ocean-UXMM-2026/Team-8**. Continue all development here. English and Myanmar interface modes are available from the language bar; the choice persists locally. See [report UX and language modes](docs/REPORT-UX-LANGUAGES.md) for preview links, localization rules and verification.
+SME navigation has three pages: **Orders / Requests**, **Delivery Tracking**, and **Reports**. Stock arrivals and available stock are inside Orders. Open `/?workspace=sme` for the SME demo.
 
 Office Staff dashboard: open `/office` for the responsive React exception queue, AI readiness indicators, evidence details and escalation workflow. It uses fictitious browser-local demo data; real Auth/domain API integration is pending. See [design decisions and reference provenance](docs/office-dashboard-design.md). Validate with `npm run build` and `npm run test:office`.
 

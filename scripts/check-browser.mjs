@@ -59,6 +59,7 @@ try {
   }
   for (const page of pages) {
     await page.selectOption('#role', 'sme');
+    await page.locator('#nav [data-page="Exceptions"]').click();
     await page.locator('#reportNew').click();
     await page.locator('#autofillReport').click();
     await page.locator('#reportForm button[type="submit"], #reportForm button.primary').last().click();

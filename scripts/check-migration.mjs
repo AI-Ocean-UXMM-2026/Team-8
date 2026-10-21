@@ -13,7 +13,7 @@ assert.equal(read('src/features/workspace/runtime.js'), baseline.match(/<body>.*
 const features = {
   reports: 'reports', 'rider-map': 'deliveries', 'rule-catalog': 'policies',
   'rule-engine': 'policies', 'rule-controls': 'policies', 'priority-engine': 'priority',
-  'priority-controls': 'priority', 'maker-checker': 'exceptions',
+  'priority-controls': 'priority', 'sme-workspace': 'workspace', 'maker-checker': 'exceptions',
 };
 for (const [name, feature] of Object.entries(features)) {
   assert.equal(read(`src/features/${feature}/${name}.js`), read(`dist/${name}.js`), `${name} behavior changed`);

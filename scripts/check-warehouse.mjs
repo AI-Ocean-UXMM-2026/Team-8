@@ -192,7 +192,7 @@ try {
   const staticLogin = await noJavaScript.newPage();
   await staticLogin.goto(`${origin}/login`);
   assert.equal(await staticLogin.getByLabel('Email', { exact: true }).isEnabled(), false, 'Credentials must not be accepted before the sign-in handler hydrates');
-  assert.equal(await staticLogin.getByRole('button').isDisabled(), true);
+  assert.equal(await staticLogin.locator('form button[type="submit"]').isDisabled(), true);
   await noJavaScript.close();
   assert.deepEqual(errors, [], 'Warehouse browser runtime errors');
   console.log('PASS warehouse: rapid filters, persistence, mobile/dialog accessibility, live sessions, committed receipt HTTP 408/reload/denied retry replay, malformed success recovery, dispatch and empty/401/403/503 states; no runtime errors.');
