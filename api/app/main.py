@@ -1,9 +1,4 @@
-from fastapi import FastAPI
+"""Application composition only. Domain rules live in feature services."""
+from .core.application import create_app
 
-app = FastAPI(title='ParcelCare API', version='0.2.0')
-
-
-@app.get('/health')
-def health() -> dict:
-    return {'status': 'ok', 'service': 'parcelcare-api', 'mode': 'demo',
-            'live_integrations': False}
+app = create_app()

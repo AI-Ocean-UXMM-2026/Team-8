@@ -1,0 +1,15 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source("../shared");
+@source "./foundation";
+
+@theme {
+  --color-brand: #176d50;
+  --color-canvas: #f5f7fa;
+  --color-ink: #203047;
+  --color-muted: #7a8798;
+}
+
+@layer base {
+  :focus-visible { outline: 2px solid #176d50; outline-offset: 3px; }
+}

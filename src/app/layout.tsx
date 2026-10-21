@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './foundation.css';
 import Script from 'next/script';
 import { styles } from '../features/workspace/generated';
 

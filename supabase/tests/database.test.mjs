@@ -27,6 +27,8 @@ try {
   await db.exec(await readFile(path.join(root,'seed.sql'),'utf8'));
   // Running seed twice must not reset stock or create duplicate fixtures.
   await db.exec(await readFile(path.join(root,'seed.sql'),'utf8'));
+  await db.exec(await readFile(path.join(root,'tests/native-smoke.sql'),'utf8'));
+  console.log('PASS: native PostgreSQL CI smoke script on fresh isolated schema');
   for (const [id,name] of [[staff,'Staff'],[smeA,'SME A'],[smeB,'SME B'],[rider,'Rider'],[outsider,'No membership'],[otherStaff,'Other staff']]) {
     await query('insert into auth.users(id,email) values($1,$2)',[id,name.replaceAll(' ','')+'@example.test']);
     await query('insert into public.profiles(id,display_name) values($1,$2)',[id,name]);

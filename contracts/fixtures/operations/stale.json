@@ -1,0 +1,13 @@
+{
+  "name": "stale",
+  "method": "POST",
+  "path": "/api/receipts/00000000-0000-4000-8000-000000000001",
+  "status": 409,
+  "schema": "ErrorResponse",
+  "body": {
+    "error": {
+      "code": "STALE_VERSION",
+      "message": "Refresh before submitting."
+    }
+  }
+}

@@ -1,5 +1,9 @@
 # ParcelCare warehouse reporting prototype
 
+M0 SET-01–06 foundation: see [handoff and contract conventions](docs/M0-FOUNDATION.md). Run `npm run dev` and open `/foundation` for the new React shared layout/components. `/` remains the prototype reference. Generate DTOs with `npm run contracts:generate`; validate fixtures and drift with `npm run test:contracts`. Operational APIs remain later tasks.
+
+SET-07–11 adds the [shared client/backend interfaces, database workflow, policy and CI](docs/M0-SET07-11.md). Install `api/requirements-dev.txt` into a root `.venv` for Python checks. The identity API verifies configured Supabase Auth; UI sign-in and operational APIs remain later tasks. GitHub Actions runs checks without deployment. The demo still uses fictitious local data.
+
 The deployable application now runs on **Next.js / React / TypeScript**, with **Python/FastAPI** foundations and optional **Supabase / OpenAI** client factories. Its interface and demo behavior are preserved through the existing feature scripts; live integrations are disabled. See [MIGRATION.md](MIGRATION.md) for local commands, migration limits, checks, and Render **Web Service** settings. Run `npm ci` then `npm run dev` from this directory.
 
 The notes below describe the original `dist/` prototype, preserved for comparison.

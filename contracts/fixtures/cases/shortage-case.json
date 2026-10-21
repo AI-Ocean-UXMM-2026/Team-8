@@ -1,0 +1,21 @@
+{
+  "name": "shortage-case",
+  "method": "GET",
+  "path": "/api/exceptions/00000000-0000-4000-8000-000000000006",
+  "status": 200,
+  "schema": "CaseSummary",
+  "body": {
+    "id": "00000000-0000-4000-8000-000000000006",
+    "shipment_id": "00000000-0000-4000-8000-000000000001",
+    "stage": "inbound",
+    "type": "quantity_mismatch",
+    "priority": "normal",
+    "status": "awaiting_sme_decision",
+    "handling_mode": "human",
+    "responsible_party": "UNDETERMINED",
+    "evidence_ids": [
+      "00000000-0000-4000-8000-000000000004"
+    ],
+    "summary": "100 expected, 90 received. Shortage: 10."
+  }
+}

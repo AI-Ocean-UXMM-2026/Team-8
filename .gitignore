@@ -6,6 +6,7 @@ node_modules/
 .venv/
 __pycache__/
 .pytest_cache/
+.test-build/
 test-results/
 public/workspace.js
 src/features/workspace/generated.ts

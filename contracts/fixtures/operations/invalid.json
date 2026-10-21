@@ -1,0 +1,13 @@
+{
+  "name": "invalid",
+  "method": "POST",
+  "path": "/api/receipts/00000000-0000-4000-8000-000000000001",
+  "status": 422,
+  "schema": "ErrorResponse",
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Damaged quantity exceeds received quantity."
+    }
+  }
+}

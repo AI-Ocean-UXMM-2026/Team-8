@@ -1,0 +1,13 @@
+{
+  "name": "provider-error",
+  "method": "POST",
+  "path": "/api/exceptions/00000000-0000-4000-8000-000000000006/analyze",
+  "status": 503,
+  "schema": "ErrorResponse",
+  "body": {
+    "error": {
+      "code": "PROVIDER_UNAVAILABLE",
+      "message": "Analysis unavailable. Retry later."
+    }
+  }
+}

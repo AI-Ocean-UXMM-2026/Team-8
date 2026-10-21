@@ -1,20 +1,28 @@
 """Server-only provider factories, reserved for authenticated feature services.
 
-Not exposed by any public route, and never called in demo mode.
+User-scoped Supabase clients support configured identity; OpenAI remains unused
+until its authorized domain service is implemented.
 """
-from openai import OpenAI
-from supabase import Client, create_client
-from .settings import get_settings
+from .settings import Settings, get_settings
 
 
-def supabase_client() -> Client:
-    settings = get_settings()
-    if not settings.supabase_url or not settings.supabase_key:
+def create_user_client(access_token: str, settings: Settings | None = None):
+    from supabase import create_client
+    from supabase.lib.client_options import ClientOptions
+    settings = settings or get_settings()
+    if not settings.supabase_url or not settings.supabase_public_key:
         raise RuntimeError('Supabase is not configured')
-    return create_client(settings.supabase_url, settings.supabase_key)
+    # Caller token is verified by Auth before the identity is used. Each request
+    # receives a distinct client; never mutate global auth state or use service keys.
+    if not access_token:
+        raise ValueError('A user access token is required')
+    return create_client(settings.supabase_url, settings.supabase_public_key,
+                         options=ClientOptions(headers={'Authorization': f'Bearer {access_token}'},
+                                               persist_session=False, auto_refresh_token=False))
 
 
-def openai_client() -> OpenAI:
+def openai_client():
+    from openai import OpenAI
     settings = get_settings()
     if not settings.openai_api_key:
         raise RuntimeError('OpenAI is not configured')

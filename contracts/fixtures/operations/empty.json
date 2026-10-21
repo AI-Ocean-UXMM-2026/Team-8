@@ -1,0 +1,11 @@
+{
+  "name": "empty",
+  "method": "GET",
+  "path": "/api/shipments",
+  "status": 200,
+  "schema": "ShipmentPage",
+  "body": {
+    "items": [],
+    "next_cursor": null
+  }
+}

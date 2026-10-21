@@ -2,11 +2,15 @@
 
 Source: [PRD V4](ParcelCare_PRD_v4_B2B_Live_GPS.md). Architecture and collaboration details: [IMPLEMENTATION-PLAN-V4.md](IMPLEMENTATION-PLAN-V4.md). Four people: two frontend, two backend. Deployment deferred. This checklist replaces earlier PRD-based scope; no customer portal is planned.
 
-All boxes are pending **real V4 implementation**, even where a prototype visually resembles the feature. Use task IDs as issue titles. For each issue record owner, branch/PR, dependency, acceptance evidence, and status (todo/in progress/blocked/review/done). Tick a box after review and integration, not merely after writing code. Developer aliases below need actual names at kickoff.
+Checkboxes track completed, verified V4 implementation. Prototype resemblance or partial implementation does not count as completion. Use task IDs as issue titles. For each issue record owner, branch/PR, dependency, acceptance evidence, and status (todo/in progress/blocked/review/done). Tick a box only when its implementation is fully finished, integrated locally, and relevant checks pass. Leave partial work and unresolved external dependencies unchecked. Team approvals and live deployment remain separate where required. Developer aliases below need actual names at kickoff.
 
-Database progress (21 October 2026): migrations, RLS, private evidence policies, fictitious seeds, and receipt/decision/tracking RPCs now exist in [supabase/](supabase/README.md), with an isolated SQL integration suite. They have not been applied to hosted Supabase. DB-02/03/04/07/08/09 have database-layer implementation/test evidence but remain unchecked pending team review, native Supabase/Auth/Storage testing, and the remaining API/worker work. DB-01 user authentication and API identity are still pending. No UI files were changed for this database work.
+Database progress (21 October 2026): migrations, RLS, private evidence policies, fictitious seeds, and receipt/decision/tracking RPCs now exist in [supabase/](supabase/README.md), with an isolated SQL integration suite. They have not been applied to hosted Supabase. DB-02/03/04/07/08/09 have database-layer implementation/test evidence but remain unchecked pending team review, native Supabase/Auth/Storage testing, and the remaining API/worker work. SET-08 adds configured Supabase Auth verification and `/api/me`; DB-01 remains unchecked pending native Auth integration acceptance. The demo UI still uses fictitious data.
 
 ## Owner register
+
+M0 SET-01–06 implementation: see [foundation handoff](docs/M0-FOUNDATION.md), [planned OpenAPI](contracts/openapi.json), [fixtures](contracts/fixtures/operations), and React preview at `/foundation`. SET-01–03 await real names, write-access verification and team agreement. SET-04–06 are implemented and verified locally; their boxes are checked. Live operational APIs, hosted deployment and team setup remain separate tasks.
+
+SET-07–11 implementation and validation: [delivery evidence](docs/M0-SET07-11.md), [shared API client](docs/SHARED-API.md), [database workflow](docs/DATABASE-WORKFLOW.md), [versioned policies](docs/V4-POLICY.md), and [CI checks](.github/workflows/checks.yml). SET-04–11 are complete as locally verified foundation implementations; SET-07 transport defects are fixed and covered by regression tests. The M0 team-access gate remains open because SET-01–03 are pending. CI is added and locally validated; its first GitHub/PostgreSQL 17 runner execution awaits pushing this branch.
 
 - FE1 — name: __________ — warehouse React UI; shared frontend integration/config.
 - FE2 — name: __________ — SME/rider React UI; shared tracking/approval/notification UI.
@@ -20,16 +24,34 @@ FE1 owns `src/app/warehouse`, warehouse/inventory/shipments/exceptions React mod
 - [ ] SET-01 — All: assign real names; confirm V4 replaces old courier/customer/closure scope.
 - [ ] SET-02 — All: resolve shared GitHub write access; give each teammate a separate clone and task branch. The previous migration push was denied; do not assume the team can push yet.
 - [ ] SET-03 — FE1 + BE1: agree file owners, PR review pairs, required checks, branch conventions, and who applies shared staging migrations.
-- [ ] SET-04 — All: freeze IDs, enums, errors, pagination, timestamps, evidence references, and idempotency rules; BE1 publishes OpenAPI/DTO generation process.
-- [ ] SET-05 — BE1 + BE2: write success/forbidden/pending/stale/error fixtures, including the 100 expected/90 received scenario and both delivery modes.
-- [ ] SET-06 — FE1: create React shared layout and styled Tailwind/shadcn primitives matching the existing visual design; freeze legacy globals and migration scripts under FE1.
-- [ ] SET-07 — FE1: create one API transport with mock/live adapters; FE2 consumes it rather than inventing a second client. Keep server mutations in FastAPI.
-- [ ] SET-08 — BE1: add shared auth/database/error/audit/outbox interfaces and compose domain routers without putting business logic in `main.py`.
-- [ ] SET-09 — BE1: establish per-developer database/secrets workflow, migration naming, isolated test seeds, and shared staging procedure. Keep secrets out of commits/chat/browser bundles.
-- [ ] SET-10 — All: define closure evidence per case type, priority rules, action allowlist, GPS intervals/staleness/retention, and who confirms delivery/physical handling.
-- [ ] SET-11 — FE1 + BE1: add CI for frontend type/build/tests, backend tests, contract drift, fresh migrations, and domain security checks. No automatic deployment is required now.
+- [x] SET-04 — All: freeze IDs, enums, errors, pagination, timestamps, evidence references, and idempotency rules; BE1 publishes OpenAPI/DTO generation process.
+- [x] SET-05 — BE1 + BE2: write success/forbidden/pending/stale/error fixtures, including the 100 expected/90 received scenario and both delivery modes.
+- [x] SET-06 — FE1: create React shared layout and styled Tailwind/shadcn primitives matching the existing visual design; freeze legacy globals and migration scripts under FE1.
+- [x] SET-07 — FE1: create one API transport with mock/live adapters; FE2 consumes it rather than inventing a second client. Keep server mutations in FastAPI.
+- [x] SET-08 — BE1: add shared auth/database/error/audit/outbox interfaces and compose domain routers without putting business logic in `main.py`.
+- [x] SET-09 — BE1: establish per-developer database/secrets workflow, migration naming, isolated test seeds, and shared staging procedure. Keep secrets out of commits/chat/browser bundles.
+- [x] SET-10 — All: define closure evidence per case type, priority rules, action allowlist, GPS intervals/staleness/retention, and who confirms delivery/physical handling.
+- [x] SET-11 — FE1 + BE1: add CI for frontend type/build/tests, backend tests, contract drift, fresh migrations, and domain security checks. No automatic deployment is required now.
 
 Gate: all four developers can run their layer, read the same contracts, and work on disjoint files. Frontend is unblocked by fixtures; backend does not wait for screens.
+
+SET-01–11 working evidence (21 October 2026):
+
+| Task | Implementation status | Evidence / remaining work |
+| --- | --- | --- |
+| SET-01 | Awaiting team | V4 scope documented in docs/M0-FOUNDATION.md; real names and ratification pending. |
+| SET-02 | Awaiting access verification | Separate clone/task-branch procedure documented; each teammate must prove write access. |
+| SET-03 | Proposed, awaiting team | Path owners, review pairs, check commands and staging operator role documented; agreement pending. |
+| SET-04 | Complete; verified locally | Pydantic models, planned OpenAPI, generated TypeScript and contract conventions published; live routes remain later work. |
+| SET-05 | Complete; verified locally | Eleven deterministic schema-validated fixtures, including 100/90 shortage, both delivery modes, pending/forbidden/stale/error. |
+| SET-06 | Complete; verified locally | React `/foundation`, shared layout and Tailwind/shadcn-style primitives; legacy files frozen under FE1. |
+| SET-07 | Complete; fixes verified locally | One deadline covers token lookup, fetch and body parsing; cancellation retains its reason; late tokens cannot start a fetch. All 10 transport tests, typecheck and production build pass. |
+| SET-08 | Complete; verified locally | Auth/database/error/audit/outbox protocols and composed routers; user-scoped Supabase verification; `main.py` contains composition only. Native Auth acceptance remains DB-01. |
+| SET-09 | Complete; verified locally | Developer secrets/database runbook, staging procedure, migration-name validator, repeatable isolated seeds and fresh SQL tests. No staging environment was changed. |
+| SET-10 | Complete; verified locally | Versioned closure matrix for 10 case types, MMK priority rules, 7 allowed actions and GPS/confirmation policy; backend guards tested. |
+| SET-11 | Complete implementation; locally validated | Four CI jobs cover frontend, backend/contracts, security and fresh PostgreSQL 17 migrations. Workflow YAML and local checks pass; first GitHub run pending branch push. |
+
+Validation (21 October 2026): typecheck, production build, legacy regression suite, 10 frontend tests, 11 backend tests, 11 contract fixtures plus OpenAPI/DTO drift checks, migration conventions, 35 isolated SQL integration tests plus CI smoke SQL, and browser desktop/mobile checks all pass. Browser checks also preserve three exact legacy screenshots. CI does not deploy. Native PostgreSQL 17 execution is configured in CI but was not run locally; native Supabase Auth/Storage/Realtime acceptance remains separate.
 
 ## BE1 — identity, tenancy, schema (M0; PRD 4, 8, 16)
 

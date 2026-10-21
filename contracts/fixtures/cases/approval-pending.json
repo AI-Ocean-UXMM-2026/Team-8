@@ -1,0 +1,14 @@
+{
+  "name": "approval-pending",
+  "method": "GET",
+  "path": "/api/approvals/00000000-0000-4000-8000-000000000011",
+  "status": 200,
+  "schema": "ApprovalSummary",
+  "body": {
+    "id": "00000000-0000-4000-8000-000000000011",
+    "case_id": "00000000-0000-4000-8000-000000000006",
+    "status": "pending",
+    "decision": null,
+    "created_at": "2026-10-21T09:00:00Z"
+  }
+}

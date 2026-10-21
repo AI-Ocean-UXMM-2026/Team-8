@@ -1,0 +1,32 @@
+"""User-scoped RPC seam. No service-role client is available through this API."""
+from typing import Callable, Protocol
+from .auth import AuthContext
+
+
+class UserDatabase(Protocol):
+    def rpc(self, function: str, parameters: dict) -> object: ...
+
+
+class UserDatabaseFactory(Protocol):
+    def for_user(self, identity: AuthContext) -> UserDatabase: ...
+
+
+class SupabaseUserDatabase:
+    def __init__(self, client):
+        self._client = client
+
+    def rpc(self, function: str, parameters: dict) -> object:
+        # Call only reviewed atomic commands; no arbitrary SQL or general table writes.
+        if function not in {'receive_shipment', 'decide_approval', 'register_evidence',
+                            'mark_notification_read', 'start_tracking', 'record_location',
+                            'get_live_location', 'stop_tracking'}:
+            raise ValueError('Unregistered database command')
+        return self._client.rpc(function, parameters).execute().data
+
+
+class SupabaseUserDatabaseFactory:
+    def __init__(self, create_user_client: Callable[[str], object]):
+        self._create_user_client = create_user_client
+
+    def for_user(self, identity: AuthContext) -> UserDatabase:
+        return SupabaseUserDatabase(self._create_user_client(identity.access_token))

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "currency": "MMK",
+  "priority_thresholds": { "normal": 50000, "high": 200000, "critical": 1000000 },
+  "category_minimums": { "perishable": "high", "safety": "critical", "temperature_breach": "critical" },
+  "allowed_actions": ["save_summary", "notify_sme", "request_information", "request_sme_decision", "propose_correction", "escalate", "update_workflow"],
+  "gps": { "send_interval_seconds": 10, "stale_after_seconds": 60, "retention_hours": 24, "max_future_seconds": 30, "max_packet_age_seconds": 300 },
+  "closure_evidence": {
+    "quantity_mismatch": ["count_verified", "sme_decision_recorded", "physical_handling_verified"],
+    "damaged_goods": ["damage_assessed", "quarantine_verified", "disposition_verified", "sme_decision_recorded"],
+    "missing_stock": ["investigation_completed", "stock_reconciliation_verified"],
+    "wrong_pick": ["correction_verified", "sme_receipt_confirmed"],
+    "short_pick": ["remainder_delivered_verified", "sme_receipt_confirmed"],
+    "courier_delay": ["courier_update_verified", "outcome_verified"],
+    "delivery_failed": ["dispatch_or_return_verified", "receiver_or_return_confirmation"],
+    "recipient_unavailable": ["capacity_confirmed", "verified_pod", "receiver_confirmation"],
+    "transit_damage": ["condition_evidence_verified", "handling_verified", "responsibility_reviewed"],
+    "transit_loss": ["carrier_response_verified", "loss_resolution_verified", "responsibility_reviewed"]
+  }
+}

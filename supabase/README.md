@@ -2,6 +2,8 @@
 
 This directory implements the database foundation. It does not change the UI, connect the demo to live data, apply anything to a hosted project, or implement the FastAPI business routes.
 
+Developer setup and shared staging runbook: [DATABASE-WORKFLOW.md](../docs/DATABASE-WORKFLOW.md). SET-08 provides identity verification and user-scoped database interfaces; native Auth/Storage acceptance remains pending. CI executes isolated security tests and fresh PostgreSQL 17 migrations using test-only Auth/Storage stand-ins; no hosted migrations run automatically.
+
 ## Contents and owners
 
 - `migrations/20261021000100_be1_identity.sql`: warehouses, SMEs, profiles/memberships and scoped authorization helpers.

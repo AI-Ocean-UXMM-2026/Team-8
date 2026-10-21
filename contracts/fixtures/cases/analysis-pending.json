@@ -1,0 +1,12 @@
+{
+  "name": "analysis-pending",
+  "method": "POST",
+  "path": "/api/exceptions/00000000-0000-4000-8000-000000000006/analyze",
+  "status": 202,
+  "schema": "PendingAnalysis",
+  "body": {
+    "job_id": "00000000-0000-4000-8000-000000000010",
+    "case_id": "00000000-0000-4000-8000-000000000006",
+    "status": "pending"
+  }
+}

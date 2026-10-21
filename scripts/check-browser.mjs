@@ -29,7 +29,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   assert.ok(ready, 'Next.js did not start: ' + output);
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const errors = [];
   const pages = [];
   for (const port of [3101, 3100]) {
@@ -67,8 +67,23 @@ try {
     await page.waitForSelector('#nav button');
     assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem('pc-reports-v2')).length > 1));
   }
+  const foundation = await browser.newPage();
+  foundation.on('pageerror', error => errors.push(`foundation: ${error.message}`));
+  for (const width of [1440, 390]) {
+    await foundation.setViewportSize({ width, height: 900 });
+    await foundation.goto('http://127.0.0.1:3100/foundation');
+    await foundation.getByRole('heading', { name: 'Shared workspace foundation' }).waitFor();
+    await foundation.getByText('In-house rider', { exact: true }).waitFor();
+    await foundation.getByText('Third-party courier', { exact: true }).waitFor();
+    assert.equal(await foundation.locator('#parcelcare-workspace').count(), 0);
+    assert.ok(await foundation.getByRole('button', { name: 'Submit receipt' }).isDisabled());
+    assert.equal(await foundation.getByLabel('Reference example').inputValue(), 'PC-IN-0100');
+    assert.ok(await foundation.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Foundation overflows viewport');
+    await foundation.screenshot({ path: `test-results/foundation-${width}.png`, fullPage: true });
+  }
+  await foundation.close();
   assert.deepEqual(errors, [], 'Browser runtime errors');
-  console.log('PASS: all four workspaces render identical content; three screenshots match exactly; report submission and persistence work; no page errors.');
+  console.log('PASS: all four workspaces render identical content; three screenshots match exactly; report submission and persistence work; React foundation fits desktop/mobile; no page errors.');
 } finally {
   await browser?.close();
   next.kill();
