@@ -1,10 +1,13 @@
 # ParcelCare UI foundation
 
-Team-8 is the canonical product. Preserve the existing ParcelCare mark. Use the green logistics theme; layout may change to improve the existing workflows.
+Team-8 is the canonical product. Preserve the existing ParcelCare mark. Use the original deployed layout and brand colors from commit 224339b, defined by globals.css and workspace/theme.css. Preserve the updated SME navigation and approved report behavior.
 
 ## Theme
 
-Workspace tokens live in `src/features/workspace/styles.css`: primary #176d50, hover #11553e, mint #eaf5ee, canvas #f4f7f5, ink #1d3028. React Tailwind brand uses the same primary in `src/app/foundation.css`. Keep semantic warning, danger and priority colors separate from brand green. Use Inter and Noto Sans Myanmar, visible focus and 44px mobile controls.
+The original deployed shadcn theme is the presentation source of truth. Operational and feature tokens resolve to primary, accent, background, foreground and border rather than overriding brand values. Keep semantic warning, danger and priority colors distinct. Preserve saved English/Myanmar language choices and responsive controls.
+
+The previous green UI and layout are preserved on branch `archive/green-ui-2026-10-22` at commit `26d078b`; restore that version only on explicit request.
+
 
 ## Approved ownership
 

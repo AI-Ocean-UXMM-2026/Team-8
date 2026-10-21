@@ -178,7 +178,7 @@ try {
     await live.getByText(type.replaceAll('_', ' '), { exact: true }).first().waitFor();
   }
   await live.getByText('Event saved. Shipment status: in transit.', { exact: true }).waitFor();
-  empty = true; await live.goto(`${origin}/warehouse/inventory`); await live.getByText('No records match these filters.', { exact: false }).waitFor(); empty = false;
+  empty = true; await live.goto(`${origin}/warehouse/inventory`); await live.getByText('No products match these filters.', { exact: false }).waitFor(); empty = false;
   for (const [status, heading] of [[403, 'Access denied'], [401, 'Session expired'], [503, 'Unable to load this view']]) {
     readError = status; await live.goto(`${origin}/warehouse/inventory`); await live.getByRole('heading', { name: heading, exact: true }).waitFor();
   }

@@ -162,4 +162,4 @@
 @utility text-muted { color: var(--muted-foreground); }
 
 /* Operational React components retain their approved semantic tokens. */
-@theme { --color-brand: #176d50; --color-canvas: #f4f7f5; --color-ink: #1d3028; --color-muted: #586b61; }
+@theme inline { --color-brand: var(--primary); --color-canvas: var(--background); --color-ink: var(--foreground); --color-muted: var(--muted-foreground); }

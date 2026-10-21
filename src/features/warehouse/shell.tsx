@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import './inventory.css';
 import { Badge, Button, Card } from '../../shared/ui';
 import { useSession } from '../auth/session';
 
@@ -10,6 +11,15 @@ export function WarehouseShell({ children }: { children: ReactNode }) {
   const session = useSession();
   const pathname = usePathname();
   const base = session.demo ? '/demo/warehouse' : '/warehouse';
+  const [caseCount,setCaseCount]=useState<{warehouse:string;value:number}|null>(null);
+  useEffect(()=>{
+    if(session.status!=='ready'||!session.api)return;
+    const controller=new AbortController();let active=true,busy=false;
+    const update=async()=>{if(busy)return;busy=true;try{const result=await session.api!.getWarehouseOverview(session.warehouseId,controller.signal);if(active)setCaseCount({warehouse:session.warehouseId,value:result.open_cases});}catch{if(active)setCaseCount(null)}finally{busy=false}};
+    void update();const timer=setInterval(()=>void update(),15000);
+    const refresh=()=>void update();window.addEventListener('focus',refresh);window.addEventListener('parcelcare:warehouse-changed',refresh);
+    return()=>{active=false;controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('parcelcare:warehouse-changed',refresh)};
+  },[session.api,session.status,session.warehouseId,pathname]);
   if (session.status !== 'ready') return <main className="grid min-h-screen place-items-center bg-canvas p-6 text-ink"><Card className="w-full max-w-lg">
     <h1 className="text-2xl font-semibold">ParcelCare warehouse</h1>
     {session.status === 'loading' ? <p role="status" className="mt-4">Checking your session… <span lang="my">စစ်ဆေးနေသည်</span></p> : <>
@@ -21,12 +31,13 @@ export function WarehouseShell({ children }: { children: ReactNode }) {
   </Card></main>;
   return <div className="pc-workspace min-h-screen bg-canvas text-ink"><a className="sr-only focus:not-sr-only focus:block focus:p-4" href="#warehouse-main">Skip to content</a>
     <div className="mx-auto grid min-h-screen max-w-screen-2xl md:grid-cols-[230px_1fr]">
-      <aside className="border-b border-slate-200 bg-white p-6 md:border-r md:border-b-0"><Link href={base} className="text-2xl font-bold text-brand">ParcelCare</Link><p className="mt-2 text-xs text-muted">Warehouse operations</p>
-        <nav aria-label="Warehouse" className="mt-8 flex flex-wrap gap-2 md:flex-col">{[['Overview', ''], ['Inventory', '/inventory'], ['Shipments', '/shipments'], ['Open cases', '/exceptions']].map(([name, path]) => <Link key={name} href={`${base}${path}`} aria-current={pathname === base + path ? 'page' : undefined} className={`rounded-lg px-3 py-3 text-sm ${pathname === base + path ? 'bg-emerald-50 font-semibold text-brand' : 'hover:bg-slate-50'}`}>{name}</Link>)}</nav>
+      <aside className="warehouseSidebar border-b border-slate-200 bg-white p-6 md:border-r md:border-b-0"><Link href={base} aria-label="ParcelCare home" className="warehouseLogo"><img src="/brand/parcelcare-logo.png" alt="ParcelCare" width="2171" height="724" /></Link><p className="mt-2 text-xs text-muted">Warehouse operations</p>
+        <nav aria-label="Warehouse" className="mt-8 flex flex-wrap gap-2 md:flex-col">{[['Overview', ''], ['Inventory', '/inventory'], ['Shipments', '/shipments'], ['Open cases', '/exceptions']].map(([name, path]) => <Link key={name} href={`${base}${path}`} aria-current={(pathname === base + path || (path && pathname.startsWith(base+path+'/'))) ? 'page' : undefined} className={`rounded-lg px-3 py-3 text-sm ${pathname === base + path ? 'bg-emerald-50 font-semibold text-brand' : 'hover:bg-slate-50'}`}>{name}{path==='/exceptions'&&caseCount?.warehouse===session.warehouseId&&caseCount.value>0&&<span className="warehouseCaseCount" aria-label={`${caseCount.value} open cases`}>{caseCount.value}</span>}</Link>)}</nav>
         <div className="mt-8"><label htmlFor="warehouse-choice" className="mb-2 block text-xs text-muted">Warehouse</label><select id="warehouse-choice" className={`${selectClass} w-full`} value={session.warehouseId} onChange={e => session.setWarehouseId(e.target.value)}>{session.identity?.memberships.filter(m => ['owner', 'staff'].includes(m.role)).filter((m, i, all) => all.findIndex(other => other.warehouse_id === m.warehouse_id) === i).map(m => <option key={m.warehouse_id} value={m.warehouse_id}>Warehouse · {m.warehouse_id.slice(-4)}</option>)}</select></div>
+        <section className="warehouseProfile" aria-label="User profile"><span className="warehouseAvatar" aria-hidden="true">PC</span><div><strong>{session.identity?.memberships.find(m=>m.warehouse_id===session.warehouseId)?.role==='owner'?'Warehouse owner':'Warehouse staff'}</strong><p>Account · <span data-user-content>{session.identity?.actor_id.slice(-8)}</span></p></div></section>
         <Button variant="outline" className="mt-5" onClick={() => void session.signOut()}>Sign out</Button>
       </aside>
-      <div className="min-w-0"><header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-4"><p className="text-xs text-muted">Warehouse / <span lang="my">ဂိုဒေါင်</span></p>{session.demo && <Badge>Demo · fictitious data in this tab</Badge>}</header><main id="warehouse-main" tabIndex={-1} className="p-5 md:p-8" key={session.warehouseId}>{children}</main></div>
+      <div className="min-w-0"><header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-4"><p className="text-xs text-muted">Warehouse / <span lang="my">ဂိုဒေါင်</span></p></header><main id="warehouse-main" tabIndex={-1} className="p-5 md:p-8" key={session.warehouseId}>{children}</main></div>
     </div>
   </div>;
 }
