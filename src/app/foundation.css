@@ -6,16 +6,16 @@
 @source "../features/auth";
 
 @theme {
-  --color-brand: #d93643;
-  --color-canvas: #f6f7f1;
-  --color-ink: #303130;
-  --color-muted: #65695f;
+  --color-brand: #176d50;
+  --color-canvas: #f4f7f5;
+  --color-ink: #1d3028;
+  --color-muted: #586b61;
 }
 
 @layer base {
-  :focus-visible { outline: 2px solid #d93643; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--logistics-green); outline-offset: 3px; }
 }
 
 /* Shared React navigation follows the visual reference. */
-nav a[aria-current="page"]{background:#ff5056;color:#fff;border-radius:8px}
-nav a:not([aria-current="page"]):hover{background:#ffe9e8}
+nav a[aria-current="page"]{background:#176d50;color:#fff;border-radius:8px}
+nav a:not([aria-current="page"]):hover{background:#eaf5ee}

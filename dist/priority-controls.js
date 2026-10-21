@@ -46,5 +46,5 @@ render();
 // Shareable demo entry points; this workspace already simulates roles locally.
 if(typeof location!=='undefined'){
  const entry=new URLSearchParams(location.search),workspace=entry.get('workspace');
- if(['sme','warehouse','manager'].includes(workspace)){role=workspace;page='Exceptions';$('#role').val(role);render()}
+ if(['sme','warehouse','manager'].includes(workspace)){role=workspace;page=workspace==='sme'?'Orders':'Exceptions';$('#role').val(role);render()}
 }

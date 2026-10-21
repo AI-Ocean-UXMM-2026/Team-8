@@ -97,3 +97,30 @@ test('event response must include the saved operation and complete renderable de
     assert.throws(() => savedEvent(invalid, id, 1, 'picked'), (e: ApiError) => e.code === 'INVALID_RESPONSE');
   }
 });
+
+test('warehouse cases support investigation, information requests, escalation and durable action replay', async () => {
+  const store=storage(), client=api(store), summary=(await client.listCases({status:'open'})).items[0];
+  const before=await client.getWarehouseCase(summary.id,warehouseId);
+  const body={action:'update_workflow' as const,status:'investigating' as const,note:'Review courier handover and verified records',expected_version:before.version,source_version:before.source_version,policy_version:1,evidence_ids:[]};
+  const idempotencyKey=key();
+  const updated=await client.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey});
+  assert.equal(updated.status,'investigating');assert.equal(updated.version,before.version+1);assert.equal(updated.events.length,1);
+  const reloaded=api(store);
+  assert.deepEqual(await reloaded.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey}),updated);
+  assert.equal((await reloaded.getWarehouseCase(summary.id,warehouseId)).events.length,1);
+  await assert.rejects(reloaded.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey:key()}),(e:ApiError)=>e.code==='STALE_VERSION');
+  await assert.rejects(reloaded.getWarehouseCase(summary.id,'10000000-0000-4000-8000-000000000999'),(e:ApiError)=>e.code==='INVALID_RESPONSE');
+  const request={...body,action:'request_information' as const,expected_version:updated.version,source_version:updated.source_version,note:'Please supply the courier handover receipt'};
+  const waiting=await reloaded.recordCaseAction(summary.id,request,{warehouseId,idempotencyKey:key()});assert.equal(waiting.status,'awaiting_information');
+  const escalated=await reloaded.recordCaseAction(summary.id,{...request,action:'escalate',expected_version:waiting.version,source_version:waiting.source_version,note:'Manager review required'},{warehouseId,idempotencyKey:key()});
+  assert.equal(escalated.handling_mode,'human');assert.equal(escalated.status,'processing');
+  assert.equal((await reloaded.listCases({status:'open'})).items.find(c=>c.id===summary.id)!.status,'processing');
+  assert.equal((await reloaded.getShipment(escalated.shipment_id)).status,'handed_over','case action must not mark delivered or alter shipment');
+});
+
+test('malformed or wrong-case action responses remain unverified',async()=>{
+  const caseId='10000000-0000-4000-8000-000000000060';
+  const body={action:'save_summary' as const,note:'Checked',expected_version:1,source_version:'1:1:1',policy_version:1,evidence_ids:[]};
+  const bad=createApiClient(async <T,>()=>({id:caseId,warehouse_id:warehouseId,version:2}) as T);
+  await assert.rejects(bad.recordCaseAction(caseId,body,{warehouseId,idempotencyKey:key()}),(e:ApiError)=>e.code==='INVALID_RESPONSE');
+});

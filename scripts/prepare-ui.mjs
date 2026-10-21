@@ -19,6 +19,7 @@ export const sources = [
   'src/features/exceptions/maker-checker.js',
   'src/features/policies/rule-controls.js',
   'src/features/priority/priority-controls.js',
+  'src/features/workspace/sme-workspace.js',
 ];
 await mkdir(path.join(root, 'public'), { recursive: true });
 const chunks = await Promise.all(sources.map(read));

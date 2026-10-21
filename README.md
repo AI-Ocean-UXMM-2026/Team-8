@@ -1,6 +1,7 @@
 # ParcelCare — Team-8
 
 Project repository: **AI-Ocean-UXMM-2026/Team-8**. Continue all development here. English and Myanmar interface modes are available from the language bar; the choice persists locally. See [report UX and language modes](docs/REPORT-UX-LANGUAGES.md) for preview links, localization rules and verification.
+SME navigation has three pages: **Orders / Requests**, **Delivery Tracking**, and **Reports**. Stock arrivals and available stock are inside Orders. Open `/?workspace=sme` for the SME demo.
 
 M0 SET-01–06 foundation: see [handoff and contract conventions](docs/M0-FOUNDATION.md). Run `npm run dev` and open `/foundation` for the new React shared layout/components. `/` remains the prototype reference. Generate DTOs with `npm run contracts:generate`; validate fixtures and drift with `npm run test:contracts`. Operational APIs remain later tasks.
 
