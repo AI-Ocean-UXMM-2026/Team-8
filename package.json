@@ -16,8 +16,11 @@
     "build": "npm run prepare:ui && next build --webpack",
     "start": "next start -H 0.0.0.0",
     "typecheck": "npm run prepare:ui && tsc --noEmit",
-    "test": "node scripts/check-migration.mjs && node check-reports.cjs && node check-maker.cjs && node check-rules.cjs && node check-autofill.cjs && node check-priority.cjs && node check-priority-reports.cjs",
+    "test": "node scripts/check-migration.mjs && node check-reports.cjs && node check-maker.cjs && node check-rules.cjs && node check-autofill.cjs && node check-priority.cjs && node check-priority-reports.cjs && node check-dashboard-workflows.cjs",
     "test:browser": "node scripts/check-browser.mjs",
+    "test:report-locales": "node scripts/check-report-locales.mjs",
+    "test:dashboard-workflows": "node scripts/check-dashboard-workflows.mjs",
+    "test:sme-workspace": "node scripts/check-sme-workspace.mjs",
     "test:office": "node scripts/check-office.mjs",
     "test:portals": "node scripts/check-portals.mjs"
   },

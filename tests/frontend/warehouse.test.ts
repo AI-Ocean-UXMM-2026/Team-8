@@ -14,6 +14,26 @@ const key = () => crypto.randomUUID();
 function storage() { const saved = new Map<string, string>(); return { getItem: (k: string) => saved.get(k) ?? null, setItem: (k: string, value: string) => { saved.set(k, value); } }; }
 const api = (store = storage()) => createApiClient(createMockTransport({ dataset: 'warehouse', storage: store }));
 
+test('merged case filters run before pagination and remain consistent after investigation actions', async () => {
+  const store = storage();
+  const data = structuredClone(fixture.body);
+  const target = data.cases[0];
+  data.cases.unshift({ ...target, id: key(), type: 'damaged_goods', priority: 'low', status: 'new' });
+  store.setItem('parcelcare.warehouse.demo.v1', JSON.stringify({ data, replay: {} }));
+  const client = api(store);
+  const filter = { warehouseId, limit: 1, issueType: 'courier_delay', priority: 'normal', mode: 'human', owner: 'unassigned' };
+  assert.deepEqual((await client.listCases({ ...filter, state: 'awaiting_courier_confirmation' })).items.map(c => c.id), [target.id]);
+  assert.equal((await client.listCases({ ...filter, owner: (await client.getMe()).actor_id })).items.length, 0);
+  const detail = await client.getWarehouseCase(target.id, warehouseId);
+  const changed = await client.recordCaseAction(target.id, { expected_version: detail.version, source_version: detail.source_version,
+    policy_version: Number(detail.source_version.split(':')[2]), action: 'escalate', note: 'Reviewed case requires human investigation.', evidence_ids: [] },
+    { warehouseId, idempotencyKey: key() });
+  assert.equal(changed.status, 'processing');
+  assert.equal((await client.listCases({ ...filter, state: 'awaiting_courier_confirmation' })).items.length, 0);
+  assert.deepEqual((await api(store).listCases({ ...filter, state: 'processing' })).items.map(c => c.id), [target.id]);
+  assert.equal(caseView(await api(store).getCase(target.id)).status, 'processing');
+});
+
 test('case details are isolated to the demo dataset; unknown IDs fail without a fabricated record', async () => {
   const client = api();
   const summary = (await client.listCases()).items[0];
@@ -128,4 +148,31 @@ test('event response must include the saved operation and complete renderable de
   for (const invalid of [{ ...result, events: [] }, { ...result, items: null }, { ...result, allowed_events: ['invented'] }, { ...result, events: [{ ...result.events[0], verified_at: 'not-a-date' }] }]) {
     assert.throws(() => savedEvent(invalid, id, 1, 'picked'), (e: ApiError) => e.code === 'INVALID_RESPONSE');
   }
+});
+
+test('warehouse cases support investigation, information requests, escalation and durable action replay', async () => {
+  const store=storage(), client=api(store), summary=(await client.listCases({status:'open'})).items[0];
+  const before=await client.getWarehouseCase(summary.id,warehouseId);
+  const body={action:'update_workflow' as const,status:'investigating' as const,note:'Review courier handover and verified records',expected_version:before.version,source_version:before.source_version,policy_version:1,evidence_ids:[]};
+  const idempotencyKey=key();
+  const updated=await client.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey});
+  assert.equal(updated.status,'investigating');assert.equal(updated.version,before.version+1);assert.equal(updated.events.length,1);
+  const reloaded=api(store);
+  assert.deepEqual(await reloaded.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey}),updated);
+  assert.equal((await reloaded.getWarehouseCase(summary.id,warehouseId)).events.length,1);
+  await assert.rejects(reloaded.recordCaseAction(summary.id,body,{warehouseId,idempotencyKey:key()}),(e:ApiError)=>e.code==='STALE_VERSION');
+  await assert.rejects(reloaded.getWarehouseCase(summary.id,'10000000-0000-4000-8000-000000000999'),(e:ApiError)=>e.code==='INVALID_RESPONSE');
+  const request={...body,action:'request_information' as const,expected_version:updated.version,source_version:updated.source_version,note:'Please supply the courier handover receipt'};
+  const waiting=await reloaded.recordCaseAction(summary.id,request,{warehouseId,idempotencyKey:key()});assert.equal(waiting.status,'awaiting_information');
+  const escalated=await reloaded.recordCaseAction(summary.id,{...request,action:'escalate',expected_version:waiting.version,source_version:waiting.source_version,note:'Manager review required'},{warehouseId,idempotencyKey:key()});
+  assert.equal(escalated.handling_mode,'human');assert.equal(escalated.status,'processing');
+  assert.equal((await reloaded.listCases({status:'open'})).items.find(c=>c.id===summary.id)!.status,'processing');
+  assert.equal((await reloaded.getShipment(escalated.shipment_id)).status,'handed_over','case action must not mark delivered or alter shipment');
+});
+
+test('malformed or wrong-case action responses remain unverified',async()=>{
+  const caseId='10000000-0000-4000-8000-000000000060';
+  const body={action:'save_summary' as const,note:'Checked',expected_version:1,source_version:'1:1:1',policy_version:1,evidence_ids:[]};
+  const bad=createApiClient(async <T,>()=>({id:caseId,warehouse_id:warehouseId,version:2}) as T);
+  await assert.rejects(bad.recordCaseAction(caseId,body,{warehouseId,idempotencyKey:key()}),(e:ApiError)=>e.code==='INVALID_RESPONSE');
 });

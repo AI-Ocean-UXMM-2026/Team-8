@@ -30,3 +30,11 @@ Run `npm.cmd run dev`, open `/login`, select **SME**, and sign in with an existi
 ## Optional fixture order
 
 Only in an isolated disposable database: apply the schema migrations, then `supabase/seed.sql`, `supabase/seeds/operations.sql`, and `supabase/seeds/cases.sql`. Do not run the test bootstrap or optional seeds on shared staging. CASE-11 does not edit the BE1 base seed. The integration suites load these files automatically and verify that rerunning the BE2 seed preserves recorded decisions.
+
+## Integration with updated main
+
+The five conflicting files were resolved by combining both implementations. The incoming warehouse table, metrics, search, stage/sort controls, investigation actions, fonts, language assets and supplied PRD remain. Issue/priority/handling/owner/state filters still reach the backend before pagination; search, stage and sorting remain page-local and are labeled accordingly. The investigation screen exposes the shared case panels and authorized advanced controls under **Evidence, analysis and verification**. Demo records do not acquire live command permissions.
+
+Both API client surfaces and both sets of package scripts remain available. The demo adapter preserves filtered lists as well as persisted investigation actions. A regression test places a matching case after a nonmatching one, verifies filtering before pagination, escalates it, and checks that filtered results and the reloaded detail agree. The combined frontend suite has 24 tests. Browser checks use the incoming **on hold** receipt wording and distinguish uploaded fixture evidence from physical verification.
+
+Merge validation passed: typecheck, 24 frontend tests, 12 contract fixtures and generated-contract drift, migration conventions, legacy regressions, legacy/warehouse/portal browser suites, production build, and the production-server English/Myanmar desktop/mobile case UI checks. Conflict resolution changed no backend logic or schema. Hosted migrations and deployment were not performed.

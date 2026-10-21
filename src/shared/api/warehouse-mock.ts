@@ -1,9 +1,11 @@
+import { type WarehouseCase, type WarehouseCaseAction } from './case-workflow';
+import policy from '../../../contracts/policies/v1.json';
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import { ApiError, type ApiRequest, type Schemas, type Transport, validateRequest } from './transport';
 
 type Data = Schemas['WarehouseFixture'];
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
-type State = { data: Data; replay: Record<string, { fingerprint: string; result: unknown }> };
+type State = { data: Data; replay: Record<string, { fingerprint: string; result: unknown }>; caseDetails?: Record<string, WarehouseCase> };
 const storageKey = 'parcelcare.warehouse.demo.v1';
 const fingerprint = (value: unknown) => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
 const fail = (status: number, code: string, text: string): never => { throw new ApiError(status, code, text); };
@@ -50,10 +52,37 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
       (!url.searchParams.get('issue_type') || c.type === url.searchParams.get('issue_type')) && (!url.searchParams.get('priority') || c.priority === url.searchParams.get('priority')) &&
       (!url.searchParams.get('handling_mode') || c.handling_mode === url.searchParams.get('handling_mode')) && (!url.searchParams.get('state') || c.status === url.searchParams.get('state')) &&
       (!url.searchParams.get('owner_id') || (url.searchParams.get('owner_id') === 'unassigned' ? !c.owner_id : c.owner_id === url.searchParams.get('owner_id')))));
-    else if (request.method === 'GET' && /^\/api\/exceptions\/[0-9a-f-]+$/i.test(url.pathname)) {
-      const item = data.cases.find(c => c.id === url.pathname.split('/').pop());
-      if (!item) fail(404, 'NOT_FOUND', 'Case not found.');
-      result = item;
+    else if (/^\/api\/exceptions\/[0-9a-f-]+(?:\/actions)?$/i.test(url.pathname)) {
+      const caseId = url.pathname.split('/')[3];
+      const summary = data.cases.find(c => c.id === caseId);
+      if (!summary) fail(404, 'NOT_FOUND', 'Case not found.');
+      const shipment = data.shipments.find(s => s.id === summary!.shipment_id);
+      if (!shipment) fail(404, 'NOT_FOUND', 'Shipment not found.');
+      next.caseDetails ??= {};
+      const detail: WarehouseCase = next.caseDetails[caseId] ?? {
+        ...summary!, warehouse_id: shipment!.warehouse_id, sme_id: shipment!.sme_id,
+        version: 1, source_version: `1:${shipment!.version}:${policy.version}`,
+        required_facts: (policy.closure_evidence as Record<string,string[]>)[summary!.type] ?? [],
+        events: [], evidence: shipment!.evidence.map(e => ({id:e.id,uploaded:e.verified})),
+      };
+      detail.source_version = `${detail.version}:${shipment!.version}:${policy.version}`;
+      if (request.method === 'POST' && url.pathname.endsWith('/actions')) {
+        const body = request.body as WarehouseCaseAction;
+        if (body.expected_version !== detail.version || body.source_version !== detail.source_version) fail(409,'STALE_VERSION','Case changed. Refresh before submitting.');
+        if (['resolved','closed'].includes(detail.status)) fail(409,'STALE_VERSION','This case is already finalized.');
+        if (body.policy_version !== policy.version || !['save_summary','request_information','escalate','update_workflow'].includes(body.action) || typeof body.note !== 'string' || !body.note.trim() || body.note.trim().length>2000 || !Array.isArray(body.evidence_ids) || body.evidence_ids.some(id=>!detail.evidence.some(e=>e.id===id&&e.uploaded))) fail(422,'VALIDATION_ERROR','Choose a permitted action, note and registered evidence.');
+        if (body.action==='update_workflow' && body.status!=='investigating') fail(422,'VALIDATION_ERROR','Choose a permitted investigation status.');
+        if (body.action==='save_summary') detail.summary=body.note.trim();
+        if (body.action==='request_information') detail.status='awaiting_information';
+        if (body.action==='escalate') {detail.status='processing';detail.handling_mode='human';}
+        if (body.action==='update_workflow') detail.status='investigating';
+        detail.version++;
+        detail.source_version=`${detail.version}:${shipment!.version}:${policy.version}`;
+        detail.events.push({id:crypto.randomUUID(),type:body.action,actor_type:'staff',created_at:new Date().toISOString(),payload:{note:body.note.trim()}});
+        summary!.summary=detail.summary;summary!.status=detail.status as typeof data.cases[number]['status'];summary!.handling_mode=detail.handling_mode as typeof data.cases[number]['handling_mode'];
+        next.caseDetails[caseId]=detail;
+      } else if (request.method!=='GET'||url.pathname.endsWith('/actions')) fail(404,'NOT_FOUND','Operation not found.');
+      result=detail;
     }
     else {
       const match = url.pathname.match(/^\/api\/(shipments|receipts)\/([0-9a-f-]+)(\/events)?$/i);

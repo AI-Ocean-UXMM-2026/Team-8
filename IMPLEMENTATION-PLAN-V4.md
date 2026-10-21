@@ -1,6 +1,6 @@
 # ParcelCare V4 implementation plan — four-person team
 
-Source of truth: [ParcelCare PRD V4](ParcelCare%20PRD.md), particularly sections 2–10 and 16. Prepared 21 October 2026. This supersedes plans derived from the original PRD. Deployment is deferred at the user's request. This document proposes architecture and delivery order; it does not implement the features.
+Source of truth: [current Standard PRD](ParcelCare%20PRD.md). The supplied Standard PRD supersedes the earlier V4 requirements; this older implementation plan must be reconciled before using its section references or priorities. Prepared 21 October 2026. This supersedes plans derived from the original PRD. Deployment is deferred at the user's request. This document proposes architecture and delivery order; it does not implement the features.
 
 ## 1. Scope and current starting point
 

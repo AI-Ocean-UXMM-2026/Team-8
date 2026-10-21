@@ -7,11 +7,15 @@
 
 @theme {
   --color-brand: #176d50;
-  --color-canvas: #f5f7fa;
-  --color-ink: #203047;
-  --color-muted: #7a8798;
+  --color-canvas: #f4f7f5;
+  --color-ink: #1d3028;
+  --color-muted: #586b61;
 }
 
 @layer base {
-  :focus-visible { outline: 2px solid #176d50; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--logistics-green); outline-offset: 3px; }
 }
+
+/* Shared React navigation follows the visual reference. */
+nav a[aria-current="page"]{background:#176d50;color:#fff;border-radius:8px}
+nav a:not([aria-current="page"]):hover{background:#eaf5ee}

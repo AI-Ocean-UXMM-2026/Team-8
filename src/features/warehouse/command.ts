@@ -38,6 +38,7 @@ export function useCommand<B, R>(storageKey: string, send: (body: B, key: string
       pendingRef.current = null; setPending(null);
       try { sessionStorage.removeItem(storageKey); } catch { /* A reload can safely replay the same completed command. */ }
       committed();
+      window.dispatchEvent(new Event('parcelcare:warehouse-changed'));
     } catch (err) {
       if (canReleaseCommand(err, retrying)) {
         // Only a known first-attempt rejection can release the saved command.

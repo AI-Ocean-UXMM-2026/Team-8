@@ -9,7 +9,7 @@ import { usePolling } from '../portal/polling';
 import { ApiError } from '../../shared/api';
 import { ErrorPanel, human, Loading, PageTitle, useResource } from './shared';
 
-export function CaseDetail({ id }: { id: string }) {
+export function CaseDetail({ id, embedded = false, onChanged }: { id: string; embedded?: boolean; onChanged?: () => void }) {
   const { api, demo, warehouseId } = useSession();
   const resource = usePolling(`${warehouseId}:${id}`, async signal => {
     const raw = await api!.getCase(id, signal); const item = caseView(raw);
@@ -19,5 +19,6 @@ export function CaseDetail({ id }: { id: string }) {
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const { item, raw } = resource.data;
-  return <><Link className="mb-4 inline-block text-sm text-brand underline" href={`${demo ? '/demo' : ''}/warehouse/exceptions`}>Back to cases</Link><PageTitle title={human(item.type)} my="ကိစ္စအသေးစိတ်" description="Recorded facts and evidence." /><CasePanels item={item} />{'version' in raw && <><CaseControls detail={raw} refresh={resource.reload} /><CaseReviewForm detail={raw} refresh={resource.reload} /></>}<EvidenceUpload shipmentId={item.shipment_id} refresh={resource.reload} /></>;
+  const refresh = () => { resource.reload(); onChanged?.(); };
+  return <>{!embedded && <><Link className="mb-4 inline-block text-sm text-brand underline" href={`${demo ? '/demo' : ''}/warehouse/exceptions`}>Back to cases</Link><PageTitle title={human(item.type)} my="ကိစ္စအသေးစိတ်" description="Recorded facts and evidence." /></>}<CasePanels item={item} />{!demo && 'version' in raw && Array.isArray(raw.allowed_actions) && <><CaseControls detail={raw} refresh={refresh} /><CaseReviewForm detail={raw} refresh={refresh} /></>}<EvidenceUpload shipmentId={item.shipment_id} refresh={refresh} /></>;
 }

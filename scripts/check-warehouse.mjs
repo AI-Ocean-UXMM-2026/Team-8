@@ -15,7 +15,7 @@ const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev'
   stdio: 'pipe', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: authOrigin, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture', NEXT_PUBLIC_PARCELCARE_API_URL: apiOrigin },
 });
 let output = ''; server.stdout.on('data', c => { output += c; }); server.stderr.on('data', c => { output += c; });
-let browser;
+let browser;let lastPage;
 try {
   let ready = false;
   for (let i = 0; i < 180; i++) {
@@ -26,7 +26,7 @@ try {
   assert.ok(ready, output);
   browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  const page = await context.newPage(); const errors = [];
+  const page = await context.newPage();lastPage=page; const errors = [];
   page.on('pageerror', err => errors.push(err.message));
   await page.goto(`${origin}/demo/warehouse`);
   await page.getByRole('heading', { name: 'Warehouse overview' }).waitFor();
@@ -49,7 +49,7 @@ try {
   await page.getByRole('button', { name: 'Review final receipt' }).click();
   await page.getByRole('button', { name: 'Confirm receipt', exact: true }).click();
   await page.getByRole('heading', { name: 'Receipt saved' }).waitFor();
-  await page.getByText('TOTE-01: available 108, quarantined 2', { exact: true }).waitFor();
+  await page.getByText('TOTE-01: available 108, on hold 2', { exact: true }).waitFor();
   await page.reload();
   await page.getByText('Receiving is finalized for this shipment.', { exact: true }).waitFor();
   await page.getByRole('link', { name: 'Inventory', exact: true }).click();
@@ -75,12 +75,13 @@ try {
   await page.getByLabel('Handling mode', { exact: true }).selectOption('human');
   await page.getByRole('link', { name: 'courier delay', exact: true }).waitFor();
   await page.getByLabel('Priority', { exact: true }).selectOption('critical');
-  await page.getByText('No cases match these filters on this page.', { exact: false }).waitFor();
+  await page.getByText('No cases match these filters.', { exact: false }).waitFor();
   await page.getByLabel('Priority', { exact: true }).selectOption('normal');
   await page.getByRole('link', { name: 'courier delay', exact: true }).click();
+  await page.getByText('Evidence, analysis and verification', { exact: true }).click();
   await page.getByRole('heading', { name: 'Case facts', exact: false }).waitFor();
   await page.getByText('No AI analysis supplied.', { exact: false }).waitFor();
-  assert.ok(await page.getByText('Reference only; availability unconfirmed', { exact: true }).count());
+  assert.ok(await page.getByText('Uploaded; verification is separate', { exact: true }).count());
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Case panels overflow mobile viewport');
   await page.screenshot({ path: 'test-results/warehouse-case-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -197,7 +198,7 @@ try {
     await live.getByText(type.replaceAll('_', ' '), { exact: true }).first().waitFor();
   }
   await live.getByText('Event saved. Shipment status: in transit.', { exact: true }).waitFor();
-  empty = true; await live.goto(`${origin}/warehouse/inventory`); await live.getByText('No records match these filters.', { exact: false }).waitFor(); empty = false;
+  empty = true; await live.goto(`${origin}/warehouse/inventory`); await live.getByText('No products match these filters.', { exact: false }).waitFor(); empty = false;
   for (const [status, heading] of [[403, 'Access denied'], [401, 'Session expired'], [503, 'Unable to load this view']]) {
     readError = status; await live.goto(`${origin}/warehouse/inventory`); await live.getByRole('heading', { name: heading, exact: true }).waitFor();
   }
@@ -211,7 +212,7 @@ try {
   const staticLogin = await noJavaScript.newPage();
   await staticLogin.goto(`${origin}/login`);
   assert.equal(await staticLogin.getByLabel('Email', { exact: true }).isEnabled(), false, 'Credentials must not be accepted before the sign-in handler hydrates');
-  assert.equal(await staticLogin.getByRole('button').isDisabled(), true);
+  assert.equal(await staticLogin.locator('form button[type="submit"]').isDisabled(), true);
   await noJavaScript.close();
   assert.deepEqual(errors, [], 'Warehouse browser runtime errors');
   console.log('PASS warehouse: rapid filters, persistence, mobile/dialog accessibility, live sessions, committed receipt HTTP 408/reload/denied retry replay, malformed success recovery, dispatch and empty/401/403/503 states; no runtime errors.');
