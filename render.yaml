@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: parcelcare-web
+    runtime: node
+    rootDir: .
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start -- --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+  - type: web
+    name: parcelcare-api
+    runtime: python
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8

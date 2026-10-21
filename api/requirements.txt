@@ -1,0 +1,5 @@
+fastapi==0.156.8
+uvicorn[standard]==0.54.0
+supabase==2.33.0
+openai==2.54.0
+pydantic-settings==2.16.1

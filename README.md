@@ -1,5 +1,9 @@
 # ParcelCare warehouse reporting prototype
 
+The deployable application now runs on **Next.js / React / TypeScript**, with **Python/FastAPI** foundations and optional **Supabase / OpenAI** client factories. Its interface and demo behavior are preserved through the existing feature scripts; live integrations are disabled. See [MIGRATION.md](MIGRATION.md) for local commands, migration limits, checks, and Render **Web Service** settings. Run `npm ci` then `npm run dev` from this directory.
+
+The notes below describe the original `dist/` prototype, preserved for comparison.
+
 HTML, Tailwind CSS and jQuery. Open dist/index.html or serve dist using `python3 -m http.server 8765 --directory dist`.
 
 ## Walkthrough
