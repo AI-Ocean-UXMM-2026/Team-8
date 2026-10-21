@@ -1,0 +1,213 @@
+{
+  "name": "warehouse-initial",
+  "schema": "WarehouseFixture",
+  "status": 200,
+  "method": "GET",
+  "path": "/api/warehouse/directory",
+  "body": {
+    "directory": {
+      "warehouse_id": "10000000-0000-4000-8000-000000000001",
+      "name": "Yangon hub",
+      "smes": [
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "name": "Golden Bloom"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000003",
+          "name": "Lotus Trading"
+        }
+      ]
+    },
+    "inventory": [
+      {
+        "id": "10000000-0000-4000-8000-000000000010",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000002",
+        "sku": "TOTE-01",
+        "name": "Canvas tote",
+        "available_qty": 20,
+        "quarantined_qty": 0,
+        "shipment_ids": [
+          "10000000-0000-4000-8000-000000000020",
+          "10000000-0000-4000-8000-000000000023"
+        ]
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000011",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000003",
+        "sku": "SOAP-02",
+        "name": "Botanical soap",
+        "available_qty": 30,
+        "quarantined_qty": 2,
+        "shipment_ids": [
+          "10000000-0000-4000-8000-000000000021",
+          "10000000-0000-4000-8000-000000000022"
+        ]
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000012",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000002",
+        "sku": "TEA-03",
+        "name": "Green tea",
+        "available_qty": 0,
+        "quarantined_qty": 4,
+        "shipment_ids": []
+      }
+    ],
+    "shipments": [
+      {
+        "id": "10000000-0000-4000-8000-000000000020",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000002",
+        "reference": "PC-IN-0001",
+        "direction": "inbound",
+        "delivery_mode": null,
+        "status": "expected",
+        "version": 1,
+        "created_at": "2026-10-21T09:00:00Z",
+        "evidence_ids": [
+          "10000000-0000-4000-8000-000000000040"
+        ],
+        "items": [
+          {
+            "product_id": "10000000-0000-4000-8000-000000000010",
+            "sku": "TOTE-01",
+            "name": "Canvas tote",
+            "expected_qty": 100,
+            "received_qty": 0,
+            "damaged_qty": 0
+          }
+        ],
+        "events": [],
+        "evidence": [
+          {
+            "id": "10000000-0000-4000-8000-000000000040",
+            "label": "Verified shipment count / condition record",
+            "verified": true
+          }
+        ],
+        "allowed_events": []
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000021",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000003",
+        "reference": "PC-IN-0002",
+        "direction": "inbound",
+        "delivery_mode": null,
+        "status": "expected",
+        "version": 1,
+        "created_at": "2026-10-21T09:00:00Z",
+        "evidence_ids": [
+          "10000000-0000-4000-8000-000000000041"
+        ],
+        "items": [
+          {
+            "product_id": "10000000-0000-4000-8000-000000000011",
+            "sku": "SOAP-02",
+            "name": "Botanical soap",
+            "expected_qty": 50,
+            "received_qty": 0,
+            "damaged_qty": 0
+          }
+        ],
+        "events": [],
+        "evidence": [
+          {
+            "id": "10000000-0000-4000-8000-000000000041",
+            "label": "Verified shipment count / condition record",
+            "verified": true
+          }
+        ],
+        "allowed_events": []
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000022",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000003",
+        "reference": "PC-OUT-0003",
+        "direction": "outbound",
+        "delivery_mode": "in_house",
+        "status": "ready",
+        "version": 1,
+        "created_at": "2026-10-21T09:00:00Z",
+        "evidence_ids": [
+          "10000000-0000-4000-8000-000000000042"
+        ],
+        "items": [
+          {
+            "product_id": "10000000-0000-4000-8000-000000000011",
+            "sku": "SOAP-02",
+            "name": "Botanical soap",
+            "expected_qty": 10,
+            "received_qty": 0,
+            "damaged_qty": 0
+          }
+        ],
+        "events": [],
+        "evidence": [
+          {
+            "id": "10000000-0000-4000-8000-000000000042",
+            "label": "Verified shipment count / condition record",
+            "verified": true
+          }
+        ],
+        "allowed_events": [
+          "picked"
+        ]
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000023",
+        "warehouse_id": "10000000-0000-4000-8000-000000000001",
+        "sme_id": "10000000-0000-4000-8000-000000000002",
+        "reference": "PC-OUT-0004",
+        "direction": "outbound",
+        "delivery_mode": "third_party",
+        "status": "handed_over",
+        "version": 1,
+        "created_at": "2026-10-21T09:00:00Z",
+        "evidence_ids": [
+          "10000000-0000-4000-8000-000000000043"
+        ],
+        "items": [
+          {
+            "product_id": "10000000-0000-4000-8000-000000000010",
+            "sku": "TOTE-01",
+            "name": "Canvas tote",
+            "expected_qty": 5,
+            "received_qty": 0,
+            "damaged_qty": 0
+          }
+        ],
+        "events": [],
+        "evidence": [
+          {
+            "id": "10000000-0000-4000-8000-000000000043",
+            "label": "Verified shipment count / condition record",
+            "verified": true
+          }
+        ],
+        "allowed_events": []
+      }
+    ],
+    "cases": [
+      {
+        "id": "10000000-0000-4000-8000-000000000060",
+        "shipment_id": "10000000-0000-4000-8000-000000000023",
+        "stage": "outbound",
+        "type": "courier_delay",
+        "priority": "normal",
+        "status": "awaiting_courier_confirmation",
+        "handling_mode": "human",
+        "responsible_party": "UNDETERMINED",
+        "evidence_ids": [
+          "10000000-0000-4000-8000-000000000043"
+        ],
+        "summary": "Awaiting verified courier delivery update."
+      }
+    ]
+  }
+}

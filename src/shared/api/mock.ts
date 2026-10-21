@@ -10,6 +10,7 @@ import caseSuccess from '../../../contracts/fixtures/cases/shortage-case.json';
 import approval from '../../../contracts/fixtures/cases/approval-pending.json';
 import providerError from '../../../contracts/fixtures/cases/provider-error.json';
 import { ApiError, type Transport, type ApiRequest, validateRequest } from './transport';
+import { createWarehouseMockTransport } from './warehouse-mock';
 
 export type MockScenario = 'success' | 'empty' | 'forbidden' | 'stale' | 'invalid' | 'provider-error';
 const canonical = (value: unknown): string => JSON.stringify(value, (_key, item) =>
@@ -17,7 +18,8 @@ const canonical = (value: unknown): string => JSON.stringify(value, (_key, item)
     ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
 
 // Fictitious development adapter, never an authentication/authorization simulator.
-export function createMockTransport({ scenario = 'success' }: { scenario?: MockScenario } = {}): Transport {
+export function createMockTransport({ scenario = 'success', dataset, storage }: { scenario?: MockScenario; dataset?: 'warehouse'; storage?: Pick<Storage, 'getItem' | 'setItem'> } = {}): Transport {
+  if (dataset === 'warehouse') return createWarehouseMockTransport(storage);
   const replay = new Map<string, { fingerprint: string; result: unknown }>();
   let receiptPosted = false;
   return async <T>(request: ApiRequest): Promise<T> => {

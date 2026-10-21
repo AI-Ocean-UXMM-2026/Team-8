@@ -6,7 +6,8 @@
     "contracts:generate": "node scripts/python.mjs scripts/export-contracts.py && npm run contracts:types",
     "contracts:types": "openapi-typescript contracts/openapi.json -o contracts/generated/api.d.ts",
     "test:contracts": "node scripts/python.mjs scripts/check-contracts.py && node scripts/check-contract-types.mjs",
-    "test:frontend": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/api.test.js",
+    "test:frontend": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/api.test.js .test-build/tests/frontend/warehouse.test.js",
+    "test:warehouse": "tsc -p tests/frontend/tsconfig.json && node scripts/check-warehouse.mjs",
     "test:backend": "node scripts/python.mjs -m unittest discover -s api/tests -v",
     "test:database": "npm test --prefix supabase/tests",
     "check:migrations": "node scripts/check-migrations.mjs",
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",
+    "@supabase/supabase-js": "^2.118.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "next": "16.4.2",

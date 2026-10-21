@@ -35,6 +35,34 @@ for path, operation_id, model, parameter in [
     endpoint['parameters'] = [{'in': 'path', 'name': parameter, 'required': True, 'schema': {'type': 'string', 'format': 'uuid'}}]
     spec['paths'][path] = {'get': endpoint}
 from app.core.application import create_app
+for endpoint, name, model in [
+    ('/api/warehouse/overview', 'warehouseOverview', 'WarehouseOverview'),
+    ('/api/warehouse/directory', 'warehouseDirectory', 'WarehouseDirectory'),
+    ('/api/inventory', 'listInventory', 'InventoryPage'),
+    ('/api/exceptions', 'listExceptions', 'CasePage'),
+]:
+    spec['paths'][endpoint] = {'get': operation(name, model)}
+spec['paths']['/api/shipments/{shipment_id}'] = {'get': operation('getShipment', 'ShipmentDetail')}
+event = operation('recordShipmentEvent', 'ShipmentDetail', mutation=True)
+event['requestBody'] = {'required': True, 'content': {'application/json': {'schema': ref('ShipmentEventRequest')}}}
+spec['paths']['/api/shipments/{shipment_id}/events'] = {'post': event}
+for endpoint, methods in spec['paths'].items():
+    for verb, config in methods.items():
+        params = config.setdefault('parameters', [])
+        if '{shipment_id}' in endpoint and not any(p['name'] == 'shipment_id' for p in params):
+            params.append({'in': 'path', 'name': 'shipment_id', 'required': True, 'schema': {'type': 'string', 'format': 'uuid'}})
+        params.append({'in': 'query', 'name': 'warehouse_id', 'schema': {'type': 'string', 'format': 'uuid'}})
+        if verb == 'get' and endpoint in ('/api/inventory', '/api/shipments', '/api/exceptions'):
+            for field, schema in [('sme_id', {'type': 'string', 'format': 'uuid'}), ('cursor', {'type': 'string'}), ('limit', {'type': 'integer', 'minimum': 1, 'maximum': 100, 'default': 25})]:
+                if not any(p['name'] == field for p in params):
+                    params.append({'in': 'query', 'name': field, 'schema': schema})
+            if endpoint == '/api/shipments':
+                for field in ('direction', 'status'):
+                    params.append({'in': 'query', 'name': field, 'schema': {'type': 'string'}})
+            if endpoint == '/api/inventory':
+                params.append({'in': 'query', 'name': 'stock_status', 'schema': {'type': 'string', 'enum': ['available', 'quarantined']}})
+            if endpoint == '/api/exceptions':
+                params.append({'in': 'query', 'name': 'status', 'schema': {'type': 'string', 'enum': ['open', 'all']}})
 from app.core.settings import Settings
 runtime = create_app(Settings(_env_file=None, supabase_url='', supabase_public_key='', cors_origins=[])).openapi()
 for path, methods in runtime['paths'].items():

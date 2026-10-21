@@ -69,15 +69,32 @@ Gate: same-tenant authorized actions work; unauthorized direct API/database/stor
 
 ## FE1 — warehouse shell, inventory, receiving (M0–M1; PRD 2, 5A, 7)
 
-- [ ] WH-01 — Build authenticated `/warehouse` route and login/session states with current visual styling. Hide/disable demo-only role switching in real mode.
-- [ ] WH-02 — Render KPI cards for SKUs, inbound/outbound shipments, and open cases using agreed API fields/definitions; counts link to filtered lists.
-- [ ] WH-03 — Build SME-filtered SKU inventory with available/quarantined status and shipment references.
-- [ ] WH-04 — Build expected receipt form, received/damaged quantities, evidence, notes, partial/final semantics, and submission validation.
-- [ ] WH-05 — Prevent accidental double-submit; show authoritative persisted receipt/stock/case results and recoverable server errors.
-- [ ] WH-06 — Build shipment list/detail/manual receiving/dispatch event controls for warehouse-to-SME flow; display verified timestamps.
-- [ ] WH-07 — Implement loading/error/empty/forbidden states, keyboard accessible dialogs/forms, and bilingual text without redesigning the interface.
+- [x] WH-01 — Build authenticated `/warehouse` route and login/session states with current visual styling. Hide/disable demo-only role switching in real mode.
+- [x] WH-02 — Render KPI cards for SKUs, inbound/outbound shipments, and open cases using agreed API fields/definitions; counts link to filtered lists.
+- [x] WH-03 — Build SME-filtered SKU inventory with available/quarantined status and shipment references.
+- [x] WH-04 — Build expected receipt form, received/damaged quantities, evidence, notes, partial/final semantics, and submission validation.
+- [x] WH-05 — Prevent accidental double-submit; show authoritative persisted receipt/stock/case results and recoverable server errors.
+- [x] WH-06 — Build shipment list/detail/manual receiving/dispatch event controls for warehouse-to-SME flow; display verified timestamps.
+- [x] WH-07 — Implement loading/error/empty/forbidden states, keyboard accessible dialogs/forms, and bilingual text without redesigning the interface.
 
 Dependencies: SET fixtures unblock UI immediately; DB/OPS contracts required for real integration.
+
+WH-01 to WH-07 frontend implementation evidence (21 October 2026): see [warehouse UI notes](docs/WAREHOUSE-UI.md). These checks record completed frontend work against shared contracts, verified with isolated fixtures and intercepted provider/API responses. Native Supabase acceptance and the operational FastAPI endpoints remain separate DB/OPS dependencies; this is not a claim of a live warehouse pilot.
+
+| Task | Frontend evidence |
+| --- | --- |
+| WH-01 | Supabase login, tab session/refresh/logout, verified /api/me staff membership gate, session/forbidden/unavailable states; no role switch or mock fallback in live routes. |
+| WH-02 | Server-field KPI cards with documented definitions and links to filtered inventory/shipments/open cases. |
+| WH-03 | SME/stock filters, available/quarantined balances, shipment references and cursor pagination. |
+| WH-04 | Incremental partial/final receipt form, integer/damage/overreceipt validation, same-shipment verified evidence references, notes and physical-count confirmation dialog. File uploads remain evidence/backend work. |
+| WH-05 | Synchronous submission guard, saved request/key recovery, lost-response replay after reload, version-conflict refresh, response-based receipt/stock/case summaries and recoverable errors. |
+| WH-06 | Shipment list/detail, receiving controls, server-allowed pick/pack/dispatch controls with physical confirmation and verified/recorded Yangon timestamps; third-party mode excludes internal dispatch. |
+| WH-07 | Loading/empty/error/401/403 states, bilingual text, accessible labels/tables, native modal Escape/focus restoration, skip link and mobile overflow checks. |
+
+Validation: 18 frontend tests (10 transport + 8 warehouse), 11 backend tests, 12 schema fixtures plus OpenAPI/DTO drift checks, production build/typecheck, legacy regression checks and both browser suites pass. The warehouse browser suite verifies SDK sign-in with fake Auth/API responses, sign-out/reload, blocked membership, lost receipt response/reload/replay exactly once, ordered dispatch, mobile layout and empty/401/403/503 views. The legacy suite still matches three reference screenshots exactly. Fixed an immediate post-login navigation race, avoided SDK auth-callback reentry, preserved saved receipt results during failed background refresh, and deduplicated warehouse membership choices.
+
+
+Review fixes verified (21 October 2026): rapid filter updates preserve all selected filters; ambiguous receipt failures and rejected retries retain the original idempotency key; malformed saved results cannot clear recovery state or display success; same-user token refresh preserves receiving drafts; sign-in remains disabled before hydration. All 18 frontend tests, the extended warehouse browser suite, typecheck and production build pass. WH-01 to WH-07 frontend checks remain complete; native Auth and operational backend integration are still separate dependencies.
 
 ## BE1 — inventory and shipment operations (M1; PRD 3, 5A, 8–9)
 

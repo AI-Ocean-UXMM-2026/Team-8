@@ -84,6 +84,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/warehouse/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["warehouseOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/warehouse/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["warehouseDirectory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listInventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listExceptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shipments/{shipment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getShipment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shipments/{shipment_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordShipmentEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -147,6 +243,13 @@ export interface components {
              */
             created_at: string;
         };
+        /** CasePage */
+        CasePage: {
+            /** Items */
+            items: components["schemas"]["CaseSummary"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** CaseSummary */
         CaseSummary: {
             /**
@@ -205,7 +308,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION_ERROR" | "STALE_VERSION" | "IDEMPOTENCY_CONFLICT" | "PROVIDER_UNAVAILABLE" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "HTTP_ERROR" | "CLOSURE_PENDING";
+            code: "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION_ERROR" | "STALE_VERSION" | "IDEMPOTENCY_CONFLICT" | "PROVIDER_UNAVAILABLE" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "HTTP_ERROR" | "CLOSURE_PENDING" | "STOCK_UNAVAILABLE";
             /** Message */
             message: string;
         };
@@ -259,6 +362,18 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** EvidenceReference */
+        EvidenceReference: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Verified */
+            verified: boolean;
+        };
         /** IdentityResponse */
         IdentityResponse: {
             /**
@@ -268,6 +383,41 @@ export interface components {
             actor_id: string;
             /** Memberships */
             memberships: components["schemas"]["MembershipDTO"][];
+        };
+        /** InventoryItem */
+        InventoryItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Sme Id
+             * Format: uuid
+             */
+            sme_id: string;
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Available Qty */
+            available_qty: number;
+            /** Quarantined Qty */
+            quarantined_qty: number;
+            /** Shipment Ids */
+            shipment_ids: string[];
+        };
+        /** InventoryPage */
+        InventoryPage: {
+            /** Items */
+            items: components["schemas"]["InventoryItem"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** MembershipDTO */
         MembershipDTO: {
@@ -342,6 +492,18 @@ export interface components {
             shortage_qty: number;
             /** Case Ids */
             case_ids: string[];
+            /** Stock */
+            stock?: components["schemas"]["InventoryItem"][];
+        };
+        /** SMEOption */
+        SMEOption: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** Shipment */
         Shipment: {
@@ -379,6 +541,111 @@ export interface components {
             /** Evidence Ids */
             evidence_ids: string[];
         };
+        /** ShipmentDetail */
+        ShipmentDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Sme Id
+             * Format: uuid
+             */
+            sme_id: string;
+            /** Reference */
+            reference: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "inbound" | "outbound";
+            delivery_mode: components["schemas"]["DeliveryMode"] | null;
+            status: components["schemas"]["ShipmentStatus"];
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Items */
+            items: components["schemas"]["ShipmentItem"][];
+            /** Events */
+            events: components["schemas"]["ShipmentEvent"][];
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceReference"][];
+            /** Allowed Events */
+            allowed_events: ("picked" | "packed" | "dispatched")[];
+        };
+        /** ShipmentEvent */
+        ShipmentEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+            /** Notes */
+            notes: string;
+            /**
+             * Verified At
+             * Format: date-time
+             */
+            verified_at: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+        };
+        /** ShipmentEventRequest */
+        ShipmentEventRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "picked" | "packed" | "dispatched";
+            /** Notes */
+            notes: string;
+            /**
+             * Verified At
+             * Format: date-time
+             */
+            verified_at: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+        };
+        /** ShipmentItem */
+        ShipmentItem: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Expected Qty */
+            expected_qty: number;
+            /** Received Qty */
+            received_qty: number;
+            /** Damaged Qty */
+            damaged_qty: number;
+        };
         /** ShipmentPage */
         ShipmentPage: {
             /** Items */
@@ -391,6 +658,49 @@ export interface components {
          * @enum {string}
          */
         ShipmentStatus: "expected" | "partially_received" | "received" | "received_with_discrepancies" | "ready" | "assigned" | "picked_up" | "in_transit" | "delayed" | "failed" | "delivered" | "cancelled" | "handed_over";
+        /** WarehouseDirectory */
+        WarehouseDirectory: {
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Name */
+            name: string;
+            /** Smes */
+            smes: components["schemas"]["SMEOption"][];
+        };
+        /** WarehouseFixture */
+        WarehouseFixture: {
+            directory: components["schemas"]["WarehouseDirectory"];
+            /** Inventory */
+            inventory: components["schemas"]["InventoryItem"][];
+            /** Shipments */
+            shipments: components["schemas"]["ShipmentDetail"][];
+            /** Cases */
+            cases: components["schemas"]["CaseSummary"][];
+        };
+        /** WarehouseOverview */
+        WarehouseOverview: {
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Unique Skus */
+            unique_skus: number;
+            /** Inbound Shipments */
+            inbound_shipments: number;
+            /** Outbound Shipments */
+            outbound_shipments: number;
+            /** Open Cases */
+            open_cases: number;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -405,6 +715,10 @@ export interface operations {
             query?: {
                 cursor?: string | null;
                 limit?: number;
+                warehouse_id?: string;
+                sme_id?: string;
+                direction?: string;
+                status?: string;
             };
             header?: never;
             path?: never;
@@ -479,7 +793,9 @@ export interface operations {
     };
     postReceipt: {
         parameters: {
-            query?: never;
+            query?: {
+                warehouse_id?: string;
+            };
             header: {
                 "Idempotency-Key": string;
             };
@@ -561,7 +877,9 @@ export interface operations {
     };
     analyzeException: {
         parameters: {
-            query?: never;
+            query?: {
+                warehouse_id?: string;
+            };
             header: {
                 "Idempotency-Key": string;
             };
@@ -639,7 +957,9 @@ export interface operations {
     };
     getException: {
         parameters: {
-            query?: never;
+            query?: {
+                warehouse_id?: string;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -715,7 +1035,9 @@ export interface operations {
     };
     getApproval: {
         parameters: {
-            query?: never;
+            query?: {
+                warehouse_id?: string;
+            };
             header?: never;
             path: {
                 approval_id: string;
@@ -731,6 +1053,480 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApprovalSummary"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    warehouseOverview: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseOverview"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    warehouseDirectory: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseDirectory"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listInventory: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+                sme_id?: string;
+                cursor?: string;
+                limit?: number;
+                stock_status?: "available" | "quarantined";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryPage"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listExceptions: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+                sme_id?: string;
+                cursor?: string;
+                limit?: number;
+                status?: "open" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CasePage"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getShipment: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+            };
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDetail"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version or idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Provider unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    recordShipmentEvent: {
+        parameters: {
+            query?: {
+                warehouse_id?: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDetail"];
                 };
             };
             /** @description Unauthenticated */

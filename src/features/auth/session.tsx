@@ -1,0 +1,97 @@
+'use client';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createApiClient, createLiveTransport, ApiError, type ApiClient, type Schemas } from '../../shared/api';
+import { browserAuth } from './browser-client';
+
+type Session = {
+  status: 'loading' | 'signed_out' | 'forbidden' | 'unavailable' | 'ready';
+  api: ApiClient | null; identity: Schemas['IdentityResponse'] | null; warehouseId: string;
+  setWarehouseId: (id: string) => void; demo: boolean; reload: () => void; signOut: () => Promise<void>;
+};
+const Context = createContext<Session | null>(null);
+export function SessionProvider({ demo = false, children }: { demo?: boolean; children: ReactNode }) {
+  const [status, setStatus] = useState<Session['status']>('loading');
+  const [api, setApi] = useState<ApiClient | null>(null);
+  const [identity, setIdentity] = useState<Session['identity']>(null);
+  const [warehouseId, setWarehouse] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const generation = useRef(0);
+  const verifiedActor = useRef<string | null>(null);
+  const reload = useCallback(() => setAttempt(n => n + 1), []);
+  useEffect(() => {
+    let active = true;
+    let unsubscribe = () => {};
+    verifiedActor.current = null;
+    setStatus('loading');
+    const accept = (client: ApiClient, who: Schemas['IdentityResponse']) => {
+      if (!active) return;
+      verifiedActor.current = who.actor_id;
+      const staff = who.memberships.filter(m => m.role === 'owner' || m.role === 'staff');
+      setIdentity(who); setApi(client);
+      if (!staff.length) { setStatus('forbidden'); return; }
+      setWarehouse(previous => staff.some(m => m.warehouse_id === previous) ? previous : staff[0].warehouse_id);
+      setStatus('ready');
+    };
+    async function start() {
+      if (demo) {
+        const { createMockTransport } = await import('../../shared/api/mock');
+        const client = createApiClient(createMockTransport({ dataset: 'warehouse', storage: window.sessionStorage }));
+        accept(client, await client.getMe());
+        return;
+      }
+      const auth = browserAuth();
+      const origin = process.env.NEXT_PUBLIC_PARCELCARE_API_URL;
+      if (!auth || !origin) { if (active) setStatus('unavailable'); return; }
+      const client = createApiClient(createLiveTransport({ baseUrl: origin, getAccessToken: async () => {
+        const result = await auth.auth.getSession();
+        if (result.error) throw new ApiError(401, 'UNAUTHENTICATED', 'Your session expired. Sign in again.');
+        return result.data.session?.access_token ?? null;
+      } }));
+      const check = async () => {
+        if (!active) return;
+        const run = ++generation.current;
+        try {
+          const result = await auth!.auth.getSession();
+          if (result.error) throw result.error;
+          if (!result.data.session) { if (active && run === generation.current) { verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out'); } return; }
+          const who = await client.getMe();
+          if (active && run === generation.current) accept(client, who);
+        } catch (error) {
+          if (active && run === generation.current) { verifiedActor.current = null; setIdentity(null); setApi(null); setStatus(error instanceof ApiError && error.status === 403 ? 'forbidden' : error instanceof ApiError && error.status === 401 ? 'signed_out' : 'unavailable'); }
+        }
+      };
+      const listener = auth.auth.onAuthStateChange((event, session) => {
+        // Leave the Supabase auth callback before calling getSession again.
+        if (!active) return;
+        generation.current++;
+        if (event === 'SIGNED_OUT' || !session) {
+          verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out');
+          return;
+        }
+        // Same-user token refresh rechecks memberships without unmounting drafts.
+        // A different user must never retain the previous user's workspace.
+        if (session.user.id !== verifiedActor.current) {
+          verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('loading');
+        }
+        setTimeout(() => void check(), 0);
+      });
+      unsubscribe = () => listener.data.subscription.unsubscribe();
+      await check();
+    }
+    start().catch(() => { if (active) setStatus('unavailable'); });
+    return () => { active = false; generation.current++; unsubscribe(); };
+  }, [demo, attempt]);
+  const setWarehouseId = (id: string) => {
+    if (identity?.memberships.some(m => m.warehouse_id === id && ['owner', 'staff'].includes(m.role))) setWarehouse(id);
+  };
+  const signOut = async () => {
+    if (!demo) await browserAuth()?.auth.signOut({ scope: 'local' });
+    generation.current++; verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out');
+  };
+  return <Context.Provider value={{ status, api, identity, warehouseId, setWarehouseId, demo, reload, signOut }}>{children}</Context.Provider>;
+}
+export function useSession() {
+  const session = useContext(Context);
+  if (!session) throw new Error('Warehouse session provider missing');
+  return session;
+}

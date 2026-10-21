@@ -44,7 +44,7 @@ class ShipmentStatus(StrEnum):
 class ErrorDetail(DTO):
     code: Literal['UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'VALIDATION_ERROR',
                   'STALE_VERSION', 'IDEMPOTENCY_CONFLICT', 'PROVIDER_UNAVAILABLE',
-                  'SERVICE_UNAVAILABLE', 'INTERNAL_ERROR', 'HTTP_ERROR', 'CLOSURE_PENDING']
+                  'SERVICE_UNAVAILABLE', 'INTERNAL_ERROR', 'HTTP_ERROR', 'CLOSURE_PENDING', 'STOCK_UNAVAILABLE']
     message: str
 
 
@@ -142,6 +142,7 @@ class ReceiptResult(DTO):
     damaged_qty: Annotated[int, Field(ge=0, strict=True)]
     shortage_qty: Annotated[int, Field(ge=0, strict=True)]
     case_ids: list[UUID]
+    stock: list['InventoryItem'] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def validate_totals(self):
@@ -158,6 +159,98 @@ class PendingAnalysis(DTO):
     status: Literal['pending']
 
 
+class SMEOption(DTO):
+    id: UUID
+    name: str
+
+
+class WarehouseDirectory(DTO):
+    warehouse_id: UUID
+    name: str
+    smes: list[SMEOption]
+
+
+class WarehouseOverview(DTO):
+    warehouse_id: UUID
+    unique_skus: Annotated[int, Field(ge=0)]
+    inbound_shipments: Annotated[int, Field(ge=0)]
+    outbound_shipments: Annotated[int, Field(ge=0)]
+    open_cases: Annotated[int, Field(ge=0)]
+    as_of: AwareDatetime
+
+
+class InventoryItem(DTO):
+    id: UUID
+    warehouse_id: UUID
+    sme_id: UUID
+    sku: str
+    name: str
+    available_qty: Annotated[int, Field(ge=0)]
+    quarantined_qty: Annotated[int, Field(ge=0)]
+    shipment_ids: list[UUID]
+
+
+class InventoryPage(DTO):
+    items: list[InventoryItem]
+    next_cursor: str | None
+
+
+class ShipmentItem(DTO):
+    product_id: UUID
+    sku: str
+    name: str
+    expected_qty: Annotated[int, Field(gt=0)]
+    received_qty: Annotated[int, Field(ge=0)]
+    damaged_qty: Annotated[int, Field(ge=0)]
+
+
+class ShipmentEvent(DTO):
+    id: UUID
+    type: str
+    notes: str
+    verified_at: AwareDatetime
+    recorded_at: AwareDatetime
+    evidence_ids: list[UUID]
+
+
+class EvidenceReference(DTO):
+    id: UUID
+    label: str
+    verified: bool
+
+
+class ShipmentDetail(Shipment):
+    items: list[ShipmentItem]
+    events: list[ShipmentEvent]
+    evidence: list[EvidenceReference]
+    allowed_events: list[Literal['picked', 'packed', 'dispatched']]
+
+
+class ShipmentEventRequest(DTO):
+    expected_version: Annotated[int, Field(ge=1, strict=True)]
+    type: Literal['picked', 'packed', 'dispatched']
+    notes: Annotated[str, Field(min_length=1, max_length=2000)]
+    verified_at: AwareDatetime
+    evidence_ids: list[UUID]
+
+
+class CasePage(DTO):
+    items: list[CaseSummary]
+    next_cursor: str | None
+
+
+class WarehouseFixture(DTO):
+    directory: WarehouseDirectory
+    inventory: list[InventoryItem]
+    shipments: list[ShipmentDetail]
+    cases: list[CaseSummary]
+
+
+ReceiptResult.model_rebuild()
+
+
 # These DTOs are published without registering fake business routes on the API.
 MODELS = [ErrorResponse, ShipmentPage, ReceiptRequest, ReceiptResult, PendingAnalysis,
-          CaseSummary, ApprovalSummary, EventEnvelope, IdentityResponse]
+          CaseSummary, ApprovalSummary, EventEnvelope, IdentityResponse,
+          WarehouseDirectory, WarehouseOverview, InventoryPage, ShipmentDetail,
+          ShipmentEventRequest, CasePage, WarehouseFixture]
