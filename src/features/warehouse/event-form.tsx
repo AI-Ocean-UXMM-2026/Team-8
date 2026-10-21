@@ -11,7 +11,7 @@ export function EventForm({ detail, refresh }: { detail: Schemas['ShipmentDetail
   const { api, identity, demo } = useSession();
   const [notes, setNotes] = useState(''); const [confirmed, setConfirmed] = useState(false); const [validation, setValidation] = useState('');
   const dialog = useRef<HTMLDialogElement>(null); const alert = useRef<HTMLParagraphElement>(null);
-  const command = useCommand<Schemas['ShipmentEventRequest'], Schemas['ShipmentDetail']>(`parcelcare.command.${demo ? 'demo' : 'live'}.${identity!.actor_id}.${detail.id}.event`, async (body, key) => savedEvent(await api!.recordShipmentEvent(detail.id, body, { idempotencyKey: key }), detail.id, body.expected_version, body.type), refresh);
+  const command = useCommand<Schemas['ShipmentEventRequest'], Schemas['ShipmentDetail']>(`parcelcare.command.${demo ? 'demo' : 'live'}.${identity!.actor_id}.${detail.id}.event`, async (body, key) => savedEvent(await api!.recordShipmentEvent(detail.id, body, { idempotencyKey: key, warehouseId: detail.warehouse_id }), detail.id, body.expected_version, body.type), refresh);
   const nextEvent = detail.allowed_events[0];
   useEffect(() => { if (command.error || validation) alert.current?.focus(); }, [command.error, validation]);
   useEffect(() => { setConfirmed(false); setNotes(''); }, [detail.version]);

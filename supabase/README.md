@@ -109,7 +109,7 @@ Confirm the selected development project before executing. Existing unrelated sc
 
 ## Remaining backend work
 
-Auth verification/identity endpoint, user-scoped clients, onboarding/CRUD commands, assignment acceptance/pickup/dispatch, handover/POD and evidence existence verification, case-specific verified closure, approval creation/action policies, AI schema/evidence validation/jobs, outbox consumer, GPS retention scheduling, private Realtime and concurrent native tests. Append-only receipt movements exist, but full reservations/reversals/stock reconciliation are not yet a complete inventory ledger.
+Auth verification, `/api/me`, user-scoped clients and warehouse operations APIs are implemented locally; see [warehouse operations](../docs/WAREHOUSE-OPERATIONS.md) for receipt/version/idempotency, dispatch, correction and validation evidence. Native concurrent tests are included in PostgreSQL 17 CI and still await execution. Native Supabase Auth/Storage acceptance, onboarding, assignment acceptance/pickup APIs, handover/POD, evidence upload/download APIs, case-specific verified closure, approval creation/action policies, AI schema/evidence validation/jobs, outbox consumer, GPS retention scheduling and private Realtime remain. Append-only receipt/dispatch/correction movements exist, but full reservations/reversals/stock reconciliation are not yet a complete inventory ledger.
 
 Do not mark all DB checklist items complete simply because migrations exist. Use this package as the reviewed schema foundation and implement domain API behavior in the owning backend feature folders.
 

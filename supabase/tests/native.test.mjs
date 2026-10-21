@@ -1,0 +1,114 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { readFile, readdir, mkdtemp, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import pg from 'pg';
+import { testOperations } from './operations.test.mjs';
+import { testCases } from './cases.test.mjs';
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+let embedded;
+let config;
+if(process.argv.includes('--embedded')) {
+ const {default:EmbeddedPostgres}=await import('embedded-postgres');
+ await mkdir(path.resolve(root,'../test-results'),{recursive:true});
+ const directory=await mkdtemp(path.resolve(root,'../test-results/postgres-'));
+ config={host:'127.0.0.1',port:55439,user:'postgres',password:randomUUID(),database:'postgres'};
+ embedded=new EmbeddedPostgres({databaseDir:directory,port:config.port,user:config.user,password:config.password,
+  persistent:false,initdbFlags:['--no-sync'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:message=>{if(String(message).includes('FATAL'))console.error(String(message));}});
+ console.log('Initializing disposable native PostgreSQL (test-only --no-sync).');
+ await embedded.initialise();
+ console.log('Starting loopback native PostgreSQL.');
+ // Windows can report readiness differently from the package's log matcher.
+ // A real authenticated connection is the readiness check on every platform.
+ const starting=embedded.start();
+ const connected=(async()=>{
+  const deadline=Date.now()+30000;
+  while(Date.now()<deadline){
+   const probe=new pg.Client({...config,connectionTimeoutMillis:1000});
+   try{await probe.connect();return;}catch{}finally{await probe.end();}
+   await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  throw new Error('Disposable PostgreSQL did not accept authenticated connections');
+ })();
+ await Promise.race([starting,connected]);
+}
+const admin=new pg.Client(config);
+await admin.connect();
+const clients=[];
+try {
+ await admin.query(await readFile(path.join(root,'tests/bootstrap.sql'),'utf8'));
+ for(const file of (await readdir(path.join(root,'migrations'))).filter(f=>f.endsWith('.sql')).sort())await admin.query(await readFile(path.join(root,'migrations',file),'utf8'));
+ await admin.query(await readFile(path.join(root,'seed.sql'),'utf8'));await admin.query(await readFile(path.join(root,'seed.sql'),'utf8'));
+ await admin.query(await readFile(path.join(root,'tests/native-smoke.sql'),'utf8'));
+ await testOperations(admin);
+ await testCases(admin);
+ const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
+ const actor=randomUUID(),product=randomUUID(),corr=randomUUID();
+ await admin.query('insert into auth.users(id,email) values($1,$2)',[actor,'race@example.test']);
+ await admin.query("insert into public.profiles(id,display_name) values($1,'Race staff')",[actor]);
+ await admin.query("insert into public.memberships(profile_id,warehouse_id,role) values($1,$2,'staff')",[actor,w]);
+ await admin.query("insert into public.products(id,warehouse_id,sme_id,sku,name) values($1,$2,$3,$4,'Race product')",[product,w,sme,product]);
+ for(let i=0;i<2;i++){const c=new pg.Client(config);await c.connect();clients.push(c);}
+ const sql='select public.ops_command($1,$2,$3,$4,$5::jsonb,$6) result';
+ const args=(kind,id,body,key=randomUUID())=>[w,kind,key,id,JSON.stringify(body),corr];
+ const begin=async c=>{await c.query('begin');await c.query('set local role authenticated');await c.query("select set_config('request.jwt.claim.sub',$1,true)",[actor]);};
+ const invoke=async(kind,id,body,key)=>{await begin(clients[0]);try{const r=(await clients[0].query(sql,args(kind,id,body,key))).rows[0].result;await clients[0].query('commit');return r;}catch(e){await clients[0].query('rollback');throw e;}};
+ const create=async(direction='inbound',qty=100)=>invoke('create',null,{sme_id:sme,reference:randomUUID(),direction,delivery_mode:direction==='inbound'?null:'in_house',lines:[{product_id:product,expected_qty:qty}]});
+ const receipt=(qty,version=1)=>({expected_version:version,final:true,lines:[{product_id:product,received_qty:qty,damaged_qty:0}],evidence_ids:[],notes:'Verified race count'});
+ async function race(a,b) {
+  await begin(clients[0]);await begin(clients[1]);
+  try {
+   const first=(await clients[0].query(sql,a)).rows[0].result;
+   const second=clients[1].query(sql,b).then(r=>({result:r.rows[0].result}),e=>({error:e}));
+   // Prove the second real server connection is blocked on our transaction.
+   const deadline=Date.now()+5000;let waiting=false;
+   while(Date.now()<deadline){
+    const row=(await admin.query("select wait_event_type from pg_stat_activity where pid=$1",[clients[1].processID])).rows[0];
+    if(row?.wait_event_type==='Lock'){waiting=true;break;}
+    await new Promise(resolve=>setTimeout(resolve,20));
+   }
+   assert.ok(waiting,'Second native connection must actually contend on a database lock');
+   await clients[0].query('commit');const next=await second;
+   await clients[1].query(next.error?'rollback':'commit');return [first,next];
+  } catch(e){await clients[0].query('rollback');await clients[1].query('rollback');throw e;}
+ }
+ let shipment=await create(),key=randomUUID(),body=receipt(90);
+ let [first,next]=await race(args('receipt',shipment.id,body,key),args('receipt',shipment.id,body,key));
+ assert.deepEqual(next.result,first);
+ assert.equal((await admin.query('select count(*)::int n from public.receipts where shipment_id=$1',[shipment.id])).rows[0].n,1);
+ console.log('PASS NATIVE: simultaneous identical receipt returns original result once');
+ shipment=await create();
+ [first,next]=await race(args('receipt',shipment.id,receipt(90)),args('receipt',shipment.id,receipt(90)));
+ assert.equal(next.error?.message,'stale_version');
+ assert.equal((await admin.query('select available_qty from public.products where id=$1',[product])).rows[0].available_qty,180);
+ console.log('PASS NATIVE: different receipt keys on same version cannot double stock/cases');
+ const a=await create(),b=await create();
+ [first,next]=await race(args('receipt',a.id,receipt(40)),args('receipt',b.id,receipt(50)));
+ assert.equal(next.result.received_qty,50);
+ assert.equal((await admin.query('select available_qty from public.products where id=$1',[product])).rows[0].available_qty,270);
+ console.log('PASS NATIVE: independent receipts serialize shared product updates without lost stock');
+ const outbound=await create('outbound',200),outbound2=await create('outbound',200);
+ for(const s of [outbound,outbound2]){
+  for(const [type,version] of [['picked',1],['packed',2]])await invoke('event',s.id,{type,expected_version:version,notes:'Verified',verified_at:new Date().toISOString(),evidence_ids:[]});
+ }
+ const rider=randomUUID(),riderRow=randomUUID();
+ await admin.query('insert into auth.users(id,email) values($1,$2)',[rider,'race-rider@example.test']);
+ await admin.query("insert into public.profiles(id,display_name) values($1,'Race rider')",[rider]);
+ await admin.query("insert into public.memberships(profile_id,warehouse_id,role) values($1,$2,'rider')",[rider,w]);
+ await admin.query('insert into public.riders(id,warehouse_id,profile_id) values($1,$2,$3)',[riderRow,w,rider]);
+ for(const s of [outbound,outbound2])await admin.query('insert into public.delivery_assignments(shipment_id,warehouse_id,sme_id,rider_id,accepted_at,picked_up_at) values($1,$2,$3,$4,now(),now())',[s.id,w,sme,riderRow]);
+ body={type:'dispatched',expected_version:3,notes:'Physical pickup verified',verified_at:new Date().toISOString(),evidence_ids:[]};key=randomUUID();
+ [first,next]=await race(args('event',outbound.id,body,key),args('event',outbound2.id,body));
+ assert.equal(next.error?.message,'stock_unavailable');
+ console.log('PASS NATIVE: competing dispatches cannot consume the same available stock');
+ [first,next]=await race(args('event',outbound.id,body,key),args('event',outbound.id,body,key));
+ assert.deepEqual(next.result,first);
+ assert.equal((await admin.query('select available_qty from public.products where id=$1',[product])).rows[0].available_qty,70);
+ await assert.rejects(()=>invoke('event',outbound2.id,body),e=>e.message==='stock_unavailable');
+ console.log('PASS NATIVE: concurrent dispatch retries debit once; another shipment cannot oversell');
+ console.log('Native concurrency and operations passed on '+(await admin.query('select version()')).rows[0].version);
+} finally {
+ await Promise.all(clients.map(c=>c.end()));await admin.end();if(embedded)await embedded.stop();
+}

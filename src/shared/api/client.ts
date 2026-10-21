@@ -4,7 +4,7 @@ const entity = (id: string) => {
   if (!isUUID(id)) throw new ApiError(400, 'INVALID_ID', 'Expected a UUID.');
   return id;
 };
-type Mutation = { idempotencyKey: string; signal?: AbortSignal };
+type Mutation = { idempotencyKey: string; warehouseId?: string; signal?: AbortSignal };
 type ListOptions = { warehouseId?: string; smeId?: string; cursor?: string; limit?: number; signal?: AbortSignal };
 function query(options: ListOptions & { direction?: string; status?: string; stockStatus?: string }) {
   const params = new URLSearchParams();
@@ -32,12 +32,12 @@ export function createApiClient(transport: Transport) {
     getWarehouseDirectory(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['WarehouseDirectory']>({ method: 'GET', path: `/api/warehouse/directory${query({ warehouseId })}`, signal }); },
     listInventory(options: ListOptions & { stockStatus?: 'available' | 'quarantined' } = {}) { return transport<Schemas['InventoryPage']>({ method: 'GET', path: `/api/inventory${query(options)}`, signal: options.signal }); },
     listCases(options: ListOptions & { status?: 'open' | 'all' } = {}) { return transport<Schemas['CasePage']>({ method: 'GET', path: `/api/exceptions${query(options)}`, signal: options.signal }); },
-    getShipment(id: string, signal?: AbortSignal) { return transport<Schemas['ShipmentDetail']>({ method: 'GET', path: `/api/shipments/${entity(id)}`, signal }); },
-    recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events`, body, ...options }); },
+    getShipment(id: string, signal?: AbortSignal, warehouseId?: string) { return transport<Schemas['ShipmentDetail']>({ method: 'GET', path: `/api/shipments/${entity(id)}${query({ warehouseId })}`, signal }); },
+    recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events${query({ warehouseId: options.warehouseId })}`, body, ...options }); },
     getCase(id: string, signal?: AbortSignal) { return transport<Schemas['CaseSummary']>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal }); },
     getApproval(id: string, signal?: AbortSignal) { return transport<Schemas['ApprovalSummary']>({ method: 'GET', path: `/api/approvals/${entity(id)}`, signal }); },
     postReceipt(id: string, body: Schemas['ReceiptRequest'], options: Mutation) {
-      return transport<Schemas['ReceiptResult']>({ method: 'POST', path: `/api/receipts/${entity(id)}`, body, ...options });
+      return transport<Schemas['ReceiptResult']>({ method: 'POST', path: `/api/receipts/${entity(id)}${query({ warehouseId: options.warehouseId })}`, body, ...options });
     },
     analyzeCase(id: string, options: Mutation) { return transport<Schemas['PendingAnalysis']>({ method: 'POST', path: `/api/exceptions/${entity(id)}/analyze`, ...options }); },
   };

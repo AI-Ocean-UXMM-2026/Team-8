@@ -14,7 +14,7 @@ export function ReceiptForm({ detail, refresh }: { detail: Schemas['ShipmentDeta
   const [validation, setValidation] = useState('');
   const [review, setReview] = useState<Schemas['ReceiptRequest'] | null>(null);
   const dialog = useRef<HTMLDialogElement>(null); const alert = useRef<HTMLParagraphElement>(null);
-  const command = useCommand<Schemas['ReceiptRequest'], Schemas['ReceiptResult']>(`parcelcare.command.${demo ? 'demo' : 'live'}.${identity!.actor_id}.${detail.id}.receipt`, async (body, key) => savedReceipt(await api!.postReceipt(detail.id, body, { idempotencyKey: key }), detail.id, body.expected_version), refresh);
+  const command = useCommand<Schemas['ReceiptRequest'], Schemas['ReceiptResult']>(`parcelcare.command.${demo ? 'demo' : 'live'}.${identity!.actor_id}.${detail.id}.receipt`, async (body, key) => savedReceipt(await api!.postReceipt(detail.id, body, { idempotencyKey: key, warehouseId: detail.warehouse_id }), detail.id, body.expected_version), refresh);
   useEffect(() => { setCounts(Object.fromEntries(detail.items.map(i => [i.product_id, { received: i.received_qty === i.expected_qty ? '0' : '', damaged: '0' }]))); }, [detail.version]);
   useEffect(() => { if (validation || command.error) alert.current?.focus(); }, [validation, command.error]);
   const canReceive = ['expected', 'partially_received', 'delayed'].includes(detail.status);

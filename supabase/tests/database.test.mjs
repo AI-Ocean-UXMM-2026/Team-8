@@ -3,6 +3,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
+import { testOperations } from './operations.test.mjs';
+import { testCases } from './cases.test.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const db = new PGlite();
@@ -21,6 +23,7 @@ const rejected = async (fn, code) => { await assert.rejects(fn, e => !code || e.
 try {
   await db.exec(await readFile(path.join(root,'tests/bootstrap.sql'),'utf8'));
   for (const file of (await readdir(path.join(root,'migrations'))).filter(f=>f.endsWith('.sql')).sort()) {
+    if (file >= '20261021000800') continue; // Exercise legacy invariants before its RPC is retired.
     try { await db.exec(await readFile(path.join(root,'migrations',file),'utf8')); }
     catch (e) { console.error('MIGRATION FAILED:',file,e.message); throw e; }
   }
@@ -224,5 +227,10 @@ try {
     await query('select private.purge_expired_locations()');
     assert.equal((await one('select count(*)::int n from public.rider_locations')).n,0);
   });
-  console.log(`\n${passed} database integration tests passed. Engine: ${JSON.stringify((await one('select version()')).version)}.`);
+  for (const file of (await readdir(path.join(root,'migrations'))).filter(f=>f.endsWith('.sql') && f >= '20261021000800').sort()) {
+    await db.exec(await readFile(path.join(root,'migrations',file),'utf8'));
+  }
+  await testOperations(db);
+  await testCases(db);
+  console.log(`\n${passed} historical foundation tests plus warehouse operation tests passed. Engine: ${JSON.stringify((await one('select version()')).version)}.`);
 } finally { await db.close(); }

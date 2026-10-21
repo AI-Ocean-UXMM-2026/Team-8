@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = []
     openai_api_key: str = ''
     openai_model: str = ''
+    supabase_worker_key: str = ''
 
     @field_validator('supabase_public_key')
     @classmethod

@@ -7,14 +7,20 @@ from .settings import Settings, get_settings
 from ..routers import router
 
 
-def create_app(settings: Settings | None = None, authenticator: Authenticator | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, authenticator: Authenticator | None = None, database_factory=None) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(title='ParcelCare API', version='0.3.0')
+    app.state.settings = settings
     if authenticator is None and settings.supabase_url and settings.supabase_public_key:
         from .providers import create_user_client
         from .supabase_auth import SupabaseAuthenticator
         authenticator = SupabaseAuthenticator(lambda token: create_user_client(token, settings))
     app.state.authenticator = authenticator or UnconfiguredAuthenticator()
+    if database_factory is None and settings.supabase_url and settings.supabase_public_key:
+        from .providers import create_user_client
+        from .database import SupabaseUserDatabaseFactory
+        database_factory = SupabaseUserDatabaseFactory(lambda token: create_user_client(token, settings))
+    app.state.database_factory = database_factory
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                            allow_methods=['GET', 'POST'], allow_headers=['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Correlation-ID'],

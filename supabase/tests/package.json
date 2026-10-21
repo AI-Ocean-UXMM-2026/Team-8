@@ -2,6 +2,14 @@
   "name": "parcelcare-database-tests",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node database.test.mjs" },
-  "devDependencies": { "@electric-sql/pglite": "0.5.10" }
+  "scripts": {
+    "test": "node database.test.mjs",
+    "test:native": "node native.test.mjs",
+    "test:embedded": "node native.test.mjs --embedded"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "embedded-postgres": "17.10.0-beta.17",
+    "pg": "8.16.3"
+  }
 }

@@ -10,7 +10,7 @@ import { dateTime, Empty, ErrorPanel, human, Loading, PageTitle, tableClass, use
 export function ShipmentDetail({ id }: { id: string }) {
   const { api, warehouseId, demo } = useSession();
   const resource = useResource(`${warehouseId}:${id}`, async signal => {
-    const [detail, directory] = await Promise.all([api!.getShipment(id, signal), api!.getWarehouseDirectory(warehouseId, signal)]);
+    const [detail, directory] = await Promise.all([api!.getShipment(id, signal, warehouseId), api!.getWarehouseDirectory(warehouseId, signal)]);
     if (detail.warehouse_id !== warehouseId) throw new Error('Shipment does not belong to the selected warehouse');
     return { detail, directory };
   });

@@ -7,16 +7,120 @@
   "paths": {
     "/api/shipments": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Shipments",
         "operationId": "listShipments",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "sme_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sme Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "inbound",
+                    "outbound"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Direction"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ShipmentStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -56,7 +160,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -66,7 +170,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -76,7 +180,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -86,72 +190,197 @@
             }
           }
         },
+        "x-implementation-status": "implemented"
+      },
+      "post": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Create",
+        "operationId": "createShipment",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
-            "in": "query",
-            "name": "cursor",
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 25
-            }
-          },
-          {
-            "in": "query",
             "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sme_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "direction",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": {
-              "type": "string"
+              "format": "uuid",
+              "title": "Idempotency-Key"
             }
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShipment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shipment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, changed idempotency payload or unavailable stock",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or warehouse transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable; outcome may be unconfirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
       }
     },
     "/api/receipts/{shipment_id}": {
       "post": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Receive",
         "operationId": "postReceipt",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
           }
         ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -191,7 +420,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -201,7 +430,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -211,7 +440,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -221,44 +450,7 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "path",
-            "name": "shipment_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReceiptRequest"
-              }
-            }
-          }
-        }
+        "x-implementation-status": "implemented"
       }
     },
     "/api/exceptions/{case_id}/analyze": {
@@ -578,16 +770,38 @@
     },
     "/api/warehouse/overview": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Overview",
         "operationId": "warehouseOverview",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -627,7 +841,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -637,7 +851,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -647,7 +861,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -657,30 +871,43 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ]
+        "x-implementation-status": "implemented"
       }
     },
     "/api/warehouse/directory": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Directory",
         "operationId": "warehouseDirectory",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -720,7 +947,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -730,7 +957,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -740,7 +967,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -750,30 +977,109 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ]
+        "x-implementation-status": "implemented"
       }
     },
     "/api/inventory": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Inventory",
         "operationId": "listInventory",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "sme_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sme Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "stock_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "available",
+                    "quarantined"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stock Status"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -813,7 +1119,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -823,7 +1129,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -833,7 +1139,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -843,66 +1149,103 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sme_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "cursor",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 25
-            }
-          },
-          {
-            "in": "query",
-            "name": "stock_status",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "available",
-                "quarantined"
-              ]
-            }
-          }
-        ]
+        "x-implementation-status": "implemented"
       }
     },
     "/api/exceptions": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Cases",
         "operationId": "listExceptions",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "sme_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sme Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "open",
+                "all"
+              ],
+              "type": "string",
+              "default": "open",
+              "title": "Status"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -942,7 +1285,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -952,7 +1295,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -962,7 +1305,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -972,66 +1315,53 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sme_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "cursor",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 25
-            }
-          },
-          {
-            "in": "query",
-            "name": "status",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "open",
-                "all"
-              ]
-            }
-          }
-        ]
+        "x-implementation-status": "implemented"
       }
     },
     "/api/shipments/{shipment_id}": {
       "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Detail",
         "operationId": "getShipment",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1071,7 +1401,7 @@
             }
           },
           "409": {
-            "description": "Stale version or idempotency conflict",
+            "description": "Stale version, changed idempotency payload or unavailable stock",
             "content": {
               "application/json": {
                 "schema": {
@@ -1081,7 +1411,7 @@
             }
           },
           "422": {
-            "description": "Invalid input",
+            "description": "Invalid input or warehouse transition",
             "content": {
               "application/json": {
                 "schema": {
@@ -1091,7 +1421,7 @@
             }
           },
           "503": {
-            "description": "Provider unavailable",
+            "description": "Database unavailable; outcome may be unconfirmed",
             "content": {
               "application/json": {
                 "schema": {
@@ -1101,133 +1431,57 @@
             }
           }
         },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "shipment_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "query",
-            "name": "warehouse_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ]
+        "x-implementation-status": "implemented"
       }
     },
     "/api/shipments/{shipment_id}/events": {
       "post": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Event",
         "operationId": "recordShipmentEvent",
-        "x-implementation-status": "planned",
         "security": [
           {
-            "BearerAuth": []
+            "HTTPBearer": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ShipmentDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Stale version or idempotency conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Provider unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
         "parameters": [
           {
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "in": "path",
             "name": "shipment_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Shipment Id"
             }
           },
           {
-            "in": "query",
             "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -1240,7 +1494,80 @@
               }
             }
           }
-        }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, changed idempotency payload or unavailable stock",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or warehouse transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable; outcome may be unconfirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
       }
     },
     "/health": {
@@ -1323,6 +1650,258 @@
         ],
         "x-implementation-status": "implemented"
       }
+    },
+    "/api/inventory/{product_id}": {
+      "get": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Stock",
+        "operationId": "getStock",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, changed idempotency payload or unavailable stock",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or warehouse transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable; outcome may be unconfirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory/{product_id}/corrections": {
+      "post": {
+        "tags": [
+          "Warehouse operations"
+        ],
+        "summary": "Correct",
+        "operationId": "correctStock",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockCorrection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, changed idempotency payload or unavailable stock",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or warehouse transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable; outcome may be unconfirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
     }
   },
   "components": {
@@ -1382,14 +1961,13 @@
         "type": "object"
       },
       "CasePage": {
-        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/CaseSummary"
             },
-            "title": "Items",
-            "type": "array"
+            "type": "array",
+            "title": "Items"
           },
           "next_cursor": {
             "anyOf": [
@@ -1403,36 +1981,37 @@
             "title": "Next Cursor"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "items",
           "next_cursor"
         ],
-        "title": "CasePage",
-        "type": "object"
+        "title": "CasePage"
       },
       "CaseSummary": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "shipment_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Shipment Id",
-            "type": "string"
+            "title": "Shipment Id"
           },
           "stage": {
+            "type": "string",
             "enum": [
               "inbound",
               "warehouse",
               "outbound"
             ],
-            "title": "Stage",
-            "type": "string"
+            "title": "Stage"
           },
           "type": {
+            "type": "string",
             "enum": [
               "quantity_mismatch",
               "damaged_goods",
@@ -1445,20 +2024,20 @@
               "transit_damage",
               "transit_loss"
             ],
-            "title": "Type",
-            "type": "string"
+            "title": "Type"
           },
           "priority": {
+            "type": "string",
             "enum": [
               "low",
               "normal",
               "high",
               "critical"
             ],
-            "title": "Priority",
-            "type": "string"
+            "title": "Priority"
           },
           "status": {
+            "type": "string",
             "enum": [
               "new",
               "investigating",
@@ -1470,39 +2049,40 @@
               "resolved",
               "closed"
             ],
-            "title": "Status",
-            "type": "string"
+            "title": "Status"
           },
           "handling_mode": {
+            "type": "string",
             "enum": [
               "ai",
               "human"
             ],
-            "title": "Handling Mode",
-            "type": "string"
+            "title": "Handling Mode"
           },
           "responsible_party": {
+            "type": "string",
             "enum": [
               "WAREHOUSE",
               "THIRD_PARTY_COURIER",
               "UNDETERMINED"
             ],
-            "title": "Responsible Party",
-            "type": "string"
+            "title": "Responsible Party"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence Ids"
           },
           "summary": {
-            "title": "Summary",
-            "type": "string"
+            "type": "string",
+            "title": "Summary"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "shipment_id",
@@ -1515,16 +2095,15 @@
           "evidence_ids",
           "summary"
         ],
-        "title": "CaseSummary",
-        "type": "object"
+        "title": "CaseSummary"
       },
       "DeliveryMode": {
+        "type": "string",
         "enum": [
           "in_house",
           "third_party"
         ],
-        "title": "DeliveryMode",
-        "type": "string"
+        "title": "DeliveryMode"
       },
       "ErrorDetail": {
         "properties": {
@@ -1648,29 +2227,29 @@
         "type": "object"
       },
       "EvidenceReference": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "label": {
-            "title": "Label",
-            "type": "string"
+            "type": "string",
+            "title": "Label"
           },
           "verified": {
-            "title": "Verified",
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Verified"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "label",
           "verified"
         ],
-        "title": "EvidenceReference",
-        "type": "object"
+        "title": "EvidenceReference"
       },
       "IdentityResponse": {
         "properties": {
@@ -1696,50 +2275,51 @@
         "title": "IdentityResponse"
       },
       "InventoryItem": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "warehouse_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Warehouse Id",
-            "type": "string"
+            "title": "Warehouse Id"
           },
           "sme_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Sme Id",
-            "type": "string"
+            "title": "Sme Id"
           },
           "sku": {
-            "title": "Sku",
-            "type": "string"
+            "type": "string",
+            "title": "Sku"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           },
           "available_qty": {
-            "minimum": 0,
-            "title": "Available Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Available Qty"
           },
           "quarantined_qty": {
-            "minimum": 0,
-            "title": "Quarantined Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quarantined Qty"
           },
           "shipment_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Shipment Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Shipment Ids"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "warehouse_id",
@@ -1750,18 +2330,16 @@
           "quarantined_qty",
           "shipment_ids"
         ],
-        "title": "InventoryItem",
-        "type": "object"
+        "title": "InventoryItem"
       },
       "InventoryPage": {
-        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/InventoryItem"
             },
-            "title": "Items",
-            "type": "array"
+            "type": "array",
+            "title": "Items"
           },
           "next_cursor": {
             "anyOf": [
@@ -1775,12 +2353,13 @@
             "title": "Next Cursor"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "items",
           "next_cursor"
         ],
-        "title": "InventoryPage",
-        "type": "object"
+        "title": "InventoryPage"
       },
       "MembershipDTO": {
         "properties": {
@@ -1849,65 +2428,69 @@
         "type": "object"
       },
       "ReceiptLine": {
-        "additionalProperties": false,
         "properties": {
           "product_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Product Id",
-            "type": "string"
+            "title": "Product Id"
           },
           "received_qty": {
-            "minimum": 0,
-            "title": "Received Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Received Qty"
           },
           "damaged_qty": {
-            "minimum": 0,
-            "title": "Damaged Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Damaged Qty"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "product_id",
           "received_qty",
           "damaged_qty"
         ],
-        "title": "ReceiptLine",
-        "type": "object"
+        "title": "ReceiptLine"
       },
       "ReceiptRequest": {
-        "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
-            "title": "Expected Version",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
           },
           "final": {
-            "title": "Final",
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Final"
           },
           "lines": {
             "items": {
               "$ref": "#/components/schemas/ReceiptLine"
             },
+            "type": "array",
+            "maxItems": 100,
             "minItems": 1,
-            "title": "Lines",
-            "type": "array"
+            "title": "Lines"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "maxItems": 100,
+            "title": "Evidence Ids"
           },
           "notes": {
-            "title": "Notes",
-            "type": "string"
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "expected_version",
           "final",
@@ -1915,56 +2498,56 @@
           "evidence_ids",
           "notes"
         ],
-        "title": "ReceiptRequest",
-        "type": "object"
+        "title": "ReceiptRequest"
       },
       "ReceiptResult": {
-        "additionalProperties": false,
         "properties": {
           "shipment": {
             "$ref": "#/components/schemas/Shipment"
           },
           "expected_qty": {
-            "minimum": 1,
-            "title": "Expected Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Qty"
           },
           "received_qty": {
-            "minimum": 0,
-            "title": "Received Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Received Qty"
           },
           "good_qty": {
-            "minimum": 0,
-            "title": "Good Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Good Qty"
           },
           "damaged_qty": {
-            "minimum": 0,
-            "title": "Damaged Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Damaged Qty"
           },
           "shortage_qty": {
-            "minimum": 0,
-            "title": "Shortage Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Shortage Qty"
           },
           "case_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Case Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Case Ids"
           },
           "stock": {
             "items": {
               "$ref": "#/components/schemas/InventoryItem"
             },
-            "title": "Stock",
-            "type": "array"
+            "type": "array",
+            "title": "Stock"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "shipment",
           "expected_qty",
@@ -1974,58 +2557,56 @@
           "shortage_qty",
           "case_ids"
         ],
-        "title": "ReceiptResult",
-        "type": "object"
+        "title": "ReceiptResult"
       },
       "SMEOption": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "name"
         ],
-        "title": "SMEOption",
-        "type": "object"
+        "title": "SMEOption"
       },
       "Shipment": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "warehouse_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Warehouse Id",
-            "type": "string"
+            "title": "Warehouse Id"
           },
           "sme_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Sme Id",
-            "type": "string"
+            "title": "Sme Id"
           },
           "reference": {
-            "title": "Reference",
-            "type": "string"
+            "type": "string",
+            "title": "Reference"
           },
           "direction": {
+            "type": "string",
             "enum": [
               "inbound",
               "outbound"
             ],
-            "title": "Direction",
-            "type": "string"
+            "title": "Direction"
           },
           "delivery_mode": {
             "anyOf": [
@@ -2041,24 +2622,26 @@
             "$ref": "#/components/schemas/ShipmentStatus"
           },
           "version": {
-            "minimum": 1,
-            "title": "Version",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
           },
           "created_at": {
+            "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "type": "string"
+            "title": "Created At"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence Ids"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "warehouse_id",
@@ -2071,38 +2654,36 @@
           "created_at",
           "evidence_ids"
         ],
-        "title": "Shipment",
-        "type": "object"
+        "title": "Shipment"
       },
       "ShipmentDetail": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "warehouse_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Warehouse Id",
-            "type": "string"
+            "title": "Warehouse Id"
           },
           "sme_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Sme Id",
-            "type": "string"
+            "title": "Sme Id"
           },
           "reference": {
-            "title": "Reference",
-            "type": "string"
+            "type": "string",
+            "title": "Reference"
           },
           "direction": {
+            "type": "string",
             "enum": [
               "inbound",
               "outbound"
             ],
-            "title": "Direction",
-            "type": "string"
+            "title": "Direction"
           },
           "delivery_mode": {
             "anyOf": [
@@ -2118,57 +2699,59 @@
             "$ref": "#/components/schemas/ShipmentStatus"
           },
           "version": {
-            "minimum": 1,
-            "title": "Version",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
           },
           "created_at": {
+            "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "type": "string"
+            "title": "Created At"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence Ids"
           },
           "items": {
             "items": {
               "$ref": "#/components/schemas/ShipmentItem"
             },
-            "title": "Items",
-            "type": "array"
+            "type": "array",
+            "title": "Items"
           },
           "events": {
             "items": {
               "$ref": "#/components/schemas/ShipmentEvent"
             },
-            "title": "Events",
-            "type": "array"
+            "type": "array",
+            "title": "Events"
           },
           "evidence": {
             "items": {
               "$ref": "#/components/schemas/EvidenceReference"
             },
-            "title": "Evidence",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence"
           },
           "allowed_events": {
             "items": {
+              "type": "string",
               "enum": [
                 "picked",
                 "packed",
                 "dispatched"
-              ],
-              "type": "string"
+              ]
             },
-            "title": "Allowed Events",
-            "type": "array"
+            "type": "array",
+            "title": "Allowed Events"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "warehouse_id",
@@ -2185,44 +2768,44 @@
           "evidence",
           "allowed_events"
         ],
-        "title": "ShipmentDetail",
-        "type": "object"
+        "title": "ShipmentDetail"
       },
       "ShipmentEvent": {
-        "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "type": "string"
+            "title": "Id"
           },
           "type": {
-            "title": "Type",
-            "type": "string"
+            "type": "string",
+            "title": "Type"
           },
           "notes": {
-            "title": "Notes",
-            "type": "string"
+            "type": "string",
+            "title": "Notes"
           },
           "verified_at": {
+            "type": "string",
             "format": "date-time",
-            "title": "Verified At",
-            "type": "string"
+            "title": "Verified At"
           },
           "recorded_at": {
+            "type": "string",
             "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
+            "title": "Recorded At"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence Ids"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "id",
           "type",
@@ -2231,46 +2814,46 @@
           "recorded_at",
           "evidence_ids"
         ],
-        "title": "ShipmentEvent",
-        "type": "object"
+        "title": "ShipmentEvent"
       },
       "ShipmentEventRequest": {
-        "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
-            "title": "Expected Version",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
           },
           "type": {
+            "type": "string",
             "enum": [
               "picked",
               "packed",
               "dispatched"
             ],
-            "title": "Type",
-            "type": "string"
+            "title": "Type"
           },
           "notes": {
+            "type": "string",
             "maxLength": 2000,
             "minLength": 1,
-            "title": "Notes",
-            "type": "string"
+            "title": "Notes"
           },
           "verified_at": {
+            "type": "string",
             "format": "date-time",
-            "title": "Verified At",
-            "type": "string"
+            "title": "Verified At"
           },
           "evidence_ids": {
             "items": {
-              "format": "uuid",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
-            "title": "Evidence Ids",
-            "type": "array"
+            "type": "array",
+            "title": "Evidence Ids"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "expected_version",
           "type",
@@ -2278,41 +2861,41 @@
           "verified_at",
           "evidence_ids"
         ],
-        "title": "ShipmentEventRequest",
-        "type": "object"
+        "title": "ShipmentEventRequest"
       },
       "ShipmentItem": {
-        "additionalProperties": false,
         "properties": {
           "product_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Product Id",
-            "type": "string"
+            "title": "Product Id"
           },
           "sku": {
-            "title": "Sku",
-            "type": "string"
+            "type": "string",
+            "title": "Sku"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           },
           "expected_qty": {
-            "exclusiveMinimum": 0,
-            "title": "Expected Qty",
-            "type": "integer"
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Expected Qty"
           },
           "received_qty": {
-            "minimum": 0,
-            "title": "Received Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Received Qty"
           },
           "damaged_qty": {
-            "minimum": 0,
-            "title": "Damaged Qty",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Damaged Qty"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "product_id",
           "sku",
@@ -2321,18 +2904,16 @@
           "received_qty",
           "damaged_qty"
         ],
-        "title": "ShipmentItem",
-        "type": "object"
+        "title": "ShipmentItem"
       },
       "ShipmentPage": {
-        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/Shipment"
             },
-            "title": "Items",
-            "type": "array"
+            "type": "array",
+            "title": "Items"
           },
           "next_cursor": {
             "anyOf": [
@@ -2346,14 +2927,16 @@
             "title": "Next Cursor"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "items",
           "next_cursor"
         ],
-        "title": "ShipmentPage",
-        "type": "object"
+        "title": "ShipmentPage"
       },
       "ShipmentStatus": {
+        "type": "string",
         "enum": [
           "expected",
           "partially_received",
@@ -2369,36 +2952,35 @@
           "cancelled",
           "handed_over"
         ],
-        "title": "ShipmentStatus",
-        "type": "string"
+        "title": "ShipmentStatus"
       },
       "WarehouseDirectory": {
-        "additionalProperties": false,
         "properties": {
           "warehouse_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Warehouse Id",
-            "type": "string"
+            "title": "Warehouse Id"
           },
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           },
           "smes": {
             "items": {
               "$ref": "#/components/schemas/SMEOption"
             },
-            "title": "Smes",
-            "type": "array"
+            "type": "array",
+            "title": "Smes"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "warehouse_id",
           "name",
           "smes"
         ],
-        "title": "WarehouseDirectory",
-        "type": "object"
+        "title": "WarehouseDirectory"
       },
       "WarehouseFixture": {
         "additionalProperties": false,
@@ -2438,39 +3020,40 @@
         "type": "object"
       },
       "WarehouseOverview": {
-        "additionalProperties": false,
         "properties": {
           "warehouse_id": {
+            "type": "string",
             "format": "uuid",
-            "title": "Warehouse Id",
-            "type": "string"
+            "title": "Warehouse Id"
           },
           "unique_skus": {
-            "minimum": 0,
-            "title": "Unique Skus",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unique Skus"
           },
           "inbound_shipments": {
-            "minimum": 0,
-            "title": "Inbound Shipments",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Inbound Shipments"
           },
           "outbound_shipments": {
-            "minimum": 0,
-            "title": "Outbound Shipments",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Outbound Shipments"
           },
           "open_cases": {
-            "minimum": 0,
-            "title": "Open Cases",
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Open Cases"
           },
           "as_of": {
+            "type": "string",
             "format": "date-time",
-            "title": "As Of",
-            "type": "string"
+            "title": "As Of"
           }
         },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "warehouse_id",
           "unique_skus",
@@ -2479,8 +3062,146 @@
           "open_cases",
           "as_of"
         ],
-        "title": "WarehouseOverview",
-        "type": "object"
+        "title": "WarehouseOverview"
+      },
+      "CreateLine": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "expected_qty": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Expected Qty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "expected_qty"
+        ],
+        "title": "CreateLine"
+      },
+      "CreateShipment": {
+        "properties": {
+          "sme_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sme Id"
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Reference"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "title": "Direction"
+          },
+          "delivery_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "in_house",
+                  "third_party"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Mode"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/CreateLine"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Lines"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sme_id",
+          "reference",
+          "direction",
+          "delivery_mode",
+          "lines"
+        ],
+        "title": "CreateShipment"
+      },
+      "StockCorrection": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "available_delta": {
+            "type": "integer",
+            "title": "Available Delta"
+          },
+          "quarantined_delta": {
+            "type": "integer",
+            "title": "Quarantined Delta"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Notes"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "available_delta",
+          "quarantined_delta",
+          "notes",
+          "evidence_ids"
+        ],
+        "title": "StockCorrection"
+      },
+      "StockResult": {
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/InventoryItem"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product",
+          "version"
+        ],
+        "title": "StockResult"
       }
     },
     "securitySchemes": {

@@ -98,15 +98,20 @@ Review fixes verified (21 October 2026): rapid filter updates preserve all selec
 
 ## BE1 — inventory and shipment operations (M1; PRD 3, 5A, 8–9)
 
-- [ ] OPS-01 — Implement `GET /api/warehouse/overview`, `/api/inventory`, `/api/shipments`, and agreed shipment create/detail/event endpoints with scoped reads.
-- [ ] OPS-02 — Implement `POST /api/receipts/{shipment_id}` with nonnegative quantities, damaged ≤ received, owned product lines, and agreed partial/final behavior.
-- [ ] OPS-03 — Atomically post receipt/good/quarantined counts and audit/outbox records. Define overreceipt and repeated partial receipt handling explicitly.
-- [ ] OPS-04 — Add idempotency keys/version checks so retry or concurrent receipt submission cannot double stock or case events.
-- [ ] OPS-05 — Publish separate quantity mismatch/damage facts to BE2; do not let AI calculate the authoritative difference.
-- [ ] OPS-06 — Implement staff-confirmed pick/pack/dispatch and authorized stock/quarantine correction commands; prevent invalid status changes and unavailable-stock dispatch.
+- [x] OPS-01 — Implement `GET /api/warehouse/overview`, `/api/inventory`, `/api/shipments`, and agreed shipment create/detail/event endpoints with scoped reads.
+- [x] OPS-02 — Implement `POST /api/receipts/{shipment_id}` with nonnegative quantities, damaged ≤ received, owned product lines, and agreed partial/final behavior.
+- [x] OPS-03 — Atomically post receipt/good/quarantined counts and audit/outbox records. Define overreceipt and repeated partial receipt handling explicitly.
+- [x] OPS-04 — Add idempotency keys/version checks so retry or concurrent receipt submission cannot double stock or case events.
+- [x] OPS-05 — Publish separate quantity mismatch/damage facts to BE2; do not let AI calculate the authoritative difference.
+- [x] OPS-06 — Implement staff-confirmed pick/pack/dispatch and authorized stock/quarantine correction commands; prevent invalid status changes and unavailable-stock dispatch.
 - [ ] OPS-07 — Test 90/100 → gap 10 exactly once, damage separation, duplicate receipts, concurrent operations, and cross-SME product references.
 
 Gate: source records, stock, event and audit agree after success, retry, or failure. Inventory writes are owned here, not in BE2 tool code.
+
+OPS-01 through OPS-06 local implementation (21 October 2026): see [warehouse operations evidence](docs/WAREHOUSE-OPERATIONS.md). Authenticated FastAPI routes and atomic user-scoped RPCs implement scoped reads/create/detail, incremental partial/final receipts, separate damage/shortage facts, persisted idempotent results, optimistic versions, ordered physical events and evidence-backed corrections. Frontend detail and mutation requests forward the selected warehouse. The retired unversioned receipt RPC is denied to authenticated clients. These boxes record local implementation, not hosted Supabase acceptance.
+
+Validation: 19 backend tests, 35 foundation database checks plus nine operations scenarios, 18 frontend tests, 12 contract fixtures and generated-contract drift checks, migration conventions, typecheck, production build, legacy regression checks and both browser suites pass (installed Chrome). Native PostgreSQL 17 CI now runs the operation suite plus real two-connection races; its `pg` dependency and optional embedded-engine tooling are pinned in the database test lockfile. OPS-07 remains unchecked until native concurrency execution passes. Native Supabase/Auth/Storage acceptance and hosted migrations remain separate; no hosted database was changed.
+
 
 ## BE2 — cases, matching, lifecycle, policies (M1–M3; PRD 5–6, 8–9)
 

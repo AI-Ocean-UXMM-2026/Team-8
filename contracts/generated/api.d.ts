@@ -11,9 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Shipments */
         get: operations["listShipments"];
         put?: never;
-        post?: never;
+        /** Create */
+        post: operations["createShipment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -29,6 +31,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Receive */
         post: operations["postReceipt"];
         delete?: never;
         options?: never;
@@ -91,6 +94,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Overview */
         get: operations["warehouseOverview"];
         put?: never;
         post?: never;
@@ -107,6 +111,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Directory */
         get: operations["warehouseDirectory"];
         put?: never;
         post?: never;
@@ -123,6 +128,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Inventory */
         get: operations["listInventory"];
         put?: never;
         post?: never;
@@ -139,6 +145,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Cases */
         get: operations["listExceptions"];
         put?: never;
         post?: never;
@@ -155,6 +162,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Detail */
         get: operations["getShipment"];
         put?: never;
         post?: never;
@@ -173,6 +181,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Event */
         post: operations["recordShipmentEvent"];
         delete?: never;
         options?: never;
@@ -208,6 +217,40 @@ export interface paths {
         get: operations["getIdentity"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock */
+        get: operations["getStock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Correct */
+        post: operations["correctStock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -701,6 +744,54 @@ export interface components {
              */
             as_of: string;
         };
+        /** CreateLine */
+        CreateLine: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Expected Qty */
+            expected_qty: number;
+        };
+        /** CreateShipment */
+        CreateShipment: {
+            /**
+             * Sme Id
+             * Format: uuid
+             */
+            sme_id: string;
+            /** Reference */
+            reference: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "inbound" | "outbound";
+            /** Delivery Mode */
+            delivery_mode: ("in_house" | "third_party") | null;
+            /** Lines */
+            lines: components["schemas"]["CreateLine"][];
+        };
+        /** StockCorrection */
+        StockCorrection: {
+            /** Expected Version */
+            expected_version: number;
+            /** Available Delta */
+            available_delta: number;
+            /** Quarantined Delta */
+            quarantined_delta: number;
+            /** Notes */
+            notes: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+        };
+        /** StockResult */
+        StockResult: {
+            product: components["schemas"]["InventoryItem"];
+            /** Version */
+            version: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -713,12 +804,12 @@ export interface operations {
     listShipments: {
         parameters: {
             query?: {
+                warehouse_id?: string | null;
+                sme_id?: string | null;
                 cursor?: string | null;
                 limit?: number;
-                warehouse_id?: string;
-                sme_id?: string;
-                direction?: string;
-                status?: string;
+                direction?: ("inbound" | "outbound") | null;
+                status?: components["schemas"]["ShipmentStatus"] | null;
             };
             header?: never;
             path?: never;
@@ -726,7 +817,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -762,7 +853,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -771,7 +862,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -780,7 +871,89 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createShipment: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShipment"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shipment"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version, changed idempotency payload or unavailable stock */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input or warehouse transition */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -794,7 +967,7 @@ export interface operations {
     postReceipt: {
         parameters: {
             query?: {
-                warehouse_id?: string;
+                warehouse_id?: string | null;
             };
             header: {
                 "Idempotency-Key": string;
@@ -810,7 +983,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -846,7 +1019,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -855,7 +1028,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -864,7 +1037,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1114,7 +1287,7 @@ export interface operations {
     warehouseOverview: {
         parameters: {
             query?: {
-                warehouse_id?: string;
+                warehouse_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -1122,7 +1295,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1158,7 +1331,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1167,7 +1340,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1176,7 +1349,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1190,7 +1363,7 @@ export interface operations {
     warehouseDirectory: {
         parameters: {
             query?: {
-                warehouse_id?: string;
+                warehouse_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -1198,7 +1371,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1234,7 +1407,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1243,7 +1416,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1252,7 +1425,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1266,11 +1439,11 @@ export interface operations {
     listInventory: {
         parameters: {
             query?: {
-                warehouse_id?: string;
-                sme_id?: string;
-                cursor?: string;
+                warehouse_id?: string | null;
+                sme_id?: string | null;
+                cursor?: string | null;
                 limit?: number;
-                stock_status?: "available" | "quarantined";
+                stock_status?: ("available" | "quarantined") | null;
             };
             header?: never;
             path?: never;
@@ -1278,7 +1451,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1314,7 +1487,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1323,7 +1496,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1332,7 +1505,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1346,9 +1519,9 @@ export interface operations {
     listExceptions: {
         parameters: {
             query?: {
-                warehouse_id?: string;
-                sme_id?: string;
-                cursor?: string;
+                warehouse_id?: string | null;
+                sme_id?: string | null;
+                cursor?: string | null;
                 limit?: number;
                 status?: "open" | "all";
             };
@@ -1358,7 +1531,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1394,7 +1567,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1403,7 +1576,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1412,7 +1585,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1426,7 +1599,7 @@ export interface operations {
     getShipment: {
         parameters: {
             query?: {
-                warehouse_id?: string;
+                warehouse_id?: string | null;
             };
             header?: never;
             path: {
@@ -1436,7 +1609,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1472,7 +1645,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1481,7 +1654,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1490,7 +1663,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1504,7 +1677,7 @@ export interface operations {
     recordShipmentEvent: {
         parameters: {
             query?: {
-                warehouse_id?: string;
+                warehouse_id?: string | null;
             };
             header: {
                 "Idempotency-Key": string;
@@ -1520,7 +1693,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Success */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1556,7 +1729,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Stale version or idempotency conflict */
+            /** @description Stale version, changed idempotency payload or unavailable stock */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1565,7 +1738,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or warehouse transition */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1574,7 +1747,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Provider unavailable */
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1644,6 +1817,168 @@ export interface operations {
                 };
             };
             /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getStock: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockResult"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version, changed idempotency payload or unavailable stock */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input or warehouse transition */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Database unavailable; outcome may be unconfirmed */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    correctStock: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockResult"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Stale version, changed idempotency payload or unavailable stock */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid input or warehouse transition */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Database unavailable; outcome may be unconfirmed */
             503: {
                 headers: {
                     [name: string]: unknown;

@@ -92,13 +92,11 @@ jobs:
       PGDATABASE: parcelcare_test
     steps:
       - uses: actions/checkout@v4
-      - name: Fresh migrations and seed (Auth/Storage test stand-ins only)
-        shell: bash
-        run: |
-          psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap.sql
-          for migration in supabase/migrations/*.sql; do
-            psql -v ON_ERROR_STOP=1 -f "$migration"
-          done
-          psql -v ON_ERROR_STOP=1 -f supabase/seed.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/seed.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/tests/native-smoke.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: supabase/tests/package-lock.json
+      - run: npm ci --prefix supabase/tests
+      # Fresh migrations, repeatable seed, tenant smoke and real multi-connection races.
+      - run: npm run test:native --prefix supabase/tests

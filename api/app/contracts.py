@@ -1,4 +1,4 @@
-"""V4 wire schemas. Contracts only; operational endpoints are not implemented."""
+"""Shared V4 wire schemas for implemented and planned domain endpoints."""
 from enum import StrEnum
 from typing import Annotated, Literal
 from uuid import UUID
@@ -128,10 +128,10 @@ class ReceiptLine(DTO):
 
 class ReceiptRequest(DTO):
     expected_version: Annotated[int, Field(ge=1, strict=True)]
-    final: bool
-    lines: Annotated[list[ReceiptLine], Field(min_length=1)]
-    evidence_ids: list[UUID]
-    notes: str
+    final: Annotated[bool, Field(strict=True)]
+    lines: Annotated[list[ReceiptLine], Field(min_length=1, max_length=100)]
+    evidence_ids: Annotated[list[UUID], Field(max_length=100)]
+    notes: Annotated[str, Field(max_length=2000)]
 
 
 class ReceiptResult(DTO):
