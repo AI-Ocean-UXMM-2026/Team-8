@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <link rel="stylesheet" href="/vendor/leaflet.css" />
       </head>
-      <body>{children}</body>
+      <body><div id="language-switch" role="group" aria-labelledby="language-label"><span id="language-label">Language</span><button type="button" disabled data-language-choice="en" aria-pressed="true" lang="en">English</button><button type="button" disabled data-language-choice="my" aria-pressed="false" lang="my">မြန်မာ</button></div>{children}<Script src="/language.js" strategy="afterInteractive" /></body>
     </html>
   );
 }

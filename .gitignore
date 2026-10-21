@@ -14,3 +14,7 @@ src/features/workspace/generated.ts
 .env.*
 !.env.example
 site*.tar.gz
+
+public/language.js
+dist/language.js
+dist/fonts/

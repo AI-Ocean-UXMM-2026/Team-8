@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export function WorkspaceLayout({ title, children }: { title: string; children: ReactNode }) {
-  return <div className="min-h-screen bg-canvas text-ink">
+  return <div className="pc-workspace min-h-screen bg-canvas text-ink">
     <a href="#main-content" className="sr-only focus:not-sr-only focus:block focus:p-4">Skip to content</a>
     <div className="mx-auto grid min-h-screen max-w-screen-2xl md:grid-cols-[240px_1fr]">
       <aside className="border-b border-slate-200 bg-white p-6 md:border-r md:border-b-0">

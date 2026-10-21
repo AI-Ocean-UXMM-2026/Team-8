@@ -6,12 +6,16 @@
 @source "../features/auth";
 
 @theme {
-  --color-brand: #176d50;
-  --color-canvas: #f5f7fa;
-  --color-ink: #203047;
-  --color-muted: #7a8798;
+  --color-brand: #d93643;
+  --color-canvas: #f6f7f1;
+  --color-ink: #303130;
+  --color-muted: #65695f;
 }
 
 @layer base {
-  :focus-visible { outline: 2px solid #176d50; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid #d93643; outline-offset: 3px; }
 }
+
+/* Shared React navigation follows the visual reference. */
+nav a[aria-current="page"]{background:#ff5056;color:#fff;border-radius:8px}
+nav a:not([aria-current="page"]):hover{background:#ffe9e8}

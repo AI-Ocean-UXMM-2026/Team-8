@@ -19,7 +19,7 @@ export function WarehouseShell({ children }: { children: ReactNode }) {
       {!session.demo && <Link href="/demo/warehouse" className="mt-4 inline-block text-sm text-brand underline">Open demo workspace</Link>}
     </>}
   </Card></main>;
-  return <div className="min-h-screen bg-canvas text-ink"><a className="sr-only focus:not-sr-only focus:block focus:p-4" href="#warehouse-main">Skip to content</a>
+  return <div className="pc-workspace min-h-screen bg-canvas text-ink"><a className="sr-only focus:not-sr-only focus:block focus:p-4" href="#warehouse-main">Skip to content</a>
     <div className="mx-auto grid min-h-screen max-w-screen-2xl md:grid-cols-[230px_1fr]">
       <aside className="border-b border-slate-200 bg-white p-6 md:border-r md:border-b-0"><Link href={base} className="text-2xl font-bold text-brand">ParcelCare</Link><p className="mt-2 text-xs text-muted">Warehouse operations</p>
         <nav aria-label="Warehouse" className="mt-8 flex flex-wrap gap-2 md:flex-col">{[['Overview', ''], ['Inventory', '/inventory'], ['Shipments', '/shipments'], ['Open cases', '/exceptions']].map(([name, path]) => <Link key={name} href={`${base}${path}`} aria-current={pathname === base + path ? 'page' : undefined} className={`rounded-lg px-3 py-3 text-sm ${pathname === base + path ? 'bg-emerald-50 font-semibold text-brand' : 'hover:bg-slate-50'}`}>{name}</Link>)}</nav>

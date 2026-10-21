@@ -1,5 +1,5 @@
 // Deterministic business-rule routing. Signals are explicit demo inputs, not AI findings.
-const RULE_VERSION='warehouse-39-v2-priority';
+const RULE_VERSION='warehouse-39-v3-information-priority';
 const RULE_THRESHOLDS={valueMMK:null,quantity:null,orders:null,attempts:null};
 function evaluateRules(r,all=[]){const f=r.facts||{},text=(r.description||'')+' '+(r.outcome||''),ids=new Set(),add=(id,condition)=>{if(condition)ids.add(id)};
 add(1,!r.ref?.trim());add(2,f.referenceFound===false);add(3,!r.description?.trim());add(4,f.quantityRequired===true&&!(Number(r.quantity)>0));add(5,f.evidenceRequired===true&&!r.evidence?.trim());add(6,f.outOfScope===true);add(7,f.ownershipMismatch===true);
