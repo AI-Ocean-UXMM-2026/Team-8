@@ -13,16 +13,16 @@ import { DecisionForm } from './decision';
 import { EvidenceUpload, EvidenceDownload } from './evidence';
 
 export function SMEDashboard() {
-  const { api, smeId } = useSession();
+  const { api, smeId, demo } = useSession();
   const resource = usePolling(smeId, signal => api!.getSMEOverview(smeId,signal));
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
     <div className="mb-5 grid gap-4 sm:grid-cols-3">{[['Product records',data.inventory.length],['Shipments',data.shipments.length],['Pending decisions',data.approvals.filter(a=>a.status==='pending').length]].map(([label,value])=><Card key={label}><h2>{label}</h2><p className="mt-3 text-3xl font-semibold">{value}</p></Card>)}</div>
-    <Card className="mb-5"><h2 className="text-lg font-semibold">Track your deliveries</h2><p className="mt-3 text-sm">View GPS locations for your shipments only, with last-updated and stale-location indicators.</p><Link className="mt-4 inline-flex min-h-11 items-center text-brand underline" href="/sme/tracking">Open shipment tracking →</Link></Card>
+    <Card className="mb-5"><h2 className="text-lg font-semibold">Track your deliveries</h2><p className="mt-3 text-sm">View GPS locations for your shipments only, with last-updated and stale-location indicators.</p><Link className="mt-4 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/tracking':'/sme/tracking'}>Open shipment tracking →</Link></Card>
     <Card className="mb-5"><h2 className="text-lg font-semibold">Own stock / မိမိပစ္စည်းစာရင်း</h2>{data.inventory.length ? <ul>{data.inventory.map(item=><li key={item.id} className="mt-4 border-t pt-3">{item.name} · {item.sku}<p className="mt-2 text-sm">Available: {item.available_qty} · Quarantined: {item.quarantined_qty}</p></li>)}</ul> : <Empty />}</Card>
-    <Card className="mb-5"><h2 className="text-lg font-semibold">Shipments / ပို့ဆောင်မှု</h2>{data.shipments.length ? <ul>{data.shipments.map(item=><li key={item.id} className="mt-4 flex flex-wrap justify-between gap-3 border-t pt-3"><Link className="text-brand underline" href={`/sme/shipments/${item.id}`}>{item.reference}</Link><Badge>{human(item.status)}</Badge></li>)}</ul> : <Empty />}</Card>
+    <Card className="mb-5"><h2 className="text-lg font-semibold">Shipments / ပို့ဆောင်မှု</h2>{data.shipments.length ? <ul>{data.shipments.map(item=><li key={item.id} className="mt-4 flex flex-wrap justify-between gap-3 border-t pt-3">{demo&&item.direction==='inbound'?<span>{item.reference}</span>:<Link className="text-brand underline" href={demo?'/demo/sme/tracking':`/sme/shipments/${item.id}`}>{item.reference}</Link>}<Badge>{human(item.status)}</Badge></li>)}</ul> : <Empty />}</Card>
     <Card><h2 className="text-lg font-semibold">Cases / ကိစ္စများ</h2>{data.cases.length ? <ul>{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`/sme/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty />}</Card></>;
 }
 

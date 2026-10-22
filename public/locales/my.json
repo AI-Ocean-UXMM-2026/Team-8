@@ -1052,5 +1052,10 @@
   "Stop waiting": "စောင့်ဆိုင်းမှု ရပ်ရန်",
   "Stopped waiting. Refresh to check whether the route was saved.": "စောင့်ဆိုင်းမှု ရပ်လိုက်ပါပြီ။ လမ်းကြောင်း သိမ်းပြီးခြင်း ရှိမရှိ သိရန် ပြန်ဖွင့်ပါ။",
   "Shared route plan · saved": "မျှဝေထားသောလမ်းကြောင်း · သိမ်းချိန်",
-  "· not live traffic or a guaranteed ETA. Routing © openrouteservice / HeiGIT.": "· တိုက်ရိုက်ယာဉ်အသွားအလာ သို့မဟုတ် အာမခံထားသောရောက်ချိန် မဟုတ်ပါ။ Routing © openrouteservice / HeiGIT."
+  "· not live traffic or a guaranteed ETA. Routing © openrouteservice / HeiGIT.": "· တိုက်ရိုက်ယာဉ်အသွားအလာ သို့မဟုတ် အာမခံထားသောရောက်ချိန် မဟုတ်ပါ။ Routing © openrouteservice / HeiGIT.",
+  "Warehouse dashboard": "Warehouse ဒက်ရှ်ဘုတ်",
+  "Warehouse manager dashboard": "Warehouse မန်နေဂျာ ဒက်ရှ်ဘုတ်",
+  "Courier dashboard": "ပို့ဆောင်သူ ဒက်ရှ်ဘုတ်",
+  "Demo workspaces": "နမူနာလုပ်ငန်းခွင်များ",
+  "Return to warehouse dashboard": "Warehouse ဒက်ရှ်ဘုတ်သို့ ပြန်ရန်"
 }
