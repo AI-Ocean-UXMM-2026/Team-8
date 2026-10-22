@@ -25,7 +25,7 @@ export function Login() {
       if (result.error) {
         const code = result.error.code;
         throw new Error(code === 'invalid_credentials'
-          ? 'The email or password is incorrect. Use the password set when this account was created. If you need a reset, contact your warehouse operator.'
+          ? 'Incorrect email or password.'
           : code === 'email_not_confirmed' ? 'Please ask your warehouse operator to confirm your account email.'
           : result.error.status === 429 ? 'Too many sign-in attempts. Please wait a few minutes and try again.'
           : 'The sign-in service is unavailable. Please try again shortly.');
