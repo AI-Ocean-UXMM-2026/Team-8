@@ -13,10 +13,10 @@
 
 ## Warehouse settings
 
-Open `/demo/warehouse/settings` for browser-local demo controls or `/warehouse/settings` for authenticated warehouse controls.
+Open `/demo/warehouse/settings` for server-shared demo controls or `/warehouse/settings` for authenticated warehouse controls.
 
 - Live GPS enabled: separate from simulation. Off ends active warehouse tracking sessions and rejects new sessions, packets and live route requests. On never grants device permission or rider consent.
-- Demo simulation enabled: controls demo movement and receipt actions in that browser preview. Demo settings do not mutate production. Public demo cannot be a production configuration authority.
+- Demo simulation enabled: controls demo movement and receipt actions across browsers on the same server. Demo settings do not mutate production. Public demo cannot be a production configuration authority.
 - Live settings can be changed only by the warehouse's staff/owner; active warehouse members can read the effective settings. Values are persisted in Supabase, not trusted from the client.
 
 ## Rollout
@@ -31,7 +31,7 @@ This change is prepared locally and has NOT been deployed or applied to producti
 ## Acceptance tests
 
 1. Demo: reset; verify no automatic movement. Click once; verify one smooth segment and no extra advancement while waiting. Complete ten steps; verify vehicle stops at destination.
-2. Try Confirm arrival before entering 100 m: disabled. Reach destination; confirm. All three same-browser dashboards show yellow/pending and toast; no delivered status yet.
+2. Try Confirm arrival before entering 100 m: disabled. Reach destination; confirm. All three dashboards on the same server show yellow/pending and toast; no delivered status yet.
 3. Open SME tracking; confirm goods received. Courier and Warehouse turn green/success. Reload: same state. Reset begins a new fictitious trip.
 4. Disable demo simulation in Warehouse settings: movement, arrival, reset and demo receipt actions are disabled. Live GPS switch is independent.
 5. Real assignment: accept, verify pickup/dispatch, select and verify the SME destination, give explicit routing/GPS consent. Outside 100 m, stale fix, poor accuracy, missing route, wrong rider and wrong SME must be rejected server-side.
@@ -51,3 +51,11 @@ This change is prepared locally and has NOT been deployed or applied to producti
 - Evidence: Team-8/test-results/demo-arrived-yellow.png and demo-sme-confirmed-green.png.
 - Responsive override did not change the measured viewport (remained 1280 px); mobile/tablet visual coverage is NOT claimed.
 - Real phone GPS, authenticated ORS routing and production end-to-end remain NOT RUN. This is a local demo browser test, not a deployment verification.
+
+## Cross-browser synchronization fix
+
+The original localStorage-only demo did not share movement between Chrome and the in-app browser. Demo state and settings now use the public, no-store `/api/demo/tracking` endpoint. Clients poll every 250 ms and animate road positions between updates. A bounded revision/idempotency check prevents stale or duplicated commands. No live shipment tables, credentials or device GPS are accessed.
+
+This public demo is one shared fictitious trip per Next.js server process. All visitors to that instance can change the demo; restarting the server resets it. This is suitable for the current single-server preview, not durable multi-instance production tracking. Actual tracking continues to use authenticated Supabase data and its access rules.
+
+Verification: 52 frontend tests passed; build passed. Native Chrome SME view changed from 2/10 to 3/10 after an in-app Courier click, without a Chrome refresh. A same-origin request rejection caused by Next's internal bind address was also corrected; origin validation compares the browser origin host with the request Host header. Action errors remain visible instead of being erased by the next successful poll.

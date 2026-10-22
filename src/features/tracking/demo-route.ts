@@ -1,14 +1,11 @@
 'use client';
-import {useEffect,useState} from 'react';
-import {demoRouteSnapshot,advanceDemoRoute,confirmDemoArrival,confirmDemoReceipt,resetDemoRoute} from '../../shared/api/demo-route';
+import {useEffect,useRef,useState} from 'react';
+import {demoRouteSnapshot} from '../../shared/api/demo-route';
+import {getDemoPacket,sendDemoAction,packetSnapshot,type DemoPacket,type DemoAction} from '../../shared/api/demo-sync';
 export function useDemoRoute(enabled:boolean){
- const [snapshot,setSnapshot]=useState(()=>demoRouteSnapshot()),[error,setError]=useState('');
- useEffect(()=>{
-  if(!enabled)return;
-  const refresh=()=>{try{setSnapshot(previous=>{const next=demoRouteSnapshot(window.localStorage);return previous.step===next.step&&previous.stage===next.stage&&previous.moving===next.moving&&previous.position[0]===next.position[0]&&previous.position[1]===next.position[1]?previous:next})}catch{setError('Demo storage is unavailable.')}};
-  refresh();const timer=setInterval(refresh,50);window.addEventListener('storage',refresh);window.addEventListener('parcelcare:demo-route',refresh);
-  return()=>{clearInterval(timer);window.removeEventListener('storage',refresh);window.removeEventListener('parcelcare:demo-route',refresh)};
- },[enabled]);
- function command(action:(storage:Storage)=>void){try{action(window.localStorage);window.dispatchEvent(new Event('parcelcare:demo-route'));setError('')}catch{setError('Demo storage is unavailable.')}}
- return {...snapshot,error,advance:()=>command(advanceDemoRoute),arrive:()=>command(confirmDemoArrival),receive:()=>command(confirmDemoReceipt),reset:()=>command(resetDemoRoute)};
+ const [snapshot,setSnapshot]=useState(()=>demoRouteSnapshot()),[error,setError]=useState(''),[busy,setBusy]=useState(false),[ready,setReady]=useState(false);const packet=useRef<DemoPacket|null>(null),offset=useRef(0),locked=useRef(false);
+ function accept(next:DemoPacket){if(packet.current&&next.revision<packet.current.revision)return;packet.current=next;offset.current=next.serverNow-Date.now();setReady(true);}
+ useEffect(()=>{if(!enabled)return;let active=true,reading=false;const controller=new AbortController();const refresh=async()=>{if(reading)return;reading=true;try{const next=await getDemoPacket(controller.signal);if(active){accept(next);setError(old=>old.startsWith('Shared demo connection')?'':old)}}catch{if(active){setReady(false);setError('Shared demo connection lost. Position may be outdated.')}}finally{reading=false}};void refresh();const poll=setInterval(()=>void refresh(),250);const animate=setInterval(()=>{if(!packet.current)return;const next=packetSnapshot(packet.current,Date.now()+offset.current);setSnapshot(old=>old.step===next.step&&old.stage===next.stage&&old.moving===next.moving&&old.position[0]===next.position[0]&&old.position[1]===next.position[1]?old:next)},50);window.addEventListener('parcelcare:demo-route',refresh);return()=>{active=false;controller.abort();clearInterval(poll);clearInterval(animate);window.removeEventListener('parcelcare:demo-route',refresh)}},[enabled]);
+ async function command(action:DemoAction){if(!enabled||!ready||!packet.current||locked.current)return;locked.current=true;setBusy(true);try{setError('');accept(await sendDemoAction(action,packet.current.revision));window.dispatchEvent(new Event('parcelcare:demo-route'))}catch(e){setError(e instanceof Error?e.message:'Shared demo unavailable.')}finally{locked.current=false;setBusy(false)}}
+ return {...snapshot,error,busy,ready,advance:()=>void command('advance'),arrive:()=>void command('arrive'),receive:()=>void command('receive'),reset:()=>void command('reset')};
 }

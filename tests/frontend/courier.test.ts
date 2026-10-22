@@ -119,3 +119,19 @@ test('tracking control responses fail closed on wrong shipment, invalid coordina
  assert.equal(checkedArrival(arrival,id)?.delivered,false);assert.equal(checkedArrival(null,id),null);
  for(const patch of [{shipment_id:crypto.randomUUID()},{latitude:100},{longitude:Infinity},{arrived_at:'bad'},{delivered:'true'}])assert.throws(()=>checkedArrival({...arrival,...patch},id));
 });
+
+import {createDemoHub,packetSnapshot,checkedDemoPacket} from '../../src/shared/api/demo-sync';
+test('independent browser snapshots share authoritative demo progress and SME success',()=>{
+ const hub=createDemoHub();let now=100000;
+ const command=(action:any,settings?:any)=>hub.command({action,key:crypto.randomUUID(),revision:hub.read(now).revision,settings},now);
+ const initial=hub.read(now),request={action:'advance' as const,key:crypto.randomUUID(),revision:initial.revision};hub.command(request,now);hub.command(request,now);
+ assert.equal(hub.read(now).state.step,1);assert.equal(packetSnapshot(hub.read(now+1000),now+1000).step,1);
+ assert.throws(()=>hub.command({...request,key:crypto.randomUUID()},now),/STALE_DEMO/);
+ assert.throws(()=>command('arrive'),/ACTION_NOT_READY/);
+ for(let i=1;i<10;i++){now+=1000;command('advance');}now+=1000;command('arrive');
+ const warehouse=checkedDemoPacket(JSON.parse(JSON.stringify(hub.read(now))));assert.equal(warehouse.state.stage,'arrived');
+ command('receive');assert.equal(hub.read(now).state.stage,'delivered');
+ command('settings',{live_gps_enabled:true,demo_simulation_enabled:false});assert.throws(()=>command('reset'),/DEMO_DISABLED/);
+ command('settings',{live_gps_enabled:false,demo_simulation_enabled:true});command('reset');assert.equal(hub.read(now).state.step,0);
+ assert.throws(()=>checkedDemoPacket({...hub.read(now),state:{step:99}}));
+});

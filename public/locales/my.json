@@ -1109,5 +1109,11 @@
   "Awaiting courier arrival confirmation": "ပို့ဆောင်သူ ရောက်ရှိအတည်ပြုရန် စောင့်နေသည်",
   "SME receipt": "လုပ်ငန်းရှင် လက်ခံရရှိခြင်း",
   "SME confirmed receipt": "လုပ်ငန်းရှင် လက်ခံအတည်ပြုပြီး",
-  "Pending arrival": "ရောက်ရှိရန် စောင့်နေသည်"
+  "Pending arrival": "ရောက်ရှိရန် စောင့်နေသည်",
+  "Shared demo vehicle position": "အတူမျှဝေထားသော နမူနာယာဉ်တည်နေရာ",
+  "Updates across browsers on this server.": "ဤဆာဗာကို အသုံးပြုသည့် browser များတွင် အလိုအလျောက် လိုက်ပြောင်းသည်။",
+  "Simulated location — not device GPS.": "နမူနာတည်နေရာသာ ဖြစ်ပြီး ဖုန်း GPS မဟုတ်ပါ။",
+  "Shared demo connection lost. Position may be outdated.": "မျှဝေထားသော နမူနာချိတ်ဆက်မှု ပြတ်နေသည်။ တည်နေရာ အဟောင်းဖြစ်နိုင်ပါသည်။",
+  "Warehouse → SME demo road route. Use Move vehicle in the courier demo. No real GPS is sent.": "ဂိုဒေါင်မှ လုပ်ငန်းရှင်ဆီ ပို့ဆောင်သည့် နမူနာလမ်းကြောင်းပါ။ ပို့ဆောင်သူနမူနာတွင် ယာဉ်ရွှေ့ရန်ကို နှိပ်ပါ။ တကယ့် GPS တည်နေရာ မပို့ပါ။",
+  "Demo settings are shared across browsers on this server. They do not change production GPS.": "ဤဆာဗာရှိ နမူနာဆက်တင်များကို browser များကြား မျှဝေထားသည်။ တကယ့် GPS ဆက်တင်များကို မပြောင်းပါ။"
 }
