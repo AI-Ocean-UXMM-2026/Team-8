@@ -11,7 +11,8 @@
 .warehouseNavigation a[aria-current=page]{background:color-mix(in srgb,var(--primary) 20%,white)!important;color:var(--color-primary-900)!important;border-left-color:var(--color-primary-700);font-weight:600}
 .warehouseNavigation a:not([aria-current=page]):hover{background:var(--muted)!important;color:var(--foreground)}
 .warehouseSidebar :focus-visible{outline:3px solid var(--color-primary-700);outline-offset:2px}
-.warehouseCaseCount{flex-shrink:0;min-width:24px;padding:2px 6px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.warehouseNavigation .navIcon{position:relative}
+.warehouseCaseCount{position:absolute;top:-9px;left:12px;display:grid;place-items:center;box-sizing:border-box;min-width:18px;height:18px;padding:0 4px;border:2px solid var(--background);border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
 .warehouseSelector{margin-top:24px;padding-inline:8px}.warehouseSelector label{line-height:1.8}.warehouseSelector select{min-height:44px;width:100%;max-width:100%;font-size:12px}
 .warehouseSidebarFooter{padding:16px;border-top:1px solid var(--border);background:var(--background);min-width:0}
 .warehouseProfile{display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.8;min-width:0}.warehouseProfile>div{min-width:0;overflow-wrap:anywhere}.warehouseProfile p{margin-top:2px;font-size:11px;color:var(--muted-foreground)}
