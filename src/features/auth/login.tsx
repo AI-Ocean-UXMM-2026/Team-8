@@ -63,6 +63,6 @@ export function Login() {
       {busy&&<p role="status" className="text-sm text-muted">{progress}</p>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <Button type="submit" className="w-full" disabled={!ready || busy}>{!ready ? 'Preparing sign-in…' : busy ? 'Signing in…' : 'Sign in'}</Button>
-    </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href={courier?'/demo/courier':'/demo'}>Explore the demo</Link></p>
+    </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href="/demo">Explore the demo</Link></p>
   </Card></main>;
 }

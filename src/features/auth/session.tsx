@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { createApiClient, createLiveTransport, ApiError, type ApiClient, type Schemas } from '../../shared/api';
 import { loadWorkspaceIdentity } from '../../shared/api/identity';
 import { browserAuth } from './browser-client';
+import {demoRole,demoRoleKey} from './demo-access';
 import { cleanupSession } from '../../shared/session/cleanup';
 
 type Session = {
@@ -33,13 +34,14 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
       verifiedActor.current = who.actor_id;
       const staff = who.memberships.filter(m => audience === 'warehouse' ? m.role === 'owner' || m.role === 'staff' : m.role === audience);
       setIdentity(who); setApi(client);
-      if (!staff.length) { setStatus('forbidden'); return; }
+      if (!staff.length) { setApi(null); setWarehouse(''); setSME(''); setStatus('forbidden'); return; }
       setWarehouse(previous => staff.some(m => m.warehouse_id === previous) ? previous : staff[0].warehouse_id);
       setSME(previous => staff.some(m => m.sme_id === previous) ? previous : staff[0].sme_id ?? '');
       setStatus('ready');
     };
     async function start() {
       if (demo) {
+        if(demoRole(window.sessionStorage.getItem(demoRoleKey))!==audience){setIdentity(null);setApi(null);setStatus('forbidden');return;}
         const { createMockTransport } = await import('../../shared/api/mock');
         const transport=audience==='sme'?(await import('../../shared/api/sme-tracking-mock')).createSmeTrackingMockTransport(window.sessionStorage):audience==='rider'?(await import('../../shared/api/courier-mock')).createCourierMockTransport(window.sessionStorage):createMockTransport({ dataset: 'warehouse', storage: window.sessionStorage });
         const client = createApiClient(transport);
@@ -95,6 +97,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
   };
   const signOut = async () => {
     await cleanupSession();
+    if (demo) sessionStorage.removeItem(demoRoleKey);
     if (!demo) {
       const auth = browserAuth()?.auth;
       if (!auth) throw new Error('Authentication is unavailable.');
@@ -113,6 +116,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
       }
     }
     generation.current++; verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out');
+    if(demo)window.location.assign('/demo');
   };
   const setSmeId = (id: string) => {
     const membership = identity?.memberships.find(m => m.role === 'sme' && m.sme_id === id);

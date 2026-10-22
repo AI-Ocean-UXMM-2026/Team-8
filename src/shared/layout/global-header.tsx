@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import {demoRoleKey} from '../../features/auth/demo-access';
 import {LanguageMenu,ProfileMenu} from './account-menu';
 import {usePathname} from 'next/navigation';
 import {useEffect,useState} from 'react';
@@ -12,6 +13,8 @@ export function GlobalHeader(){
  useEffect(()=>{try{setCollapsed(localStorage.getItem('parcelcare.sidebar.collapsed')==='true')}catch{}},[]);
  useEffect(()=>{document.documentElement.classList.toggle('sidebarCollapsed',collapsed);try{localStorage.setItem('parcelcare.sidebar.collapsed',String(collapsed))}catch{}},[collapsed]);
  useEffect(()=>{const toggle=()=>{if(window.innerWidth<768)document.querySelector<HTMLButtonElement>('.warehouseMenuToggle,#workspaceMenu')?.click();else setCollapsed(v=>!v)};window.addEventListener('parcelcare:toggle-sidebar',toggle);return()=>window.removeEventListener('parcelcare:toggle-sidebar',toggle)},[]);
- const manager=pathname==='/demo/workspace'||pathname.startsWith('/demo/manager');
- return <header className={`globalHeader ${demo?'globalHeaderDemo':''}`}><button className="sidebarToggle" aria-label={collapsed?'Expand sidebar':'Collapse sidebar'} aria-expanded={!collapsed} onClick={()=>{if(window.innerWidth<768){const menu=document.querySelector<HTMLButtonElement>('.warehouseMenuToggle,#workspaceMenu');menu?.click();}else setCollapsed(v=>!v)}}><ListIcon size={22}/></button><div id="workspace-controls">{manager&&<><select aria-label="Workspace" value="manager" onChange={e=>window.location.assign('/demo/'+e.target.value)}><option value="manager">Manager</option><option value="warehouse">Warehouse</option><option value="sme">SME</option><option value="courier">Courier</option></select><span>Warehouse · Yangon Hub</span><div className="topAccount"><ProfileMenu role="Manager" actorId="Demo account" context="Warehouse · Yangon Hub" accountHref="/demo/manager/account" signOut={async()=>{window.location.assign('/login')}}/></div></>}</div><div className="topUtilities">{demo&&<Link href="/demo" className="globalDemoBadge">Demo Data</Link>}<LanguageMenu/></div></header>;
+ const [demoManager,setDemoManager]=useState(false);
+ useEffect(()=>{try{setDemoManager(sessionStorage.getItem(demoRoleKey)==='manager')}catch{setDemoManager(false)}},[pathname]);
+ const manager=demoManager&&(pathname==='/demo/workspace'||pathname.startsWith('/demo/manager'));
+ return <header className={`globalHeader ${demo?'globalHeaderDemo':''}`}><button className="sidebarToggle" aria-label={collapsed?'Expand sidebar':'Collapse sidebar'} aria-expanded={!collapsed} onClick={()=>{if(window.innerWidth<768){const menu=document.querySelector<HTMLButtonElement>('.warehouseMenuToggle,#workspaceMenu');menu?.click();}else setCollapsed(v=>!v)}}><ListIcon size={22}/></button><div id="workspace-controls">{manager&&<><span>Manager</span><Link className="hidden text-sm text-brand underline md:inline-flex" href="/demo">Change demo role</Link><span>Warehouse · Yangon Hub</span><div className="topAccount"><ProfileMenu role="Manager" actorId="Demo account" context="Warehouse · Yangon Hub" accountHref="/demo/manager/account" signOut={async()=>{sessionStorage.removeItem(demoRoleKey);window.location.assign('/demo')}}/></div></>}</div><div className="topUtilities">{demo&&<Link href="/demo" className="globalDemoBadge">Demo Data</Link>}<LanguageMenu/></div></header>;
 }

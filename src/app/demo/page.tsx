@@ -1,2 +1,2 @@
-import {redirect} from 'next/navigation';
-export default function Page(){redirect('/demo/warehouse')}
+import {DemoSelection} from '../../features/auth/demo-gate';
+export default function Page(){return <DemoSelection/>;}

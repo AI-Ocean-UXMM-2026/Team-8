@@ -12,7 +12,7 @@ try{
  browser=await chromium.launch({headless:true});
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),errors=[];
  page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000);page.on('pageerror',e=>errors.push(e.message));
- await page.goto(origin+'/demo/sme');
+ await page.goto(origin+'/demo');await page.getByRole('button',{name:'Enter SME demo',exact:true}).click();
  await page.getByRole('link',{name:/Report Cases ·/}).first().waitFor();
  await page.getByRole('button',{name:'Expand sidebar'}).or(page.getByRole('button',{name:'Collapse sidebar'})).click();
  await page.getByRole('navigation',{name:'SME',exact:true}).getByRole('link',{name:'Report Cases',exact:true}).click();
@@ -43,7 +43,7 @@ try{
  await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/sme-report-cases-mobile.png',fullPage:true});
  await page.goto(origin+'/demo/sme/orders');await page.getByRole('heading',{name:'Delivery orders',exact:true}).waitFor();
  await page.getByText('No orders yet').waitFor();
- await page.goto(origin+'/demo/courier');
+ await page.goto(origin+'/demo');await page.getByRole('button',{name:'Enter Rider demo',exact:true}).click();
  const cards=page.locator('.courierDeliveryCard');await cards.first().waitFor();
  await cards.nth(0).getByRole('button',{name:/Report issue/}).click();
  assert.equal(await page.locator('#report-issue').getByRole('button',{name:/Report issue/}).isEnabled(),false);
