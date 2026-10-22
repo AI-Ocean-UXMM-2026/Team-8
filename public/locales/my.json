@@ -1063,5 +1063,7 @@
   "View your shipments": "မိမိပို့ဆောင်မှုများ ကြည့်ရန်",
   "Review related cases": "ဆက်စပ်ကိစ္စများ စစ်ဆေးရန်",
   "Replay demo movement": "နမူနာရွေ့လျားမှု ပြန်စရန်",
-  "Demo route completed — replay available": "နမူနာလမ်းကြောင်း ပြီးဆုံးပါပြီ — ပြန်စနိုင်သည်"
+  "Demo route completed — replay available": "နမူနာလမ်းကြောင်း ပြီးဆုံးပါပြီ — ပြန်စနိုင်သည်",
+  "Map tiles are unavailable. Route and GPS data may still update. Check your connection.": "မြေပုံပုံရိပ်များ မရနိုင်ပါ။ လမ်းကြောင်းနှင့် GPS ဒေတာ ဆက်ပြောင်းနိုင်သည်။ အင်တာနက်စစ်ပါ။",
+  "GPS requires an online secure connection and location permission.": "GPS အတွက် အင်တာနက်၊ လုံခြုံသောချိတ်ဆက်မှုနှင့် တည်နေရာခွင့်ပြုချက် လိုသည်။"
 }
