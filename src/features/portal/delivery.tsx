@@ -55,7 +55,8 @@ export function DeliveryWorkspace({ id }: { id: string }) {
     {data.capacity.map(c=><Card key={c.id} className="my-4"><h2 className="font-semibold">Capacity confirmed</h2><p className="mt-2">{dateTime(c.scheduled_at)} · Yangon</p><p className="mt-2">{c.instructions}</p></Card>)}
     {audience==='rider'&&!external&&!terminal&&<CourierRoute key={id} shipmentId={id} accepted={!!assignment?.accepted_at}/>}
     {audience==='rider'&&assignment?.picked_up_at&&!external&&!terminal&&<LocationSharing assignmentId={assignment.id}/>}
-    {audience==='rider'&&assignment?.accepted_at&&!external&&!terminal&&!demo&&<RiderIssueReport key={assignment.id} shipmentId={id} evidence={shipment.evidence} refresh={resource.reload}/>}
+    {audience==='rider'&&assignment&&!external&&!terminal&&!assignment.accepted_at&&<Card id="report-issue" className="my-5"><h2 className="font-semibold">Report issue · ပြဿနာတင်ရန်</h2><p className="mt-3">Report တင်ရန် assignment ကို အရင်လက်ခံပါ။ · Accept this assignment before reporting.</p></Card>}
+    {audience==='rider'&&assignment?.accepted_at&&!external&&!terminal&&<RiderIssueReport key={assignment.id} shipmentId={id} evidence={shipment.evidence} refresh={resource.reload}/>}
     {audience==='warehouse'&&shipment.direction==='outbound'&&!terminal&&<DestinationPicker key={id} shipmentId={id}/>}
     <EvidenceUpload shipmentId={id} refresh={resource.reload}/>
     {!terminal&&!demo&&<Card className="my-5"><h2 className="text-lg font-semibold">Delivery action</h2>{command.result&&<p role="status" className="my-3">Saved: {human(command.result.shipment.status)}</p>}{(error||command.error)&&<p role="alert" className="my-3">{error||command.error}</p>}{command.pending&&<Button disabled={command.busy} onClick={()=>void command.execute()}>Retry original delivery request</Button>}

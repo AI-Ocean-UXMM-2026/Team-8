@@ -5,7 +5,7 @@ import {usePathname} from 'next/navigation';
 import {useEffect,useState} from 'react';
 import {ListIcon,PackageIcon,HouseIcon,MapPinIcon,WarningCircleIcon,GearIcon,TruckIcon,ClockIcon} from '@phosphor-icons/react';
 
-export function NavLabel({name,count}:{name:string;count?:number}){const Icon=({Overview:HouseIcon,Inventory:PackageIcon,Shipments:TruckIcon,'GPS tracking':MapPinIcon,'Open cases':WarningCircleIcon,'Admin settings':GearIcon,'Case deadlines':ClockIcon,'My deliveries':TruckIcon} as Record<string,typeof HouseIcon>)[name]||PackageIcon;return <><span className="navIcon" aria-hidden="true"><Icon size={20}/>{count!==undefined&&count>0&&<span className="warehouseCaseCount">{count>99?'99+':count}</span>}</span><span className="navText">{name}</span></>;}
+export function NavLabel({name,count}:{name:string;count?:number}){const Icon=({Overview:HouseIcon,Inventory:PackageIcon,Shipments:TruckIcon,'GPS tracking':MapPinIcon,'Report Cases':WarningCircleIcon,'Delivery Orders':TruckIcon,'Open cases':WarningCircleIcon,'Admin settings':GearIcon,'Case deadlines':ClockIcon,'My deliveries':TruckIcon} as Record<string,typeof HouseIcon>)[name]||PackageIcon;return <><span className="navIcon" aria-hidden="true"><Icon size={20}/>{count!==undefined&&count>0&&<span className="warehouseCaseCount">{count>99?'99+':count}</span>}</span><span className="navText">{name}</span></>;}
 export function GlobalHeader(){
  const pathname=usePathname(),demo=pathname==='/demo'||pathname.startsWith('/demo/');
  const [collapsed,setCollapsed]=useState(false);

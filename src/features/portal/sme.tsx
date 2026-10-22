@@ -24,7 +24,7 @@ export function SMEDashboard() {
   if (!resource.data) return <Loading />;
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
-    {!demo&&<Card className="mb-5"><h2 className="text-lg font-semibold">Send warehouse stock to a customer</h2><Link className="mt-3 inline-flex min-h-11 items-center text-brand underline" href="/sme/orders">Create delivery order · ပို့ဆောင်ရန် အော်ဒါတင်မည် →</Link></Card>}
+    <Card className="mb-5"><h2 className="text-lg font-semibold">Send warehouse stock to a customer</h2><Link className="mt-3 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/orders':'/sme/orders'}>Create delivery order · ပို့ဆောင်ရန် အော်ဒါတင်မည် →</Link><Link className="mt-3 flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/reports':'/sme/reports'}>Report Cases · ပြဿနာတင်ရန်နှင့် ကြည့်ရန် →</Link></Card>
     <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
       {label:'Products',value:data.inventory.length,href:'#sme-stock',action:'View your stock'},
       {label:'Shipments',value:data.shipments.length,href:'#sme-shipments',action:'View your shipments'},
@@ -34,12 +34,12 @@ export function SMEDashboard() {
     <div className="smeDashboardGrid">
     <Card id="sme-stock"><h2 className="text-lg font-semibold">Your stock</h2>{data.inventory.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Your stock"><table className="smeTable"><thead><tr><th scope="col">Product</th><th scope="col">SKU</th><th scope="col">Available</th><th scope="col">On hold</th></tr></thead><tbody>{data.inventory.map(item=><tr key={item.id}><td data-user-content>{item.name}</td><td data-user-content>{item.sku}</td><td>{item.available_qty}</td><td>{item.quarantined_qty}</td></tr>)}</tbody></table></div> : <Empty text="No products recorded yet." />}</Card>
     <Card id="sme-shipments"><h2 className="text-lg font-semibold">Shipments</h2>{data.shipments.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments"><table className="smeTable"><thead><tr><th scope="col">Reference</th><th scope="col">Direction</th><th scope="col">Status</th></tr></thead><tbody>{data.shipments.map(item=><tr key={item.id}><td>{demo&&item.direction==='inbound'?<span>{item.reference}</span>:<Link className="text-brand underline" href={demo?'/demo/sme/tracking':`/sme/shipments/${item.id}`}>{item.reference}</Link>}</td><td>{human(item.direction)}</td><td><ShipmentStatus status={item.status}/></td></tr>)}</tbody></table></div> : <Empty text="No shipments yet." />}</Card>
-    <Card className="smeCases" id="sme-cases"><h2 className="text-lg font-semibold">Cases</h2>{data.cases.length ? <ul className="smeCaseGrid">{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`/sme/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty text="No cases yet." />}</Card>
+    <Card className="smeCases" id="sme-cases"><h2 className="text-lg font-semibold">Report Cases · ပြဿနာများ</h2><Link className="inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/reports':'/sme/reports'}>New report / View all cases →</Link>{data.cases.length ? <ul className="smeCaseGrid">{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`${demo?'/demo/sme':'/sme'}/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty text="No cases yet." />}</Card>
     </div></>;
 }
 
 export function SMECase({ id }: { id: string }) {
-  const { api, smeId } = useSession();
+  const { api, smeId, demo } = useSession();
   const resource = usePolling(`${smeId}:${id}`, async signal => {
     const raw = await api!.getCase(id,signal);
     if (!('version' in raw) || raw.id !== id || raw.sme_id !== smeId) throw new ApiError(403,'FORBIDDEN','Case unavailable for this SME.');
@@ -50,7 +50,7 @@ export function SMECase({ id }: { id: string }) {
   const detail = resource.data;
   return <><PageTitle title={human(detail.type)} my="မိမိလုပ်ငန်း ကိစ္စအသေးစိတ်" /><CasePanels item={caseView(detail)} />
     {detail.approvals.filter((a): a is typeof a & Approval => typeof a.id === 'string' && typeof a.case_id === 'string' && Array.isArray(a.options)).map((approval) => <DecisionForm key={approval.id} approval={approval} refresh={resource.reload} />)}
-    <CaseControls detail={detail} refresh={resource.reload} sme /><EvidenceUpload shipmentId={detail.shipment_id} refresh={resource.reload} />
+    {!demo&&<CaseControls detail={detail} refresh={resource.reload} sme />}<EvidenceUpload shipmentId={detail.shipment_id} refresh={resource.reload} />
     <Card><h2 className="font-semibold">Evidence downloads</h2>{detail.evidence.filter((e): e is typeof e & {id:string} => e.uploaded === true && typeof e.id === 'string').map(e=><div className="mt-3" key={e.id}><EvidenceDownload id={e.id} /></div>)}</Card></>;
 }
 

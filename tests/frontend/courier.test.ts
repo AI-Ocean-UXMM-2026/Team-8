@@ -68,7 +68,54 @@ test('routing decoder preserves ORS longitude/latitude and rejects bad or mislea
  for(const patch of [{coordinates:[[181,0],[96,16]]},{coordinates:[]},{duration_ms:NaN},{traffic_aware:true},{provider:'unknown'}])assert.throws(()=>checkedRoute({...route,...patch}));
 });
 import {createSmeTrackingMockTransport} from '../../src/shared/api/sme-tracking-mock';
-test('SME GPS preview exposes only its own shipments and never supplies live GPS or writes',async()=>{
+
+test('SME reports are scoped, survive reload and replay without duplicate cases or delivery changes',async()=>{
+ const storage=store(),api=createApiClient(createSmeTrackingMockTransport(storage)),who=await api.getMe();
+ const sme=who.memberships[0].sme_id!,overview=await api.getSMEOverview(sme),shipment=overview.shipments[0];
+ const body={shipment_id:shipment.id,stage:'outbound' as const,type:'delivery_failed' as const,note:'Unable to deliver to customer',evidence_ids:[]};
+ const operation=key(),reported=await api.reportCase(body,operation);
+ assert.equal(reported.sme_id,sme);
+ const reload=createApiClient(createSmeTrackingMockTransport(storage));
+ assert.deepEqual(await reload.reportCase(body,operation),reported);
+ assert.equal((await reload.getSMEOverview(sme)).cases.length,1);
+ assert.equal((await reload.getTrackingShipment(shipment.id)).status,shipment.status);
+ assert.equal((await reload.getCase(reported.id)).id,reported.id);
+ await assert.rejects(reload.reportCase({...body,note:'Different'},operation),(e:ApiError)=>e.status===409);
+ await assert.rejects(reload.reportCase({...body,shipment_id:'10000000-0000-4000-8000-000000000020'},key()),(e:ApiError)=>e.status===403);
+ await assert.rejects(reload.reportCase({...body,evidence_ids:[key()]},key()),(e:ApiError)=>e.status===422);
+ await assert.rejects(reload.reportCase({...body,note:'   '},key()),(e:ApiError)=>e.status===422);
+ const failed=createApiClient(createSmeTrackingMockTransport({getItem:storage.getItem,setItem:()=>{throw Error('full');}}));
+ await assert.rejects(failed.reportCase({...body,type:'recipient_unavailable'},key()));
+ assert.equal((await failed.getSMEOverview(sme)).cases.length,1);
+});
+
+test('SME demo orders reserve own stock, replay once and release stock on cancellation',async()=>{
+ const storage=store(),api=createApiClient(createSmeTrackingMockTransport(storage)),membership=(await api.getMe()).memberships[0];
+ const sme=membership.sme_id!,warehouse=membership.warehouse_id,overview=await api.getSMEOverview(sme),item=overview.inventory.find(i=>i.available_qty>0)!;
+ const body={warehouse_id:warehouse,sme_id:sme,customer_name:'Demo recipient',customer_phone:'0912345678',address:'Yangon',notes:'Call on arrival',maps_url:'',latitude:16.8,longitude:96.15,lines:[{product_id:item.id,expected_qty:1}]};
+ const operation=key(),order=await api.submitOrder(body,operation);
+ const reload=createApiClient(createSmeTrackingMockTransport(storage));
+ assert.equal((await reload.submitOrder(body,operation)).id,order.id);
+ assert.equal((await reload.listOrders(warehouse,sme)).length,1);
+ assert.equal((await reload.getSMEOverview(sme)).inventory.find(i=>i.id===item.id)!.available_qty,item.available_qty-1);
+ await assert.rejects(reload.submitOrder({...body,sme_id:key()},key()),(e:ApiError)=>e.status===403);
+ await reload.actOnOrder(order.id,warehouse,{action:'cancel'},key());
+ assert.equal((await reload.getSMEOverview(sme)).inventory.find(i=>i.id===item.id)!.available_qty,item.available_qty);
+});
+
+test('both rider report reasons require accepted own assignments and preserve shipment status',async()=>{
+ const api=createApiClient(createCourierMockTransport(store())),assignments=await api.listRiderAssignments();
+ for(const type of ['delivery_failed','recipient_unavailable'] as const){
+  const body={kind:'report' as const,type,note:'Delivery issue confirmed',evidence_ids:[]};
+  await assert.rejects(api.recordCourierAction(assignments[0].shipment_id,body,{idempotencyKey:key()}),(e:ApiError)=>e.status===422);
+  await assert.rejects(api.recordCourierAction(key(),body,{idempotencyKey:key()}),(e:ApiError)=>e.status===403);
+  const id=assignments[1].shipment_id,before=await api.getCourierDelivery(id),operation=key();
+  const result=await api.recordCourierAction(id,body,{idempotencyKey:operation});
+  assert.equal(result.kind,'report');assert.deepEqual(await api.recordCourierAction(id,body,{idempotencyKey:operation}),result);
+  assert.equal((await api.getCourierDelivery(id)).shipment.status,before.shipment.status);
+ }
+});
+test('SME preview exposes only its own shipments and never supplies live GPS',async()=>{
  const transport=createSmeTrackingMockTransport(),api=createApiClient(transport),identity=await api.getMe(),membership=identity.memberships[0];
  assert.equal(membership.role,'sme');
  const overview=await api.getSMEOverview(membership.sme_id!);
