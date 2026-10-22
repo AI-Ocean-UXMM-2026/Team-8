@@ -135,3 +135,20 @@ test('independent browser snapshots share authoritative demo progress and SME su
  command('settings',{live_gps_enabled:false,demo_simulation_enabled:true});command('reset');assert.equal(hub.read(now).state.step,0);
  assert.throws(()=>checkedDemoPacket({...hub.read(now),state:{step:99}}));
 });
+
+import {previewRole,previewState} from '../../src/shared/api/delivery-preview';
+test('delivery preview defaults to SME and keeps all role actions separate',()=>{
+ assert.equal(previewRole(undefined),'sme');assert.equal(previewRole('owner'),'sme');assert.equal(previewRole('courier'),'courier');
+ const state={stage:'transit' as const,ready:true,busy:false,moving:false,step:1,canArrive:false,enabled:true};
+ assert.equal(previewState({role:'courier',...state}).canMove,true);
+ for(const role of ['warehouse','sme'] as const){const p=previewState({role,...state});assert.equal(p.canMove,false);assert.equal(p.canArrive,false);assert.equal(p.canReceive,false);}
+ const arrived={...state,stage:'arrived' as const,canArrive:true};assert.equal(previewState({role:'sme',...arrived}).canReceive,true);assert.equal(previewState({role:'warehouse',...arrived}).canReceive,false);
+ for(const patch of [{ready:false},{busy:true},{enabled:false}])assert.equal(previewState({role:'sme',...arrived,...patch}).canReceive,false);
+ assert.equal(previewState({role:'courier',...state,canArrive:true}).canArrive,true);
+ assert.equal(previewState({role:'courier',...state,moving:true}).canMove,false);
+ assert.equal(previewState({role:'sme',...arrived,stage:'delivered'}).canReceive,false);
+});
+
+test('shared demo restart has a new epoch even when its revision resets',()=>{
+ const a=createDemoHub(),b=createDemoHub();assert.notEqual(a.read().epoch,b.read().epoch);assert.equal(b.read().revision,0);assert.ok(checkedDemoPacket(b.read()));
+});
