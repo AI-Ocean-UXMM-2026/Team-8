@@ -25,6 +25,8 @@
     "test:sme-workspace": "node scripts/check-sme-workspace.mjs",
     "test:categorization:database": "node supabase/tests/categorization.test.mjs",
     "test:categorization:ui": "node scripts/check-categorization-ui.mjs",
+    "test:sla:database": "node supabase/tests/sla.test.mjs",
+    "test:sla:ui": "node scripts/check-sla-ui.mjs",
     "test:office": "node scripts/check-office.mjs",
     "test:portals": "node scripts/check-portals.mjs",
     "test:maps": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/maps.test.js"

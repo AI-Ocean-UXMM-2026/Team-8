@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createApiClient, createLiveTransport, ApiError, type ApiClient, type Schemas } from '../../shared/api';
+import { loadWorkspaceIdentity } from '../../shared/api/identity';
 import { browserAuth } from './browser-client';
 import { cleanupSession } from '../../shared/session/cleanup';
 
@@ -24,6 +25,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
   useEffect(() => {
     let active = true;
     let unsubscribe = () => {};
+    let identityRequest:AbortController|null=null;
     verifiedActor.current = null;
     setStatus('loading');
     const accept = (client: ApiClient, who: Schemas['IdentityResponse']) => {
@@ -55,11 +57,12 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
       const check = async () => {
         if (!active) return;
         const run = ++generation.current;
+        identityRequest?.abort();const request=new AbortController();identityRequest=request;
         try {
           const result = await auth!.auth.getSession();
           if (result.error) throw result.error;
           if (!result.data.session) { if (active && run === generation.current) { verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out'); } return; }
-          const who = await client.getMe();
+          const who = await loadWorkspaceIdentity(signal=>client.getMe(signal),{signal:request.signal});
           if (active && run === generation.current) accept(client, who);
         } catch (error) {
           if (active && run === generation.current) { verifiedActor.current = null; setIdentity(null); setApi(null); setStatus(error instanceof ApiError && error.status === 403 ? 'forbidden' : error instanceof ApiError && error.status === 401 ? 'signed_out' : 'unavailable'); }
@@ -70,6 +73,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
         if (!active) return;
         generation.current++;
         if (event === 'SIGNED_OUT' || !session) {
+          identityRequest?.abort();
           verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out');
           return;
         }
@@ -84,7 +88,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
       await check();
     }
     start().catch(() => { if (active) setStatus('unavailable'); });
-    return () => { active = false; generation.current++; unsubscribe(); };
+    return () => { active = false; generation.current++; identityRequest?.abort(); unsubscribe(); };
   }, [demo, audience, attempt]);
   const setWarehouseId = (id: string) => {
     if (identity?.memberships.some(m => m.warehouse_id === id && ['owner', 'staff'].includes(m.role))) setWarehouse(id);

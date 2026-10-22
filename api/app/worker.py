@@ -7,7 +7,7 @@ from .features.ai.service import OpenAIInvestigator, OpenAIChecker, run_job
 
 
 class WorkerDatabase:
-    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_stage', 'analysis_finish', 'run_retention'}
+    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_stage', 'analysis_finish', 'run_retention', 'run_sla_escalations'}
 
     def __init__(self, client):
         self.client = client
@@ -32,6 +32,7 @@ def main():
     while True:
         # No raw coordinates, tokens, complaint text or provider errors are logged.
         if time.monotonic() >= maintenance_at:
+            database.rpc('run_sla_escalations', {})
             database.rpc('run_retention', {'p_hours': settings.location_retention_hours})
             maintenance_at = time.monotonic() + settings.maintenance_interval_seconds
         for job in database.rpc('analysis_pending', {}):

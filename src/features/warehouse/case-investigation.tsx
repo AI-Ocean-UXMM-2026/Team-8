@@ -7,6 +7,7 @@ import { Badge, Button, Card } from '../../shared/ui';
 import { type WarehouseCase, type WarehouseCaseAction } from '../../shared/api/case-workflow';
 import { useCommand } from './command';
 import { dateTime, ErrorPanel, human, Loading, PageTitle, useResource } from './shared';
+import { CaseSLAPanel } from '../sla/sla';
 import { CaseDetail } from './case-detail';
 
 export function CaseInvestigation({ id }: { id: string }) {
@@ -17,6 +18,7 @@ export function CaseInvestigation({ id }: { id: string }) {
   if (!resource.data) return <Loading />;
   return <><Link href={`${base}/exceptions`} className="text-sm text-brand underline">← Open cases</Link>
     <PageTitle title="Case investigation" my="အမှုစုံစမ်းစစ်ဆေးမှု" description={id} />
+    <CaseSLAPanel id={id}/>
     <CaseActions key={`${warehouseId}:${id}`} detail={resource.data} refresh={resource.reload} />
     <details className="mt-6 rounded-xl border bg-white p-5"><summary className="cursor-pointer font-semibold">Evidence, analysis and verification</summary><div className="mt-5"><CaseDetail id={id} embedded onChanged={resource.reload} /></div></details>
   </>;

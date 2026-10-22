@@ -3781,6 +3781,402 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/sla/policies": {
+      "get": {
+        "tags": [
+          "SLA policies"
+        ],
+        "summary": "Policies",
+        "operationId": "policies_api_sla_policies_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SLAPolicies"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/sla/policies/{case_type}/{priority}": {
+      "post": {
+        "tags": [
+          "SLA policies"
+        ],
+        "summary": "Save",
+        "operationId": "save_api_sla_policies__case_type___priority__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "quantity_mismatch",
+                "damaged_goods",
+                "missing_stock",
+                "wrong_pick",
+                "short_pick",
+                "courier_delay",
+                "delivery_failed",
+                "recipient_unavailable",
+                "transit_damage",
+                "transit_loss"
+              ],
+              "type": "string",
+              "title": "Case Type"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "low",
+                "normal",
+                "high",
+                "critical"
+              ],
+              "type": "string",
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SLACommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SLAPolicy"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/sla/cases": {
+      "get": {
+        "tags": [
+          "SLA policies"
+        ],
+        "summary": "Cases",
+        "operationId": "cases_api_sla_cases_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "flag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "at_risk",
+                "overdue",
+                "escalated"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Flag"
+            }
+          },
+          {
+            "name": "include_closed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Closed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SLAPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/sla/cases/{case_id}": {
+      "get": {
+        "tags": [
+          "SLA policies"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_sla_cases__case_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSLA"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/sla/cases/{case_id}/response": {
+      "post": {
+        "tags": [
+          "SLA policies"
+        ],
+        "summary": "Respond",
+        "operationId": "respond_api_sla_cases__case_id__response_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SLAResponseCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSLA"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/evidence/reservations": {
       "post": {
         "tags": [
@@ -5590,6 +5986,190 @@
         ],
         "title": "CaseReview"
       },
+      "CaseSLA": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "quantity_mismatch",
+              "damaged_goods",
+              "missing_stock",
+              "wrong_pick",
+              "short_pick",
+              "courier_delay",
+              "delivery_failed",
+              "recipient_unavailable",
+              "transit_damage",
+              "transit_loss"
+            ],
+            "title": "Type"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "critical"
+            ],
+            "title": "Priority"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "case_status": {
+            "type": "string",
+            "title": "Case Status"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "first_response_due_at": {
+            "type": "string",
+            "title": "First Response Due At"
+          },
+          "resolution_due_at": {
+            "type": "string",
+            "title": "Resolution Due At"
+          },
+          "first_response_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Response At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "first_response_flag": {
+            "type": "string",
+            "enum": [
+              "on_track",
+              "at_risk",
+              "overdue",
+              "met",
+              "breached",
+              "not_required"
+            ],
+            "title": "First Response Flag"
+          },
+          "resolution_flag": {
+            "type": "string",
+            "enum": [
+              "on_track",
+              "at_risk",
+              "overdue",
+              "met",
+              "breached"
+            ],
+            "title": "Resolution Flag"
+          },
+          "first_response_minutes": {
+            "type": "integer",
+            "title": "First Response Minutes"
+          },
+          "resolution_minutes": {
+            "type": "integer",
+            "title": "Resolution Minutes"
+          },
+          "at_risk_percent": {
+            "type": "integer",
+            "title": "At Risk Percent"
+          },
+          "policy_revision": {
+            "type": "integer",
+            "title": "Policy Revision"
+          },
+          "response_escalated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Escalated At"
+          },
+          "resolution_escalated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Escalated At"
+          },
+          "manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Id"
+          },
+          "server_now": {
+            "type": "string",
+            "title": "Server Now"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "warehouse_id",
+          "type",
+          "priority",
+          "summary",
+          "case_status",
+          "started_at",
+          "first_response_due_at",
+          "resolution_due_at",
+          "first_response_at",
+          "resolved_at",
+          "first_response_flag",
+          "resolution_flag",
+          "first_response_minutes",
+          "resolution_minutes",
+          "at_risk_percent",
+          "policy_revision",
+          "response_escalated_at",
+          "resolution_escalated_at",
+          "manager_id",
+          "server_now"
+        ],
+        "title": "CaseSLA"
+      },
       "CategoryOptions": {
         "properties": {
           "categories": {
@@ -6439,6 +7019,191 @@
           "consent"
         ],
         "title": "RouteRequest"
+      },
+      "SLACommand": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "first_response_minutes": {
+            "type": "integer",
+            "maximum": 43200.0,
+            "minimum": 1.0,
+            "title": "First Response Minutes"
+          },
+          "resolution_minutes": {
+            "type": "integer",
+            "maximum": 43200.0,
+            "minimum": 1.0,
+            "title": "Resolution Minutes"
+          },
+          "at_risk_percent": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 50.0,
+            "title": "At Risk Percent",
+            "default": 80
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "first_response_minutes",
+          "resolution_minutes"
+        ],
+        "title": "SLACommand"
+      },
+      "SLAPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaseSLA"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "server_now": {
+            "type": "string",
+            "title": "Server Now"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor",
+          "server_now"
+        ],
+        "title": "SLAPage"
+      },
+      "SLAPolicies": {
+        "properties": {
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/SLAPolicy"
+            },
+            "type": "array",
+            "title": "Policies"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "manager_count": {
+            "type": "integer",
+            "title": "Manager Count"
+          },
+          "scheduler_last_run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduler Last Run"
+          },
+          "server_now": {
+            "type": "string",
+            "title": "Server Now"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policies",
+          "can_edit",
+          "manager_count",
+          "scheduler_last_run",
+          "server_now"
+        ],
+        "title": "SLAPolicies"
+      },
+      "SLAPolicy": {
+        "properties": {
+          "case_type": {
+            "type": "string",
+            "enum": [
+              "quantity_mismatch",
+              "damaged_goods",
+              "missing_stock",
+              "wrong_pick",
+              "short_pick",
+              "courier_delay",
+              "delivery_failed",
+              "recipient_unavailable",
+              "transit_damage",
+              "transit_loss"
+            ],
+            "title": "Case Type"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "critical"
+            ],
+            "title": "Priority"
+          },
+          "first_response_minutes": {
+            "type": "integer",
+            "title": "First Response Minutes"
+          },
+          "resolution_minutes": {
+            "type": "integer",
+            "title": "Resolution Minutes"
+          },
+          "at_risk_percent": {
+            "type": "integer",
+            "title": "At Risk Percent"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_type",
+          "priority",
+          "first_response_minutes",
+          "resolution_minutes",
+          "at_risk_percent",
+          "revision"
+        ],
+        "title": "SLAPolicy"
+      },
+      "SLAResponseCommand": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 5,
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "note"
+        ],
+        "title": "SLAResponseCommand"
       },
       "SavedSuggestion": {
         "properties": {

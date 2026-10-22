@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button, Card, Input } from '../../shared/ui';
 import { browserAuth } from './browser-client';
 import { createApiClient, createLiveTransport } from '../../shared/api';
+import { loadWorkspaceIdentity } from '../../shared/api/identity';
 import { workspacePath } from './roles';
 
 class SignInError extends Error {}
@@ -16,9 +17,12 @@ export function Login() {
   useEffect(() => { setReady(true);setCourier(new URLSearchParams(window.location.search).get('next')==='/courier'); }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [progress,setProgress]=useState('');
+  const identityRequest=useRef<AbortController|null>(null);
+  useEffect(()=>()=>identityRequest.current?.abort(),[]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (lock.current) return;
-    lock.current = true; setBusy(true); setError('');
+    lock.current = true; setBusy(true); setError('');setProgress('Checking your sign-in…');
     const data = new FormData(event.currentTarget);
     try {
       const auth = browserAuth();
@@ -34,7 +38,9 @@ export function Login() {
       }
       const origin = window.location.origin;
       const api = createApiClient(createLiveTransport({ baseUrl: origin, timeoutMs: 75_000, getAccessToken: async () => result.data.session?.access_token ?? null }));
-      const identity = await api.getMe().catch(error => { throw new SignInError(safeError(error)); });
+      identityRequest.current=new AbortController();
+      setProgress('Connecting to your workspace. The free server may need up to two minutes to start…');
+      const identity = await loadWorkspaceIdentity(signal=>api.getMe(signal),{signal:identityRequest.current.signal,onWaiting:()=>setProgress('The workspace server is starting. Retrying automatically; please keep this page open…')}).catch(error=>{throw new SignInError(safeError(error));});
       const destination = workspacePath(identity.memberships);
       if (!destination) throw new SignInError('Your account has no active workspace. Please contact your operator.');
       const next=new URLSearchParams(window.location.search).get('next');
@@ -52,6 +58,7 @@ export function Login() {
     <form onSubmit={submit} className="mt-6" aria-busy={busy}><fieldset disabled={!ready || busy} className="space-y-4">
       <div><label htmlFor="email" className="mb-2 block text-sm">Email</label><Input id="email" name="email" type="email" autoComplete="username" required disabled={busy} /></div>
       <div><label htmlFor="password" className="mb-2 block text-sm">Password</label><Input id="password" name="password" type="password" autoComplete="current-password" required disabled={busy} /></div>
+      {busy&&<p role="status" className="text-sm text-muted">{progress}</p>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <Button type="submit" className="w-full" disabled={!ready || busy}>{!ready ? 'Preparing sign-in…' : busy ? 'Signing in…' : 'Sign in'}</Button>
     </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href={courier?'/demo/courier':'/demo'}>Explore the demo</Link></p>

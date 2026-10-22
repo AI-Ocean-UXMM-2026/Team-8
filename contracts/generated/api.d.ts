@@ -723,6 +723,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sla/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Policies */
+        get: operations["policies_api_sla_policies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sla/policies/{case_type}/{priority}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save */
+        post: operations["save_api_sla_policies__case_type___priority__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sla/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cases */
+        get: operations["cases_api_sla_cases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sla/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_sla_cases__case_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sla/cases/{case_id}/response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Respond */
+        post: operations["respond_api_sla_cases__case_id__response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/evidence/reservations": {
         parameters: {
             query?: never;
@@ -1462,6 +1547,69 @@ export interface components {
              */
             basis: string;
         };
+        /** CaseSLA */
+        CaseSLA: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "quantity_mismatch" | "damaged_goods" | "missing_stock" | "wrong_pick" | "short_pick" | "courier_delay" | "delivery_failed" | "recipient_unavailable" | "transit_damage" | "transit_loss";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "low" | "normal" | "high" | "critical";
+            /** Summary */
+            summary: string;
+            /** Case Status */
+            case_status: string;
+            /** Started At */
+            started_at: string;
+            /** First Response Due At */
+            first_response_due_at: string;
+            /** Resolution Due At */
+            resolution_due_at: string;
+            /** First Response At */
+            first_response_at: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /**
+             * First Response Flag
+             * @enum {string}
+             */
+            first_response_flag: "on_track" | "at_risk" | "overdue" | "met" | "breached" | "not_required";
+            /**
+             * Resolution Flag
+             * @enum {string}
+             */
+            resolution_flag: "on_track" | "at_risk" | "overdue" | "met" | "breached";
+            /** First Response Minutes */
+            first_response_minutes: number;
+            /** Resolution Minutes */
+            resolution_minutes: number;
+            /** At Risk Percent */
+            at_risk_percent: number;
+            /** Policy Revision */
+            policy_revision: number;
+            /** Response Escalated At */
+            response_escalated_at: string | null;
+            /** Resolution Escalated At */
+            resolution_escalated_at: string | null;
+            /** Manager Id */
+            manager_id: string | null;
+            /** Server Now */
+            server_now: string;
+        };
         /** CategoryOptions */
         CategoryOptions: {
             /** Categories */
@@ -1760,6 +1908,68 @@ export interface components {
              * @constant
              */
             consent: true;
+        };
+        /** SLACommand */
+        SLACommand: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** First Response Minutes */
+            first_response_minutes: number;
+            /** Resolution Minutes */
+            resolution_minutes: number;
+            /**
+             * At Risk Percent
+             * @default 80
+             */
+            at_risk_percent: number;
+        };
+        /** SLAPage */
+        SLAPage: {
+            /** Items */
+            items: components["schemas"]["CaseSLA"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Server Now */
+            server_now: string;
+        };
+        /** SLAPolicies */
+        SLAPolicies: {
+            /** Policies */
+            policies: components["schemas"]["SLAPolicy"][];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Manager Count */
+            manager_count: number;
+            /** Scheduler Last Run */
+            scheduler_last_run: string | null;
+            /** Server Now */
+            server_now: string;
+        };
+        /** SLAPolicy */
+        SLAPolicy: {
+            /**
+             * Case Type
+             * @enum {string}
+             */
+            case_type: "quantity_mismatch" | "damaged_goods" | "missing_stock" | "wrong_pick" | "short_pick" | "courier_delay" | "delivery_failed" | "recipient_unavailable" | "transit_damage" | "transit_loss";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "low" | "normal" | "high" | "critical";
+            /** First Response Minutes */
+            first_response_minutes: number;
+            /** Resolution Minutes */
+            resolution_minutes: number;
+            /** At Risk Percent */
+            at_risk_percent: number;
+            /** Revision */
+            revision: number;
+        };
+        /** SLAResponseCommand */
+        SLAResponseCommand: {
+            /** Note */
+            note: string;
         };
         /** SavedSuggestion */
         SavedSuggestion: {
@@ -4042,6 +4252,184 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CategoryState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    policies_api_sla_policies_get: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SLAPolicies"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_api_sla_policies__case_type___priority__post: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_type: "quantity_mismatch" | "damaged_goods" | "missing_stock" | "wrong_pick" | "short_pick" | "courier_delay" | "delivery_failed" | "recipient_unavailable" | "transit_damage" | "transit_loss";
+                priority: "low" | "normal" | "high" | "critical";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SLACommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SLAPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cases_api_sla_cases_get: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+                cursor?: string | null;
+                limit?: number;
+                flag?: "all" | "at_risk" | "overdue" | "escalated";
+                include_closed?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SLAPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_sla_cases__case_id__get: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseSLA"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    respond_api_sla_cases__case_id__response_post: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SLAResponseCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseSLA"];
                 };
             };
             /** @description Validation Error */
