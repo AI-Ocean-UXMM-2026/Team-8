@@ -1,5 +1,7 @@
 # ParcelCare — Team-8
 
+Independent AI maker–checker: [workflow, configuration and testing](docs/AI-MAKER-CHECKER.md).
+
 Current product requirements: [Standard PRD (Word)](ParcelCare_Standard_PRD.docx) · [Readable Markdown copy](ParcelCare%20PRD.md).
 
 Project repository: **AI-Ocean-UXMM-2026/Team-8**. Continue all development here. English and Myanmar interface modes are available from the language bar; the choice persists locally. See [report UX and language modes](docs/REPORT-UX-LANGUAGES.md) for preview links, localization rules and verification.

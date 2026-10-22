@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { testOperations } from './operations.test.mjs';
 import { testCases } from './cases.test.mjs';
+import { testMakerChecker } from './maker-checker.test.mjs';
 import { testWorkflows } from './workflows.test.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -47,6 +48,7 @@ try {
  await admin.query(await readFile(path.join(root,'tests/native-smoke.sql'),'utf8'));
  await testOperations(admin);
  await testCases(admin);
+ await testMakerChecker(admin);
  await testWorkflows(admin);
  const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
  const actor=randomUUID(),product=randomUUID(),corr=randomUUID();
@@ -57,12 +59,12 @@ try {
  for(let i=0;i<2;i++){const c=new pg.Client(config);await c.connect();clients.push(c);}
  const sql='select public.ops_command($1,$2,$3,$4,$5::jsonb,$6) result';
  const args=(kind,id,body,key=randomUUID())=>[w,kind,key,id,JSON.stringify(body),corr];
- const begin=async c=>{await c.query('begin');await c.query('set local role authenticated');await c.query("select set_config('request.jwt.claim.sub',$1,true)",[actor]);};
+ const begin=async(c,role='authenticated')=>{await c.query('begin');await c.query(role==='service_role'?'set local role service_role':'set local role authenticated');await c.query("select set_config('request.jwt.claim.sub',$1,true)",[actor]);};
  const invoke=async(kind,id,body,key)=>{await begin(clients[0]);try{const r=(await clients[0].query(sql,args(kind,id,body,key))).rows[0].result;await clients[0].query('commit');return r;}catch(e){await clients[0].query('rollback');throw e;}};
  const create=async(direction='inbound',qty=100)=>invoke('create',null,{sme_id:sme,reference:randomUUID(),direction,delivery_mode:direction==='inbound'?null:'in_house',lines:[{product_id:product,expected_qty:qty}]});
  const receipt=(qty,version=1)=>({expected_version:version,final:true,lines:[{product_id:product,received_qty:qty,damaged_qty:0}],evidence_ids:[],notes:'Verified race count'});
- async function race(a,b,statement=sql) {
-  await begin(clients[0]);await begin(clients[1]);
+ async function race(a,b,statement=sql,role='authenticated') {
+  await begin(clients[0],role);await begin(clients[1],role);
   try {
    const first=(await clients[0].query(statement,a)).rows[0].result;
    const second=clients[1].query(statement,b).then(r=>({result:r.rows[0].result}),e=>({error:e}));
@@ -120,6 +122,24 @@ try {
  assert.equal((await admin.query('select count(*)::int n from public.exception_cases where shipment_id=$1',[caseShipment.id])).rows[0].n,1);
  assert.equal((await admin.query('select count(*)::int n from public.case_events where case_id=$1',[first.id])).rows[0].n,2);
  console.log('PASS NATIVE: simultaneous same-issue reports match one active case and append both reports');
+ // Two real worker connections finish the same checked proposal concurrently.
+ const aiCase=(await admin.query("select to_jsonb(c)||jsonb_build_object('source_version',private.case_source(c)) result from public.exception_cases c where id=$1",[first.id])).rows[0].result;
+ await begin(clients[0]);
+ const queued=(await clients[0].query(caseSQL,['analyze',aiCase.id,randomUUID(),JSON.stringify({expected_version:aiCase.version,source_version:aiCase.source_version,note:'Check records',evidence_ids:[]}),corr])).rows[0].result;
+ await clients[0].query('commit');
+ await admin.query("update public.resolution_policies set rules=jsonb_set(rules,'{ai_auto_actions}','[\"save_summary\"]') where sme_id=$1",[sme]);
+ const snapshot=(await admin.query('select public.analysis_claim($1) result',[queued.job_id])).rows[0].result;
+ const maker={policy_id:snapshot.policy_id,model:'race-maker',provider_response_id:'maker-'+queued.job_id,proposal_hash:'a'.repeat(64),configuration:{fake:true},input_tokens:10,output_tokens:10,
+  output:{exception_type:'quantity_mismatch',priority:aiCase.priority,summary:'Independent checked summary',evidence_ids:[],recommended_action:'save_summary',requires_human:false,missing_information:[]}};
+ await admin.query("select public.analysis_stage($1,$2,'checker',$3::jsonb)",[queued.job_id,snapshot.lease_token,JSON.stringify(maker)]);
+ const pair={maker,checker:{model:'race-checker',provider_response_id:'checker-'+queued.job_id,configuration:{fake:true},input_tokens:10,output_tokens:10,
+  output:{verdict:'approved',source_version:snapshot.source_version,proposal_hash:maker.proposal_hash,evidence_supported:true,classification_correct:true,priority_correct:true,action_authorized:true,findings:[]}},checker_error:null};
+ const finishArgs=[queued.job_id,snapshot.lease_token,JSON.stringify(pair)];
+ [first,next]=await race(finishArgs,finishArgs,'select public.analysis_finish($1,$2,$3::jsonb,null) result','service_role');
+ assert.equal(first.execution_status,'executed');assert.deepEqual(next.result,first);
+ assert.equal((await admin.query('select count(*)::int n from public.ai_analyses where job_id=$1',[queued.job_id])).rows[0].n,1);
+ assert.equal((await admin.query("select count(*)::int n from public.action_executions where case_id=$1 and execution_origin='ai_maker_checker'",[aiCase.id])).rows[0].n,1);
+ console.log('PASS NATIVE: simultaneous worker finishes execute a checked proposal exactly once');
  console.log('Native concurrency and operations passed on '+(await admin.query('select version()')).rows[0].version);
 } finally {
  await Promise.all(clients.map(c=>c.end()));await admin.end();if(embedded)await embedded.stop();

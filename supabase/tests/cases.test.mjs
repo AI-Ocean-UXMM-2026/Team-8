@@ -67,13 +67,15 @@ export async function testCases(db) {
  assert.equal((await one('select public.analysis_claim($1) result',[job])).result,null);
  await fail(()=>q('select public.analysis_finish($1,$2,null,$3)',[job,randomUUID(),'timeout']),'stale_version');
  await q('select public.analysis_finish($1,$2,null,$3)',[job,snapshot.lease_token,'timeout']);
- assert.equal((await one('select status from public.analysis_jobs where id=$1',[job])).status,'queued');
- await q("update public.analysis_jobs set available_at=now()-interval '1 second' where id=$1",[job]);
+ assert.equal((await one('select status from public.analysis_jobs where id=$1',[job])).status,'failed');
+ await user(staff,async()=>{analysisCase=await read(analysisCase.id);job=(await command('analyze',analysisCase.id,body(analysisCase))).job_id;});
  snapshot=(await one('select public.analysis_claim($1) result',[job])).result;
- const result={policy_id:snapshot.policy_id,model:'provider-test',input_tokens:20,output_tokens:10,configuration:{fake:true},provider_response_id:'fake-response',
+ const maker={policy_id:snapshot.policy_id,model:'provider-test',input_tokens:20,output_tokens:10,configuration:{fake:true},provider_response_id:'fake-response',proposal_hash:'a'.repeat(64),
   output:{exception_type:'missing_stock',priority:'normal',summary:'Recorded shortage 10',evidence_ids:[evidence],recommended_action:'escalate',requires_human:true,missing_information:[]}};
+ await q("select public.analysis_stage($1,$2,'checker',$3::jsonb)",[job,snapshot.lease_token,JSON.stringify(maker)]);
+ const result={maker,checker:{model:'checker-test',provider_response_id:'checker-response',configuration:{fake:true},output:{verdict:'approved',source_version:snapshot.source_version,proposal_hash:maker.proposal_hash,evidence_supported:true,classification_correct:true,priority_correct:true,action_authorized:true,findings:[]}},checker_error:null};
  await q('select public.analysis_finish($1,$2,$3::jsonb,null)',[job,snapshot.lease_token,JSON.stringify(result)]);
  assert.equal((await one('select status from public.analysis_jobs where id=$1',[job])).status,'completed');
  await user(customer,async()=>{assert.equal((await read(analysisCase.id)).analyses.length,0);});
- console.log('PASS AI: durable claim lease, timeout retry, staff-only model persistence and authoritative shortage 10');
+ console.log('PASS AI: durable lease, failure routes to review, independent checker and staff-only persistence');
 }
