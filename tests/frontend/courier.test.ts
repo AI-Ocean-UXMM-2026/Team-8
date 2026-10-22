@@ -78,3 +78,24 @@ test('SME GPS preview exposes only its own shipments and never supplies live GPS
  await assert.rejects(api.getTrackingShipment('10000000-0000-4000-8000-000000000020'),(e:ApiError)=>e.status===403);
  await assert.rejects(api.startTracking(crypto.randomUUID()),(e:ApiError)=>e.status===403);
 });
+import {demoRouteSnapshot,setDemoRouteSharing,demoShipmentId} from '../../src/shared/api/demo-route';
+import {checkedSharedRoute} from '../../src/shared/api/route';
+test('demo route movement is shared across role views, stops at its last example point, and is never real GPS',()=>{
+ const storage=store(),start=100000;
+ assert.equal(demoRouteSnapshot(storage,start).sharing,false);
+ setDemoRouteSharing(storage,true,start);
+ assert.equal(demoRouteSnapshot(storage,start+8000).index,2);
+ assert.deepEqual(demoRouteSnapshot(storage,start+8000).coordinates,demoRouteSnapshot(storage,start).coordinates);
+ setDemoRouteSharing(storage,false,start+8000);
+ assert.equal(demoRouteSnapshot(storage,start+90000).index,2);assert.equal(demoRouteSnapshot(storage,start+90000).sharing,false);
+ assert.equal(demoRouteSnapshot(storage,start+90000).position.length,2);
+});
+test('shared route decoder binds saved geometry and destination to the requested shipment',()=>{
+ const id=crypto.randomUUID(),route={provider:'openrouteservice',profile:'car',coordinates:[[96.1,16.8],[96.2,16.9]],distance_m:1200,duration_ms:180000,traffic_aware:false,destination_source:'courier_selected',shipment_id:id,assignment_id:crypto.randomUUID(),saved_at:new Date().toISOString(),expires_at:new Date(Date.now()+86400000).toISOString(),origin:[96.1,16.8],destination:[96.2,16.9]};
+ assert.equal(checkedSharedRoute(route,id)?.shipment_id,id);assert.equal(checkedSharedRoute(null,id),null);
+ for(const patch of [{shipment_id:crypto.randomUUID()},{destination:[200,16]},{origin:null},{expires_at:'bad'},{assignment_id:'invalid'}])assert.throws(()=>checkedSharedRoute({...route,...patch},id));
+});
+test('courier shared demo shipment uses the same reference and id as warehouse and SME',async()=>{
+ const api=createApiClient(createCourierMockTransport(store()));
+ assert.ok((await api.listRiderAssignments()).some(a=>a.shipment_id===demoShipmentId&&a.reference==='PC-OUT-0003'));
+});

@@ -2,12 +2,12 @@ import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import {ApiError,type Transport,type ApiRequest,type Schemas} from './transport';
 import type {CourierDelivery,RiderAssignment} from './courier';
 const uid=(n:number)=>`20000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-const key='parcelcare.courier.demo.v1',actor=uid(99),warehouse=fixture.body.directory.warehouse_id;
+const key='parcelcare.courier.demo.v2',actor=uid(99),warehouse=fixture.body.directory.warehouse_id;
 type State={deliveries:CourierDelivery[];cases:Array<{id:string;shipment_id:string;type:string;note:string}>;replay:Record<string,{fingerprint:string;result:unknown}>};
 export function createCourierMockTransport(storage:Pick<Storage,'getItem'|'setItem'>):Transport{
  const seed=():State=>({deliveries:[0,1,2].map(i=>{
   const shipment=structuredClone(fixture.body.shipments[2]) as Schemas['ShipmentDetail'];
-  shipment.id=uid(i+1);shipment.reference=`PC-COURIER-000${i+1}`;shipment.status=(['assigned','picked_up','in_transit'] as const)[i];shipment.version=1;
+  shipment.id=i===2?fixture.body.shipments[2].id:uid(i+1);shipment.reference=i===2?fixture.body.shipments[2].reference:`PC-COURIER-000${i+1}`;shipment.status=(['assigned','picked_up','in_transit'] as const)[i];shipment.version=1;
   shipment.evidence=[{id:uid(40+i),label:'Demo delivery evidence reference',verified:true}];shipment.evidence_ids=[uid(40+i)];shipment.allowed_events=[];
   shipment.events=[{id:uid(50+i),type:'packed',notes:'Demo fixture: warehouse packing verified.',verified_at:'2026-10-21T08:00:00Z',recorded_at:'2026-10-21T08:00:00Z',evidence_ids:[]}];
   if(i===2)shipment.events.push({id:uid(60+i),type:'dispatched',notes:'Demo fixture: warehouse dispatch verified.',verified_at:'2026-10-21T09:00:00Z',recorded_at:'2026-10-21T09:00:00Z',evidence_ids:[]});
