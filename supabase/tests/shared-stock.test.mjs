@@ -30,6 +30,7 @@ export async function testSharedStock(db){
   assert.equal((await one('select public.sme_orders_read($1,$2) r',[w,s])).r.find(o=>o.id===order.id).payload.address,'Yangon');
   await assert.rejects(()=>command(null,{...body,lines:[{product_id:legacy,expected_qty:1}]}),/invalid_product/);
   await assert.rejects(()=>command(null,{...body,lines:[{product_id:product,expected_qty:1.5}]}),/invalid_lines/);
+  await assert.rejects(()=>command(null,{...body,lines:[{product_id:product,expected_qty:1},{product_id:product.toUpperCase(),expected_qty:1}]}),/invalid_lines/);
  });
  await as(second,async()=>{
   await assert.rejects(()=>command(null,{...body,sme_id:tenant2,lines:[{product_id:product,expected_qty:4}]}),/stock_unavailable/);
@@ -95,6 +96,13 @@ export async function testSharedStock(db){
  });
  assert.deepEqual(await one('select available_qty,quarantined_qty,reserved_qty from public.products where id=$1',[product]),{available_qty:2,quarantined_qty:1,reserved_qty:0});
  assert.equal((await one('select sme_id from public.products where id=$1',[product])).sme_id,null);
+ await as(staff,async()=>{
+  const version=(await one('select version from public.products where id=$1',[product])).version;
+  const b={expected_version:version,available_delta:1,quarantined_delta:0,notes:'Verified warehouse common stock count',evidence_ids:[record.id]},k=randomUUID();
+  await q("select public.ops_command($1,'correction',$2,$3,$4::jsonb,$5)",[w,k,product,JSON.stringify(b),corr]);
+  await q("select public.ops_command($1,'correction',$2,$3,$4::jsonb,$5)",[w,k,product,JSON.stringify(b),corr]);
+ });
+ assert.equal((await one('select available_qty from public.products where id=$1',[product])).available_qty,3);
  console.log('PASS shared stock: cross-SME reservations, catalog privacy, profile authorization/snapshot/replay, legacy protection and evidenced common-stock returns');
  console.log('PASS shared stock: dispatch rollback/replay, assigned rider customer access, warehouse cancellation, third-party handover stock once');
  console.log('PASS shared stock: fresh migrations, tenant isolation, replay, overbooking, cancellation, rejection, acceptance and stock guard');

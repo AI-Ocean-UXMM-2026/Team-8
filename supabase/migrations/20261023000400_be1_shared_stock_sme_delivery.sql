@@ -1,6 +1,7 @@
 begin;
 -- Nullable ownership marks warehouse common stock. Existing rows remain untouched.
 alter table public.products alter column sme_id drop not null;
+alter table public.products add constraint products_warehouse_fkey foreign key(warehouse_id) references public.warehouses(id);
 alter table public.products add constraint products_id_warehouse_key unique(id,warehouse_id);
 create unique index products_common_sku on public.products(warehouse_id,sku) where sme_id is null;
 alter table public.shipment_items drop constraint shipment_items_product_id_warehouse_id_sme_id_fkey;
@@ -100,7 +101,7 @@ begin
    or not ((p_body->>'latitude')::numeric between -90 and 90) or not ((p_body->>'longitude')::numeric between -180 and 180)
    or jsonb_typeof(p_body->'lines') is distinct from 'array' then raise exception 'invalid_order' using errcode='22023'; end if;
   if jsonb_array_length(p_body->'lines') not between 1 and 100 or
-   (select count(*)<>count(distinct value->>'product_id') from jsonb_array_elements(p_body->'lines')) then raise exception 'invalid_lines' using errcode='22023'; end if;
+   (select count(*)<>count(distinct (value->>'product_id')::uuid) from jsonb_array_elements(p_body->'lines')) then raise exception 'invalid_lines' using errcode='22023'; end if;
   if coalesce(p_body->>'maps_url','')<>'' and (p_body->>'maps_url') !~ '^https://(maps[.]app[.]goo[.]gl/|goo[.]gl/maps/|(www[.])?google[.]com/maps([/?]|$)|maps[.]google[.]com/)[^[:space:]]+$' then raise exception 'invalid_maps_link' using errcode='22023'; end if;
   if exists(select 1 from jsonb_array_elements(p_body->'lines') x where jsonb_typeof(x->'expected_qty') is distinct from 'number' or (x->>'expected_qty')::numeric<>trunc((x->>'expected_qty')::numeric)) then raise exception 'invalid_lines' using errcode='22023'; end if;
   if p_body ? 'order_kind' and p_body->>'order_kind' is distinct from 'sme_self_delivery' then raise exception 'invalid_order_kind' using errcode='22023'; end if;
@@ -163,7 +164,7 @@ begin
   if not exists(select 1 from public.smes where id=v_sme and warehouse_id=p_warehouse)
     or p_body->>'direction' not in ('inbound','outbound') or nullif(btrim(p_body->>'reference'),'') is null
     or length(p_body->>'reference')>120 or jsonb_typeof(p_body->'lines')<>'array' or jsonb_array_length(p_body->'lines') not between 1 and 100
-    or (select count(*)<>count(distinct value->>'product_id') from jsonb_array_elements(p_body->'lines'))
+    or (select count(*)<>count(distinct (value->>'product_id')::uuid) from jsonb_array_elements(p_body->'lines'))
    then raise exception 'invalid_shipment' using errcode='22023'; end if;
   insert into public.shipments(warehouse_id,sme_id,reference,direction,delivery_mode,status)
    values(p_warehouse,v_sme,p_body->>'reference',p_body->>'direction',p_body->>'delivery_mode',
