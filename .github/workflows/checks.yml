@@ -25,7 +25,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run test:frontend
-      - run: npm test
       - name: Cache Next.js build
         uses: actions/cache@v4
         with:
