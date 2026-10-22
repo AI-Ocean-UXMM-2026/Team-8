@@ -95,7 +95,23 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
   };
   const signOut = async () => {
     await cleanupSession();
-    if (!demo) await browserAuth()?.auth.signOut({ scope: 'local' });
+    if (!demo) {
+      const auth = browserAuth()?.auth;
+      if (!auth) throw new Error('Authentication is unavailable.');
+      const current = await auth.getSession();
+      if (current.error) throw current.error;
+      if (current.data.session) {
+        // The SDK clears local state even when signOut returns an error.
+        // Verify revocation with this user's JWT first so failures remain retryable.
+        const revoked = await auth.admin.signOut(current.data.session.access_token, 'local');
+        if (revoked.error && ![401, 403, 404].includes(revoked.error.status ?? 0)) throw revoked.error;
+      }
+      const result = await auth.signOut({ scope: 'local' });
+      if (result.error) {
+        const remaining = await auth.getSession();
+        if (remaining.data.session) throw result.error;
+      }
+    }
     generation.current++; verifiedActor.current = null; setIdentity(null); setApi(null); setStatus('signed_out');
   };
   const setSmeId = (id: string) => {

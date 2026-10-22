@@ -29,7 +29,9 @@
     "test:sla:ui": "node scripts/check-sla-ui.mjs",
     "test:office": "node scripts/check-office.mjs",
     "test:portals": "node scripts/check-portals.mjs",
-    "test:maps": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/maps.test.js"
+    "test:maps": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/maps.test.js",
+    "test:maps:browser": "node scripts/check-map-sync.mjs",
+    "test:maps:live": "node scripts/check-map-live.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

@@ -62,6 +62,11 @@
     try { localStorage.setItem(key, language); } catch {}
     renderLanguage();
   });
+  window.addEventListener('parcelcare:set-language', event => {
+    language = event.detail === 'my' ? 'my' : 'en';
+    try { localStorage.setItem(key, language); } catch {}
+    renderLanguage();
+  });
   document.addEventListener('invalid', event => { const field = event.target; if (!field.setCustomValidity) return; const message = field.validity.valueMissing ? 'Fill in this field.' : field.validity.rangeUnderflow || field.validity.rangeOverflow ? 'Enter a number within the allowed range.' : 'Enter a valid value.'; field.setCustomValidity(translate(message)); }, true);
   for (const type of ['input','change']) document.addEventListener(type, event => { if (event.target.setCustomValidity) event.target.setCustomValidity(''); });
   window.addEventListener('storage', event => {if (event.key === key) {language = event.newValue === 'my' ? 'my' : 'en';renderLanguage();}});

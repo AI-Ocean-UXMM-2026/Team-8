@@ -25,7 +25,7 @@ export function useFilters() {
     // History updates immediately, so back-to-back filters include earlier changes
     // instead of reading a stale React render's search params.
     const next = new URLSearchParams(window.location.search);
-    next.delete('cursor'); if (value) next.set(key, value); else next.delete(key);
+    next.delete('cursor'); next.delete('page'); if (value) next.set(key, value); else next.delete(key);
     window.history.replaceState(null, '', `${path}${next.size ? `?${next}` : ''}`);
   } };
 }

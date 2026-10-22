@@ -6,19 +6,15 @@ try{
   const p=await browser.newPage({viewport:{width,height}}),errors=[];p.setDefaultTimeout(15000);p.on('pageerror',e=>errors.push(e.message));
   for(const language of ['en','my']){
    for(const path of ['', '/inventory','/shipments','/exceptions']){
-    await p.goto(base+'/demo/warehouse'+path);await p.locator('.warehouseLogo img').waitFor();
-    await p.locator(`#language-switch [data-language-choice=${language}]`).click();
+    await p.goto(base+'/demo/warehouse'+path);await p.locator('.warehouseLogo img').waitFor({state:'attached'});
+    await p.locator('.languageTrigger').click();await p.getByRole('menuitem',{name:language==='my'?'မြန်မာ':'English',exact:true}).click();
     await p.waitForFunction(l=>document.documentElement.lang===l,language);
-    assert.ok(await p.locator('.globalHeader').evaluate(e=>e.getBoundingClientRect().height<=34));
-    assert.equal(await p.evaluate(()=>getComputedStyle(document.body).paddingTop),'0px');
-    assert.equal(await p.locator('.warehouseNavigation a').count(),5);
+    assert.equal(await p.locator('.globalHeader').evaluate(e=>e.getBoundingClientRect().height),width<768?144:64);
+    assert.equal(await p.evaluate(()=>getComputedStyle(document.body).paddingTop),width<768?'144px':'64px');
+    assert.equal(await p.locator('.warehouseNavigation a').count(),6);
     assert.equal(await p.locator('.warehousePage>header').count(),0);
     assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    if(width<768){await p.locator('.warehouseMenuToggle').click();await p.locator('.warehouseSignOut').waitFor();}
-    const metrics=await p.locator('.warehouseSidebar').evaluate(e=>{const sidebar=e.getBoundingClientRect(),footer=e.querySelector('.warehouseSidebarFooter').getBoundingClientRect(),scroll=e.querySelector('.warehouseSidebarScroll');return{top:sidebar.top,bottom:sidebar.bottom,footerBottom:footer.bottom,scrollHeight:scroll.clientHeight}});
-    assert.ok(Math.abs(metrics.footerBottom-height)<2,JSON.stringify({width,height,language,path,metrics}));
-    assert.ok(metrics.scrollHeight>0);
-    if(width<768){await p.locator('.warehouseSignOut').focus();await p.keyboard.press('Escape');assert.equal(await p.locator('.warehouseMenuToggle').getAttribute('aria-expanded'),'false');assert.equal(await p.locator('.warehouseMenuToggle').evaluate(e=>e===document.activeElement),true);}
+    if(width<768){await p.locator('.sidebarToggle').click();await p.locator('.warehouseNavigation').waitFor({state:'visible'});await p.locator('.warehouseNavigation a').first().focus();await p.keyboard.press('Escape');assert.equal(await p.locator('.warehouseMenuToggle').getAttribute('aria-expanded'),'false');assert.equal(await p.locator('.sidebarToggle').evaluate(e=>e===document.activeElement),true);}
     else{await p.locator('.warehouseNavigation a').last().focus();assert.equal(await p.locator('.warehouseNavigation a').last().evaluate(e=>e===document.activeElement),true);}
    }
   }

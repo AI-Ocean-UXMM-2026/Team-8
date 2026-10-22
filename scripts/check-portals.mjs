@@ -109,7 +109,7 @@ try{
  await rider.page.waitForFunction(()=>document.body.textContent.includes('Location sent'));assert.equal(locations,1);
  await rider.page.getByRole('button',{name:'Stop sharing',exact:true}).click();await rider.page.getByText('Location sharing ended',{exact:false}).waitFor();assert.ok(stops>0);assert.ok(await rider.page.evaluate(()=>window.__gpsClears>0));
  assert.ok(await rider.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await rider.page.screenshot({path:'test-results/rider-delivery-mobile.png',fullPage:true});
- await rider.page.getByRole('button',{name:'Sign out',exact:true}).click();await rider.page.waitForURL(origin+'/login');await rider.page.getByRole('heading',{name:'Sign in to ParcelCare',exact:true}).waitFor();
+ await rider.page.locator('.profileTrigger').click();await rider.page.getByRole('button',{name:'Sign out',exact:true}).click();await rider.page.getByRole('dialog').getByRole('button',{name:'Sign out',exact:true}).click();await rider.page.waitForURL(origin+'/login');await rider.page.getByRole('heading',{name:'Sign in to ParcelCare',exact:true}).waitFor();
  console.log('PASS PORTAL: authenticated rider accept/pickup, explicit consent, real browser geolocation boundary, bounded location update, stop/watch cleanup, sign-out and mobile layout');
  assert.deepEqual(errors,[],'Portal runtime errors');await sme.context.close();await rider.context.close();
 }catch(error){console.error(output);if(lastPage){console.error(await lastPage.locator('body').innerText().catch(()=>''));await lastPage.screenshot({path:'test-results/portal-failure.png',fullPage:true}).catch(()=>{});}throw error;}finally{await browser?.close();server.kill();}

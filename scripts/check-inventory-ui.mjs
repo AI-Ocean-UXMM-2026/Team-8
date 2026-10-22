@@ -10,27 +10,27 @@ try{
   await p.goto(base+'/demo/warehouse/inventory');await p.getByRole('heading',{name:'Inventory',exact:true}).waitFor();
   assert.equal(await p.locator('.warehouseLogo img').evaluate(e=>e.complete&&e.naturalWidth>0),true);
   assert.equal(await p.getByText('Demo · fictitious data in this tab',{exact:true}).count(),0);
-  if(width<768)await p.locator('.warehouseMenuToggle').click();
+  if(width<768)await p.locator('.sidebarToggle').click();
   await p.locator('.warehouseCaseCount').getByText('1',{exact:true}).waitFor();
-  if(width<768)await p.locator('.warehouseMenuToggle').click();
+  if(width<768)await p.locator('.sidebarToggle').click();
   await p.getByLabel('Search inventory',{exact:true}).fill('000000000011');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,1);
   await p.getByLabel('Search inventory',{exact:true}).fill('Golden Bloom');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,2);
   await p.getByRole('button',{name:'Clear filters',exact:true}).click();await p.waitForFunction(()=>document.querySelectorAll('.inventoryTable tbody tr').length===3);
   await p.getByLabel('Stock status',{exact:true}).selectOption('out');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,1);
   await p.getByLabel('Stock status',{exact:true}).selectOption('quarantined');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,2);
   await p.getByRole('button',{name:'Clear filters',exact:true}).click();await p.waitForFunction(()=>document.querySelectorAll('.inventoryTable tbody tr').length===3);
-  await p.getByLabel('SME',{exact:true}).selectOption(fixture.directory.smes[1].id);await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,1);
+  await p.locator('#inventory-sme').selectOption(fixture.directory.smes[1].id);await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,1);
   await p.getByRole('button',{name:'Clear filters',exact:true}).click();await p.waitForFunction(()=>document.querySelectorAll('.inventoryTable tbody tr').length===3);
-  await p.getByRole('button',{name:'Canvas tote',exact:true}).click();
+  await p.getByRole('link',{name:'Canvas tote',exact:true}).click();
   await p.getByRole('heading',{name:'Stock on hold details',exact:true}).waitFor();
-  await p.getByRole('button',{name:'Close details',exact:true}).click();
-  assert.equal(await p.getByRole('button',{name:'Canvas tote',exact:true}).evaluate(e=>e===document.activeElement),true);
-  await p.locator('.inventoryTable tbody tr').first().getByRole('button',{name:'View details'}).click();
+  await p.getByRole('link',{name:'Back to list'}).click();
+  await p.locator('.inventoryTable tbody tr').first().getByRole('link',{name:'View details'}).click();
   await p.locator('.inventoryDetail').getByRole('link',{name:/courier delay/}).waitFor();
   assert.equal(await p.locator('.inventoryDetail a[href*="/shipments/"]').count(),2);
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await p.screenshot({path:`test-results/inventory-improved-${width}.png`,fullPage:true});
-  await p.locator('[data-language-choice=my]').first().click();await p.getByLabel('ပစ္စည်းစာရင်းရှာရန်',{exact:true}).waitFor();
+  await p.getByRole('link',{name:'Back to list'}).click();
+  await p.locator('.profileTrigger').waitFor();await p.locator('.languageTrigger').click();await p.getByRole('menuitem',{name:'မြန်မာ',exact:true}).click();await p.getByLabel('ပစ္စည်းစာရင်းရှာရန်',{exact:true}).waitFor();
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);await p.close();
  }
  // Seed isolated browser-only fixture to check zero badge and dynamic warning removal.

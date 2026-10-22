@@ -79,7 +79,7 @@ try {
 
   await page.goto(`${origin}/demo/warehouse/exceptions`);
   await page.getByLabel('Issue type', { exact: true }).selectOption('courier_delay');
-  await page.getByLabel('Review mode', { exact: true }).selectOption('human');
+  await page.getByLabel('Handling mode', { exact: true }).selectOption('human');
   await page.getByRole('link', { name: 'courier delay', exact: true }).waitFor();
   await page.getByLabel('Priority', { exact: true }).selectOption('critical');
   await page.getByText('No cases match these filters.', { exact: false }).waitFor();
@@ -218,7 +218,9 @@ try {
   readError = 0; identityStatus = 403; await live.goto(`${origin}/warehouse`); await live.getByRole('heading', { name: 'Warehouse access required' }).waitFor();
   identityStatus = 401; await live.goto(`${origin}/warehouse`); await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   identityStatus = 200; await live.goto(`${origin}/warehouse`); await live.getByRole('heading', { name: 'Warehouse overview' }).waitFor();
-  await live.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await live.locator('.profileTrigger').click();
+    await live.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await live.getByRole('dialog').getByRole('button', { name: 'Sign out', exact: true }).click();
   await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   await live.reload(); await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   const noJavaScript = await browser.newContext({ javaScriptEnabled: false });
@@ -240,7 +242,9 @@ try {
     await live.getByText('An active membership is required', { exact: false }).waitFor();
     await live.getByRole('link', { name: 'Go to my workspace', exact: true }).click();
     await live.waitForURL(`${origin}/${role}`);
+    await live.locator('.profileTrigger').click();
     await live.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await live.getByRole('dialog').getByRole('button', { name: 'Sign out', exact: true }).click();
     await live.waitForURL(`${origin}/login`);
   }
   assert.deepEqual(errors, [], 'Warehouse browser runtime errors');

@@ -10,7 +10,7 @@ try{for(const width of [1440,390]){
  assert.ok(page.url().endsWith('#live-courier-tracking'));
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.equal(await page.locator('.trackingTimeline li').count(),3);
- await page.locator('[data-language-choice=my]').first().click();
+ await page.locator('.languageTrigger').click();await page.getByRole('menuitem',{name:'မြန်မာ',exact:true}).click();
  await page.getByRole('heading',{name:'ပို့ဆောင်သူ၏ လက်ရှိတည်နေရာ',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  assert.deepEqual(errors,[]);await page.close();
