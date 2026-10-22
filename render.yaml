@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: parcelcare-web
+    name: parcelcare-team8
     runtime: node
     rootDir: .
     buildCommand: npm ci --include=dev && npm run build
@@ -12,20 +12,20 @@ services:
       - key: PARCELCARE_API_URL
         fromService:
           type: web
-          name: parcelcare-api
+          name: parcelcare-team8-api
           envVarKey: RENDER_EXTERNAL_URL
       - key: NEXT_PUBLIC_SUPABASE_URL
         fromService:
           type: web
-          name: parcelcare-api
+          name: parcelcare-team8-api
           envVarKey: SUPABASE_URL
       - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
         fromService:
           type: web
-          name: parcelcare-api
+          name: parcelcare-team8-api
           envVarKey: SUPABASE_PUBLIC_KEY
   - type: web
-    name: parcelcare-api
+    name: parcelcare-team8-api
     runtime: python
     rootDir: api
     buildCommand: pip install -r requirements.txt

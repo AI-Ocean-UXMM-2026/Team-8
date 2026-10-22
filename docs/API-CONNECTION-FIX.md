@@ -17,7 +17,7 @@ URL; Render settings and logs are required to identify that deployment condition
   502/503 responses as service failures. Malformed replies never authenticate a
   user or silently select demo data.
 - The Blueprint now sets frontend `PARCELCARE_API_URL` from the declared
-  `parcelcare-api` service's `RENDER_EXTERNAL_URL`. It also shares the backend's
+  `parcelcare-team8-api` service's `RENDER_EXTERNAL_URL`. It also shares the backend's
   Supabase URL and public key with the frontend. Only public configuration is
   shared; no worker, service-role or OpenAI key is exposed.
 - The local `cn` utility fix is needed for a clean production build.
@@ -46,3 +46,20 @@ responses, upstream JSON validation, and outage-to-success proxy recovery.
 
 Render references: [cross-service variables](https://render.com/docs/blueprint-spec#referencing-service-properties),
 [RENDER_EXTERNAL_URL](https://render.com/docs/environment-variables).
+
+## Live verification
+
+Render browser access was restored during this investigation. The matching
+services were identified as `parcelcare-team8` and `parcelcare-team8-api` from
+the Team-8 repository. The separate `parcelcare-api` service belongs to the
+older ParcelCare repository and is not this application's backend. The
+Blueprint names now match the verified Team-8 services.
+
+The existing frontend environment already pointed to
+`https://parcelcare-team8-api.onrender.com`; it was not changed. A cold request
+to that backend's `/health` took 52.9 seconds before returning JSON HTTP 200.
+After commit `f0141df` deployed successfully, the live frontend `/api/me`
+returned JSON HTTP 401 with `UNAUTHENTICATED` / “Session is invalid or expired”
+for an intentionally invalid diagnostic token. This confirms the API connection
+and response contract recovered. No real credentials or operational mutations
+were used; successful account-specific membership loading was not tested.
