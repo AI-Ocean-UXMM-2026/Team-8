@@ -49,7 +49,8 @@ try{
    if(scenario==='rejected'){await review.getByText('Checker: rejected',{exact:true}).waitFor();await review.getByText('Failed',{exact:true}).waitFor()}
    if(scenario==='error'){await p.getByText('Human review required: checker timeout',{exact:true}).waitFor();await review.getByText('Execution: blocked',{exact:true}).waitFor()}
    if(scenario==='legacy_unchecked')await review.getByText('This older analysis has no independent checker approval. Automatic execution is blocked.',{exact:true}).waitFor();
-   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),scenario+' overflows '+width);
+   const overflow=await p.evaluate(()=>({width:document.documentElement.scrollWidth,elements:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(-15).map(e=>({tag:e.tagName,classes:e.className,text:e.textContent.slice(0,100)}))}));
+   assert.ok(overflow.width<=width,scenario+' overflows '+width+': '+JSON.stringify(overflow));
    await p.screenshot({path:`test-results/maker-checker-${scenario}-${width}.png`,fullPage:true});
   }
  }

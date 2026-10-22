@@ -9,7 +9,7 @@
     "test:frontend": "tsc -p tests/frontend/tsconfig.json && node --test .test-build/tests/frontend/api.test.js .test-build/tests/frontend/warehouse.test.js .test-build/tests/frontend/roles.test.js .test-build/tests/frontend/courier.test.js",
     "test:warehouse": "tsc -p tests/frontend/tsconfig.json && node scripts/check-warehouse.mjs",
     "test:tracking": "tsc -p tests/frontend/tsconfig.json && node scripts/check-tracking-polling.mjs",
-    "test:maker-checker": "tsc -p tests/frontend/tsconfig.json && node scripts/check-maker-checker.mjs",
+    "test:maker-checker": "npm run prepare:ui && tsc -p tests/frontend/tsconfig.json && node scripts/check-maker-checker.mjs",
     "test:backend": "node scripts/python.mjs -m unittest discover -s api/tests -v",
     "test:database": "npm test --prefix supabase/tests",
     "check:migrations": "node scripts/check-migrations.mjs",
