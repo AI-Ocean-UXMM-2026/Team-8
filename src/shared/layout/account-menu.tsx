@@ -5,6 +5,7 @@ import {usePathname} from 'next/navigation';
 import {useEffect,useRef,useState} from 'react';
 import {Menu} from '@base-ui/react/menu';
 import {Dialog} from '@base-ui/react/dialog';
+import {localizedText} from '../i18n/text';
 import {CaretDownIcon,UserCircleIcon,SignOutIcon,SidebarSimpleIcon,XIcon,TranslateIcon,CheckIcon,MapPinIcon} from '@phosphor-icons/react';
 
 export function useMyanmar(){
@@ -35,13 +36,14 @@ export function ProfileMenu({role,actorId,context,accountHref,signOut}:ProfilePr
  const [collapsed,setCollapsed]=useState(false);
  useEffect(()=>{const update=()=>setCollapsed(document.documentElement.classList.contains('sidebarCollapsed'));update();const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});return()=>observer.disconnect()},[]);
  const t=(en:string,mm:string)=>my?mm:en;
+ const roleLabel=localizedText(role,my?'my':'en');
  const shortAccount=/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(actorId)?`…${actorId.slice(-8)}`:actorId;
  const shortContext=context.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,id=>`…${id.slice(-8)}`);
  const startSignOut=()=>{setOpen(false);setError('');setConfirm(true)};
  const toggleSidebar=()=>{window.dispatchEvent(new Event('parcelcare:toggle-sidebar'));setOpen(false)};
  const logout=async()=>{if(busy)return;setBusy(true);setError('');try{await signOut();setConfirm(false)}catch{setError(t('Unable to sign out. Please try again.','အကောင့်မှ ထွက်၍မရပါ။ ထပ်မံကြိုးစားပါ။'))}finally{setBusy(false)}};
- const identity=<div className="accountIdentity" translate="no"><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><div><strong>{role}</strong><p>{t('Account','အကောင့်')} · <span data-user-content>{shortAccount}</span></p><p className="accountContext"><MapPinIcon size={13} aria-hidden/><span data-user-content>{shortContext}</span></p></div></div>;
- const button=<><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><span className="profileRole">{role}</span><CaretDownIcon size={13} aria-hidden/></>;
+ const identity=<div className="accountIdentity" translate="no"><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><div><strong>{roleLabel}</strong><p>{t('Account','အကောင့်')} · <span data-user-content>{shortAccount}</span></p><p className="accountContext"><MapPinIcon size={13} aria-hidden/><span data-user-content>{shortContext}</span></p></div></div>;
+ const button=<><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><span className="profileRole">{roleLabel}</span><CaretDownIcon size={13} aria-hidden/></>;
  const accountLabel=t('My account','ကျွန်ုပ်၏အကောင့်'),sidebarLabel=mobile?t('Open navigation','လမ်းညွှန်မီနူး ဖွင့်ရန်'):collapsed?t('Expand sidebar','ဘေးမီနူး ဖြန့်ရန်'):t('Collapse sidebar','ဘေးမီနူး ခေါက်ရန်'),signOutLabel=t('Sign out','ထွက်ရန်');
  return <div className="profileControl" translate="no">
  {mobile?<Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Trigger disabled={!ready} ref={trigger} className="headerTrigger profileTrigger" aria-label={t('Profile','ပရိုဖိုင်')}>{button}</Dialog.Trigger><Dialog.Portal><Dialog.Backdrop className="accountBackdrop"/><Dialog.Popup className="profileDrawer" finalFocus={trigger} translate="no"><div className="drawerHeading"><Dialog.Title>{t('Profile','ပရိုဖိုင်')}</Dialog.Title><Dialog.Close className="iconButton" aria-label={t('Close profile','ပရိုဖိုင် ပိတ်ရန်')}><XIcon size={22}/></Dialog.Close></div>{identity}<Link className="accountMenuItem" href={accountHref} onClick={()=>setOpen(false)}><UserCircleIcon size={19} aria-hidden/><span className="accountActionCopy"><span>{accountLabel}</span><small>{t('Account details & access','အကောင့်နှင့် အသုံးပြုခွင့်များ')}</small></span></Link><button className="accountMenuItem" onClick={toggleSidebar}><SidebarSimpleIcon size={19} aria-hidden/>{sidebarLabel}</button><button className="accountMenuItem signOutItem" onClick={startSignOut}><SignOutIcon size={19} aria-hidden/>{signOutLabel}</button></Dialog.Popup></Dialog.Portal></Dialog.Root>:

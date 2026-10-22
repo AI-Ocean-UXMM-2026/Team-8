@@ -12,7 +12,8 @@
     text = window.ParcelCareEnglish[normalize(text)] || text;
     if (language === 'en') return text;
     const clean = normalize(text);
-    if (catalog[clean]) return text.replace(clean, catalog[clean]);
+    // Match normalized copy even when JSX splits a sentence over several lines.
+    if (catalog[clean]) return text.replace(/\S[\s\S]*\S|\S/, catalog[clean]);
     const monthNames={Jan:'ဇန်နဝါရီ',Feb:'ဖေဖော်ဝါရီ',Mar:'မတ်',Apr:'ဧပြီ',May:'မေ',Jun:'ဇွန်',Jul:'ဇူလိုင်',Aug:'ဩဂုတ်',Sep:'စက်တင်ဘာ',Oct:'အောက်တိုဘာ',Nov:'နိုဝင်ဘာ',Dec:'ဒီဇင်ဘာ'};
     let result = text.replace(/(\d{1,2}) (Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?) (\d{4})/g, (_,day,month,year)=>day+' '+monthNames[month.slice(0,3)]+' '+year).replace(/(\d+) of (\d+) reports/g, '$2 ခုအနက် $1 ခု').replace(/(\d+) reports?/g, '$1 တိုင်ကြားချက်');
     // Composed labels (counts, references, units) use the same catalog as static copy.

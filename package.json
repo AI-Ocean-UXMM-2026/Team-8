@@ -21,6 +21,7 @@
     "test": "node scripts/check-migration.mjs && node check-reports.cjs && node check-maker.cjs && node check-rules.cjs && node check-autofill.cjs && node check-priority.cjs && node check-priority-reports.cjs && node check-dashboard-workflows.cjs",
     "test:browser": "node scripts/check-browser.mjs",
     "test:report-locales": "node scripts/check-report-locales.mjs",
+    "test:localization": "node scripts/check-localization.mjs",
     "test:dashboard-workflows": "node scripts/check-dashboard-workflows.mjs",
     "test:sme-workspace": "node scripts/check-sme-workspace.mjs",
     "test:categorization:database": "node supabase/tests/categorization.test.mjs",

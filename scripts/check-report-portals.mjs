@@ -13,25 +13,25 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),errors=[];
  page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000);page.on('pageerror',e=>errors.push(e.message));
  await page.goto(origin+'/demo');await page.getByRole('button',{name:'Enter SME demo',exact:true}).click();
- await page.getByRole('link',{name:/Report Cases ·/}).first().waitFor();
+ await page.getByRole('link',{name:/Report Cases/}).first().waitFor();
  await page.getByRole('button',{name:'Expand sidebar'}).or(page.getByRole('button',{name:'Collapse sidebar'})).click();
  await page.getByRole('navigation',{name:'SME',exact:true}).getByRole('link',{name:'Report Cases',exact:true}).click();
  await page.getByText('No cases yet.').waitFor();
  const fixture=JSON.parse(await readFile('contracts/fixtures/warehouse/initial.json','utf8')).body;
  const sme=fixture.directory.smes[1].id,shipment=fixture.shipments.find(s=>s.sme_id===sme&&s.direction==='outbound');
- await page.getByLabel('Shipment ·').selectOption(shipment.id);
- await page.getByLabel('Description ·').fill('Customer cannot be contacted at delivery address.');
- await page.getByLabel('Issue ·').selectOption('recipient_unavailable');
- await page.getByRole('button',{name:/Review report ·/}).click();
+ await page.getByLabel('Select your shipment').selectOption(shipment.id);
+ await page.getByLabel('Description').fill('Customer cannot be contacted at delivery address.');
+ await page.getByLabel('Issue').selectOption('recipient_unavailable');
+ await page.getByRole('button',{name:/Review report/}).click();
  await page.getByRole('region',{name:'Report review'}).waitFor();
  // Simulate a lost acknowledgement after the adapter commits to session storage.
  await page.evaluate(()=>{
   const original=Storage.prototype.setItem;let fail=true;
   Storage.prototype.setItem=function(k,v){original.call(this,k,v);if(k==='parcelcare.sme.demo.reports.v1'&&fail){fail=false;throw Error('Lost acknowledgement');}};
  });
- await page.getByRole('button',{name:/Submit report ·/}).dblclick();
+ await page.getByRole('button',{name:/Submit report/}).dblclick();
  await page.getByRole('button',{name:'Retry same report'}).waitFor();
- await page.reload();await page.getByLabel('Shipment ·').selectOption(shipment.id);
+ await page.reload();await page.getByLabel('Select your shipment').selectOption(shipment.id);
  await page.getByRole('button',{name:'Retry same report'}).click();
  await page.waitForURL(/\/demo\/sme\/exceptions\//);
  await page.getByRole('heading',{name:'Recipient unavailable'}).waitFor();

@@ -17,9 +17,9 @@ export function DemoDeadlines() {
     <section className="slaDemoGrid" aria-label="Three example case deadlines">{examples.map(item => <Card key={item.id}>
       <div className="slaHeading"><span>{item.id}</span><Badge className={`slaFlag sla-${item.flag}`}>{item.label}</Badge></div>
       <h2 className="slaDemoTitle">{item.issue}</h2>
-      <p className="slaHint">{item.priority} priority · {item.owner}</p>
+      <p className="slaHint">{`${item.priority} priority · ${item.owner}`}</p>
       <dl className="slaDemoTargets"><div><dt>First response</dt><dd>{item.response}</dd></div><div><dt>Resolution</dt><dd>{item.resolution}</dd></div></dl>
-      <details className="slaDemoDetails"><summary>View {item.id} case details</summary><p>{item.note}</p><h3>Next action</h3><p>{item.next}</p>{item.flag === 'overdue' && <p className="slaAlert">Escalated to management · sample only</p>}</details>
+      <details className="slaDemoDetails"><summary>{`View ${item.id} case details`}</summary><p>{item.note}</p><h3>Next action</h3><p>{item.next}</p>{item.flag === 'overdue' && <p className="slaAlert">Escalated to management · sample only</p>}</details>
     </Card>)}</section>
     <p className="slaHint"><Link className="underline" href="/demo/warehouse/exceptions">Open demo cases →</Link></p>
   </div>;
