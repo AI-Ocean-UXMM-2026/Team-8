@@ -1,5 +1,7 @@
 # SME outbound delivery orders
 
+Current workflow: **Warehouse → SME**, using common warehouse stock and a saved SME delivery address. See [Shared stock and SME self-delivery](SME-SHARED-STOCK.md) for the replacement flow, migration, APIs and validation. The customer-delivery description below records the earlier implementation and is retained for legacy compatibility context.
+
 SMEs can open `/sme/orders` from the dashboard or sidebar, select their own warehouse stock, enter customer contact/address/instructions, paste a Google Maps link, confirm the delivery pin, review and submit. Link resolution supports coordinate query links and place markers. Short links follow at most five redirects, only to explicitly allowed Google Maps hosts; no credentials are forwarded. Links without a readable marker retain the form and offer place search or manual map selection. Viewport coordinates are never treated as a customer marker.
 
 Warehouse staff review requests on `/warehouse/shipments`. Accepting selects in-house or third-party delivery and atomically creates an outbound shipment with the confirmed destination. Rejection requires a reason. SMEs can cancel pending requests. Customer details, confirmed pin and the original link are available to authorized warehouse staff, the owning SME and the assigned rider on shipment screens. Existing dispatch, courier handover and tracking continue from the shipment.

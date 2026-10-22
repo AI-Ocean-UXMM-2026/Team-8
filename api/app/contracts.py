@@ -90,7 +90,7 @@ class EventEnvelope(DTO):
     event_id: UUID
     event_type: str
     warehouse_id: UUID
-    sme_id: UUID
+    sme_id: UUID | None
     entity_id: UUID
     actor_id: UUID | None
     occurred_at: AwareDatetime
@@ -195,7 +195,7 @@ class WarehouseOverview(DTO):
 class InventoryItem(DTO):
     id: UUID
     warehouse_id: UUID
-    sme_id: UUID
+    sme_id: UUID | None
     sku: str
     name: str
     available_qty: Annotated[int, Field(ge=0)]

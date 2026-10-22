@@ -1,5 +1,5 @@
 import {checkedSettings,checkedArrival,type TrackingSettings} from './tracking-control';
-import {checkedOrder,type OrderInput,type SmeOrder} from './orders';
+import {checkedOrder,checkedProfile,checkedCatalog,type DeliveryProfile,type OrderInput,type SmeOrder} from './orders';
 import {checkedRoute,checkedSharedRoute,checkedCalculatedRoute,type RouteRequest} from './route';
 import {checkedPosition} from './tracking';
 import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
@@ -31,9 +31,12 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
+    async getWarehouseCatalog(warehouseId:string,signal?:AbortSignal){return checkedCatalog(await transport<unknown>({method:'GET',path:`/api/orders/catalog${query({warehouseId})}`,signal}),warehouseId);},
+    async getSMEDeliveryProfile(warehouseId:string,smeId:string,signal?:AbortSignal){const p=await transport<unknown>({method:'GET',path:`/api/orders/delivery-profile${query({warehouseId,smeId})}`,signal});return p===null?null:checkedProfile(p);},
+    async saveSMEDeliveryProfile(warehouseId:string,smeId:string,body:DeliveryProfile){return checkedProfile(await transport<unknown>({method:'PUT',path:`/api/orders/delivery-profile${query({warehouseId,smeId})}`,body}));},
     getOrderCustomer(id:string,signal?:AbortSignal){return transport<Omit<OrderInput,'lines'|'warehouse_id'|'sme_id'>|null>({method:'GET',path:`/api/orders/shipment/${entity(id)}/customer`,signal});},
     async listOrders(warehouseId:string,smeId?:string,signal?:AbortSignal){const values=await transport<unknown>({method:'GET',path:`/api/orders${query({warehouseId,smeId})}`,signal});if(!Array.isArray(values))throw new ApiError(502,'INVALID_RESPONSE','Orders could not be verified.');return values.map(value=>{const o=checkedOrder(value);if(o.warehouse_id!==warehouseId||(smeId&&o.sme_id!==smeId))throw new ApiError(502,'INVALID_RESPONSE','Order scope could not be verified.');return o;});},
-    async submitOrder(body:OrderInput,idempotencyKey:string){const o=checkedOrder(await transport<SmeOrder>({method:'POST',path:'/api/orders',body,idempotencyKey}));if(o.warehouse_id!==body.warehouse_id||o.sme_id!==body.sme_id||o.status!=='pending')throw new ApiError(502,'INVALID_RESPONSE','Submitted order could not be verified.');return o;},
+    async submitOrder(body:OrderInput,idempotencyKey:string){const {customer_name,customer_phone,...rest}=body;const payload=body.order_kind==='sme_self_delivery'?{...rest,recipient_name:body.recipient_name??customer_name,recipient_phone:body.recipient_phone??customer_phone}:body;const o=checkedOrder(await transport<SmeOrder>({method:'POST',path:'/api/orders',body:payload,idempotencyKey}));if(o.warehouse_id!==body.warehouse_id||o.sme_id!==body.sme_id||o.status!=='pending')throw new ApiError(502,'INVALID_RESPONSE','Submitted order could not be verified.');return o;},
     async actOnOrder(id:string,warehouseId:string,body:{action:'accept'|'reject'|'cancel';delivery_mode?:'in_house'|'third_party';note?:string},idempotencyKey:string){const o=checkedOrder(await transport<SmeOrder>({method:'POST',path:`/api/orders/${entity(id)}/actions${query({warehouseId})}`,body,idempotencyKey}));if(o.id!==id||o.warehouse_id!==warehouseId||o.status!==({accept:'accepted',reject:'rejected',cancel:'cancelled'}[body.action])||(body.action==='accept'&&!o.shipment_id))throw new ApiError(502,'INVALID_RESPONSE','Order action could not be verified.');return o;},
     async getTrackingSettings(id:string){return checkedSettings(await transport<unknown>({method:'GET',path:`/api/warehouses/${entity(id)}/tracking-settings`}));},
     async setTrackingSettings(id:string,body:TrackingSettings){return checkedSettings(await transport<unknown>({method:'PUT',path:`/api/warehouses/${entity(id)}/tracking-settings`,body}));},
@@ -87,10 +90,10 @@ export function createApiClient(transport: Transport) {
     listCases(options: ListOptions & { status?: 'open' | 'all'; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string; sort?: string; slaRisk?: string; escalated?: string; stage?: string } = {}) { return transport<Schemas['CasePage']>({ method: 'GET', path: `/api/exceptions${query(options)}`, signal: options.signal }); },
     updateCaseRisk(id:string,body:Schemas['CaseRiskCommand'],key:string){return transport<Schemas['CaseDetail']>({method:'POST',path:`/api/exceptions/${entity(id)}/risk`,body,idempotencyKey:key});},
     getShipment(id: string, signal?: AbortSignal, warehouseId?: string) { return transport<Schemas['ShipmentDetail']>({ method: 'GET', path: `/api/shipments/${entity(id)}${query({ warehouseId })}`, signal }); },
+    createShipment(body: Schemas['CreateShipment'], options: Mutation) { return transport<Schemas['Shipment']>({ method: 'POST', path: '/api/shipments'+query({warehouseId:options.warehouseId}), body, ...options }); },
     recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events${query({ warehouseId: options.warehouseId })}`, body, ...options }); },
     async getWarehouseCase(id: string, warehouseId: string, signal?: AbortSignal) {
       const value = await transport<unknown>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal });
-    createShipment(body: Schemas['CreateShipment'], options: Mutation) { return transport<Schemas['Shipment']>({ method: 'POST', path: '/api/shipments'+query({warehouseId:options.warehouseId}), body, ...options }); },
       return checkedWarehouseCase(value, id, entity(warehouseId));
     },
     async recordCaseAction(id: string, body: WarehouseCaseAction, options: Mutation & { warehouseId: string }) {

@@ -89,18 +89,18 @@ test('SME reports are scoped, survive reload and replay without duplicate cases 
  assert.equal((await failed.getSMEOverview(sme)).cases.length,1);
 });
 
-test('SME demo orders reserve own stock, replay once and release stock on cancellation',async()=>{
+test('SME demo orders reserve shared warehouse stock, replay once and release stock on cancellation',async()=>{
  const storage=store(),api=createApiClient(createSmeTrackingMockTransport(storage)),membership=(await api.getMe()).memberships[0];
- const sme=membership.sme_id!,warehouse=membership.warehouse_id,overview=await api.getSMEOverview(sme),item=overview.inventory.find(i=>i.available_qty>0)!;
- const body={warehouse_id:warehouse,sme_id:sme,customer_name:'Demo recipient',customer_phone:'0912345678',address:'Yangon',notes:'Call on arrival',maps_url:'',latitude:16.8,longitude:96.15,lines:[{product_id:item.id,expected_qty:1}]};
+ const sme=membership.sme_id!,warehouse=membership.warehouse_id,catalog=await api.getWarehouseCatalog(warehouse),item=catalog.find(i=>i.available_qty>0)!;
+ const body={warehouse_id:warehouse,sme_id:sme,order_kind:'sme_self_delivery' as const,customer_name:'Demo SME shop',customer_phone:'0912345678',address:'Yangon',notes:'Call on arrival',maps_url:'',latitude:16.8,longitude:96.15,lines:[{product_id:item.id,expected_qty:1}]};
  const operation=key(),order=await api.submitOrder(body,operation);
  const reload=createApiClient(createSmeTrackingMockTransport(storage));
  assert.equal((await reload.submitOrder(body,operation)).id,order.id);
  assert.equal((await reload.listOrders(warehouse,sme)).length,1);
- assert.equal((await reload.getSMEOverview(sme)).inventory.find(i=>i.id===item.id)!.available_qty,item.available_qty-1);
+ assert.equal((await reload.getWarehouseCatalog(warehouse)).find(i=>i.id===item.id)!.available_qty,item.available_qty-1);
  await assert.rejects(reload.submitOrder({...body,sme_id:key()},key()),(e:ApiError)=>e.status===403);
  await reload.actOnOrder(order.id,warehouse,{action:'cancel'},key());
- assert.equal((await reload.getSMEOverview(sme)).inventory.find(i=>i.id===item.id)!.available_qty,item.available_qty);
+ assert.equal((await reload.getWarehouseCatalog(warehouse)).find(i=>i.id===item.id)!.available_qty,item.available_qty);
 });
 
 test('both rider report reasons require accepted own assignments and preserve shipment status',async()=>{

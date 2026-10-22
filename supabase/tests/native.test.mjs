@@ -1,3 +1,4 @@
+import {testSharedStock} from './shared-stock.test.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile, readdir, mkdtemp, mkdir, rm } from 'node:fs/promises';
@@ -52,6 +53,26 @@ try {
  await testMakerChecker(admin);
  await testWorkflows(admin);
  await testRisk(admin);
+ await testSharedStock(admin);
+ // Actual concurrent SME requests contend for the same common stock row.
+ {
+  const warehouse='10000000-0000-4000-8000-000000000001',product=randomUUID(),actors=[randomUUID(),randomUUID()];
+  const tenants=['20000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002'];
+  await admin.query("insert into public.products(id,warehouse_id,sku,name,available_qty) values($1,$2,$3,'Shared race stock',5)",[product,warehouse,product]);
+  const raceClients=[];
+  for(let i=0;i<2;i++){
+   await admin.query('insert into auth.users(id,email) values($1,$2)',[actors[i],actors[i]+'@shared-race.test']);
+   await admin.query("insert into public.profiles(id,display_name) values($1,'Shared race SME')",[actors[i]]);
+   await admin.query("insert into public.memberships(profile_id,warehouse_id,sme_id,role) values($1,$2,$3,'sme')",[actors[i],warehouse,tenants[i]]);
+   const c=new pg.Client(config);await c.connect();clients.push(c);raceClients.push(c);
+   await c.query('set role authenticated');await c.query("select set_config('request.jwt.claim.sub',$1,false)",[actors[i]]);
+  }
+  const results=await Promise.allSettled(raceClients.map((c,i)=>c.query('select public.sme_order_command($1,$2,null,$3::jsonb) r',[warehouse,randomUUID(),JSON.stringify({warehouse_id:warehouse,sme_id:tenants[i],order_kind:'sme_self_delivery',recipient_name:'Race SME',recipient_phone:'09123',address:'Yangon',latitude:16.8,longitude:96.1,lines:[{product_id:product,expected_qty:4}]})])));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  assert.equal(results.filter(r=>r.status==='rejected'&&r.reason.message.includes('stock_unavailable')).length,1);
+  assert.equal((await admin.query('select reserved_qty from public.products where id=$1',[product])).rows[0].reserved_qty,4);
+  console.log('PASS SHARED STOCK CONCURRENCY: two SMEs race for five units; one four-unit order commits and the other rolls back');
+ }
  const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
  const actor=randomUUID(),product=randomUUID(),corr=randomUUID();
  await admin.query('insert into auth.users(id,email) values($1,$2)',[actor,'race@example.test']);

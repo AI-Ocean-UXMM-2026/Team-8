@@ -1,5 +1,8 @@
 # Outbound shipment workflow
 
+Current SME order semantics: common warehouse stock is delivered **to the ordering SME**. See [SME shared stock](SME-SHARED-STOCK.md). Staff can explicitly select common or legacy SME stock; the accounting and physical-return rules below still apply.
+
+
 Warehouse staff can create an outbound shipment on `/warehouse/shipments`, select one SME's inventory, enter a reference and quantities, review, and confirm. The existing SME order acceptance path remains available. Direct creation does not reserve stock; SME orders do. Both paths check physical stock when it leaves the warehouse.
 
 For in-house delivery: set the destination, assign a rider, obtain rider acceptance, record pick and pack on shipment details, record rider pickup, then dispatch. Dispatch debits stock. Rider arrival, delivery proof and the SME's receipt confirmation remain separate gates.

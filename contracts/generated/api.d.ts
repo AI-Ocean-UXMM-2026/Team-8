@@ -860,6 +860,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["warehouseCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/delivery-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profile */
+        get: operations["getSMEDeliveryProfile"];
+        /** Save Profile */
+        put: operations["saveSMEDeliveryProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orders": {
         parameters: {
             query?: never;
@@ -1121,11 +1156,8 @@ export interface components {
              * Format: uuid
              */
             warehouse_id: string;
-            /**
-             * Sme Id
-             * Format: uuid
-             */
-            sme_id: string;
+            /** Sme Id */
+            sme_id: string | null;
             /**
              * Entity Id
              * Format: uuid
@@ -1187,11 +1219,8 @@ export interface components {
              * Format: uuid
              */
             warehouse_id: string;
-            /**
-             * Sme Id
-             * Format: uuid
-             */
-            sme_id: string;
+            /** Sme Id */
+            sme_id: string | null;
             /** Sku */
             sku: string;
             /** Name */
@@ -1828,7 +1857,7 @@ export interface components {
             /** Warehouse Id */
             warehouse_id: string;
             /** Sme Id */
-            sme_id: string;
+            sme_id: string | null;
             /** Name */
             name: string;
             /** Sku */
@@ -1928,6 +1957,8 @@ export interface components {
             status?: ("handed_over" | "delayed" | "failed" | "delivered") | null;
             /** Scheduled At */
             scheduled_at?: string | null;
+            /** Lines */
+            lines?: components["schemas"]["ReturnLine"][] | null;
         };
         /** DeliveryDestination */
         DeliveryDestination: {
@@ -1937,6 +1968,29 @@ export interface components {
             longitude: number;
             /** Label */
             label: string;
+        };
+        /** DeliveryProfile */
+        DeliveryProfile: {
+            /** Recipient Name */
+            recipient_name: string;
+            /** Recipient Phone */
+            recipient_phone: string;
+            /** Address */
+            address: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /**
+             * Maps Url
+             * @default
+             */
+            maps_url: string;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
         };
         /** EvidenceReservation */
         EvidenceReservation: {
@@ -1960,8 +2014,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-            /** Lines */
-            lines?: components["schemas"]["ReturnLine"][] | null;
         /** Me */
         Me: {
             /**
@@ -2062,20 +2114,10 @@ export interface components {
         };
         /** OrderInput */
         OrderInput: {
-            /**
-             * Warehouse Id
-             * Format: uuid
-             */
-            warehouse_id: string;
-            /**
-             * Sme Id
-             * Format: uuid
-             */
-            sme_id: string;
-            /** Customer Name */
-            customer_name: string;
-            /** Customer Phone */
-            customer_phone: string;
+            /** Recipient Name */
+            recipient_name: string;
+            /** Recipient Phone */
+            recipient_phone: string;
             /** Address */
             address: string;
             /**
@@ -2092,6 +2134,23 @@ export interface components {
             latitude: number;
             /** Longitude */
             longitude: number;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Sme Id
+             * Format: uuid
+             */
+            sme_id: string;
+            /** Order Kind */
+            order_kind?: "sme_self_delivery" | null;
+            /**
+             * Save Delivery Profile
+             * @default false
+             */
+            save_delivery_profile: boolean;
             /** Lines */
             lines: components["schemas"]["CreateLine"][];
         };
@@ -2138,6 +2197,18 @@ export interface components {
              * @default true
              */
             sme_visible: boolean;
+        };
+        /** ReturnLine */
+        ReturnLine: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Received Qty */
+            received_qty: number;
+            /** Damaged Qty */
+            damaged_qty: number;
         };
         /** ReviewCommand */
         ReviewCommand: {
@@ -2201,18 +2272,6 @@ export interface components {
              * @default unknown
              * @enum {string}
              */
-        /** ReturnLine */
-        ReturnLine: {
-            /**
-             * Product Id
-             * Format: uuid
-             */
-            product_id: string;
-            /** Received Qty */
-            received_qty: number;
-            /** Damaged Qty */
-            damaged_qty: number;
-        };
             perishability: "unknown" | "perishable" | "non_perishable";
             /** Order Value Mmk */
             order_value_mmk?: number | null;
@@ -2388,6 +2447,25 @@ export interface components {
             evidence_ids: string[];
             /** Fact */
             fact: string;
+        };
+        /** WarehouseCatalogItem */
+        WarehouseCatalogItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Available Qty */
+            available_qty: number;
         };
     };
     responses: never;
@@ -4908,6 +4986,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseSLA"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    warehouseCatalog: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarehouseCatalogItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSMEDeliveryProfile: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+                sme_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryProfile"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    saveSMEDeliveryProfile: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+                sme_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryProfile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryProfile"];
                 };
             };
             /** @description Validation Error */

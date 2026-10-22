@@ -1,3 +1,4 @@
+import {createSharedStockDemo} from './shared-stock-demo';
 import { type WarehouseCase, type WarehouseCaseAction } from './case-workflow';
 import policy from '../../../contracts/policies/v1.json';
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
@@ -41,8 +42,13 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     try { const saved = storage.getItem(storageKey); if (saved) state = JSON.parse(saved); }
     catch { fail(0, 'DEMO_STORAGE_UNAVAILABLE', 'Demo storage is unavailable. Enable storage for this tab.'); }
   }
+  const shared=createSharedStockDemo(state.data.directory.warehouse_id,null,storage);
   return async <T>(request: ApiRequest): Promise<T> => {
     validateRequest(request);
+    const managed=shared.handle(request);if(managed)return structuredClone(managed.value) as T;
+    const common=shared.snapshot();
+    for(const shipment of common.shipments)if(!state.data.shipments.some(s=>s.id===shipment.id))state.data.shipments.push(shipment);
+    for(const product of common.products)if(!state.data.inventory.some(p=>p.id===product.id))state.data.inventory.push(product);
     request.signal?.throwIfAborted();
     const url = new URL(request.path, 'https://demo.invalid');
     if (url.searchParams.has('warehouse_id') && url.searchParams.get('warehouse_id') !== state.data.directory.warehouse_id) fail(403, 'FORBIDDEN', 'Access denied.');
@@ -62,7 +68,7 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
       if (!Number.isInteger(limit) || limit < 1 || limit > 100) fail(422, 'VALIDATION_ERROR', 'Invalid page size.');
       return { items: items.slice(offset, offset + limit), next_cursor: offset + limit < items.length ? `page-${offset + limit}` : null };
     };
-    const scoped = <I extends { sme_id: string }>(items: I[]) => items.filter(item => !url.searchParams.get('sme_id') || item.sme_id === url.searchParams.get('sme_id'));
+    const scoped = <I extends { sme_id: string | null }>(items: I[]) => items.filter(item => !url.searchParams.get('sme_id') || item.sme_id === url.searchParams.get('sme_id'));
     const toShipment = (detail: Schemas['ShipmentDetail']): Schemas['Shipment'] => {
       const { items: _items, events: _events, evidence: _evidence, allowed_events: _allowed, ...shipment } = detail; return shipment;
     };
@@ -163,7 +169,8 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     if (request.method === 'POST') {
       next.replay[replayKey] = { fingerprint: fingerprint(request.body), result: structuredClone(result) };
       if (storage) { try { storage.setItem(storageKey, JSON.stringify(next)); } catch { fail(0, 'DEMO_STORAGE_UNAVAILABLE', 'Unable to save demo changes.'); } }
-      state = next;
+      shared.sync(next.data);
+    state = next;
     }
     return structuredClone(result) as T;
   };

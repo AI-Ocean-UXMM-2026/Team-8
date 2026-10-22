@@ -31,7 +31,7 @@ class SavedSuggestion(Suggestion):
 class CategoryState(Strict):
     product_id: str
     warehouse_id: str
-    sme_id: str
+    sme_id: str | None
     name: str
     sku: str
     revision: int

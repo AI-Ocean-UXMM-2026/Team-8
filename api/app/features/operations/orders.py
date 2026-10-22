@@ -2,7 +2,7 @@
 from typing import Annotated, Literal
 from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Request
-from pydantic import Field, model_validator
+from pydantic import AliasChoices, Field, model_validator
 from ...contracts import DTO
 from ...core.auth import AuthContext, current_identity
 from ..operations.models import CreateLine
@@ -12,25 +12,20 @@ router = APIRouter(prefix='/api/orders', tags=['SME orders'])
 Identity = Annotated[AuthContext, Depends(current_identity)]
 Key = Annotated[UUID, Header(alias='Idempotency-Key')]
 
-class OrderInput(DTO):
-    warehouse_id: UUID
-    sme_id: UUID
-    customer_name: Annotated[str, Field(min_length=1, max_length=120)]
-    customer_phone: Annotated[str, Field(min_length=3, max_length=40)]
+class DeliveryProfile(DTO):
+    recipient_name: Annotated[str, Field(min_length=1, max_length=120, validation_alias=AliasChoices('recipient_name', 'customer_name'))]
+    recipient_phone: Annotated[str, Field(min_length=3, max_length=40, validation_alias=AliasChoices('recipient_phone', 'customer_phone'))]
     address: Annotated[str, Field(min_length=1, max_length=500)]
     notes: Annotated[str, Field(max_length=2000)] = ''
     maps_url: Annotated[str, Field(max_length=2048)] = ''
     latitude: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
     longitude: Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
-    lines: Annotated[list[CreateLine], Field(min_length=1, max_length=100)]
 
     @model_validator(mode='after')
     def valid(self):
         from urllib.parse import urlparse
-        if not all(x.strip() for x in [self.customer_name, self.customer_phone, self.address]):
-            raise ValueError('Customer and address are required')
-        if len({x.product_id for x in self.lines}) != len(self.lines):
-            raise ValueError('Duplicate products')
+        if not all(x.strip() for x in [self.recipient_name, self.recipient_phone, self.address]):
+            raise ValueError('SME delivery contact and address are required')
         if self.maps_url:
             u = urlparse(self.maps_url)
             if u.scheme != 'https' or u.hostname not in ('maps.app.goo.gl', 'goo.gl', 'google.com', 'www.google.com', 'maps.google.com') or u.username or u.password or u.port:
@@ -40,6 +35,45 @@ class OrderInput(DTO):
             if u.hostname in ('google.com', 'www.google.com') and not (u.path == '/maps' or u.path.startswith('/maps/')):
                 raise ValueError('Use a Google Maps link')
         return self
+
+class OrderInput(DeliveryProfile):
+    warehouse_id: UUID
+    sme_id: UUID
+    order_kind: Literal['sme_self_delivery'] | None = None
+    save_delivery_profile: bool = False
+    lines: Annotated[list[CreateLine], Field(min_length=1, max_length=100)]
+
+    @model_validator(mode='after')
+    def unique_lines(self):
+        if len({x.product_id for x in self.lines}) != len(self.lines):
+            raise ValueError('Duplicate products')
+        return self
+
+class WarehouseCatalogItem(DTO):
+    id: UUID
+    warehouse_id: UUID
+    sku: str
+    name: str
+    available_qty: Annotated[int, Field(ge=0, strict=True)]
+
+@router.get('/catalog', response_model=list[WarehouseCatalogItem], operation_id='warehouseCatalog')
+def catalog(request: Request, identity: Identity, warehouse_id: UUID):
+    from ...core.errors import AppError
+    if not any(m.warehouse_id == warehouse_id and m.role in ('sme', 'staff', 'owner') for m in identity.memberships):
+        raise AppError(403, 'FORBIDDEN', 'Access denied.')
+    return call(request, identity, 'warehouse_catalog', {'p_warehouse': str(warehouse_id)})
+
+@router.get('/delivery-profile', response_model=DeliveryProfile | None, operation_id='getSMEDeliveryProfile')
+def profile(request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUID):
+    identity.require_tenant_read(warehouse_id, sme_id)
+    return call(request, identity, 'sme_delivery_profile', {'p_warehouse': str(warehouse_id), 'p_sme': str(sme_id), 'p_value': None})
+
+@router.put('/delivery-profile', response_model=DeliveryProfile, operation_id='saveSMEDeliveryProfile')
+def save_profile(body: DeliveryProfile, request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUID):
+    from ...core.errors import AppError
+    if not any(m.warehouse_id == warehouse_id and m.sme_id == sme_id and m.role == 'sme' for m in identity.memberships):
+        raise AppError(403, 'FORBIDDEN', 'Only this SME can change its delivery profile.')
+    return call(request, identity, 'sme_delivery_profile', {'p_warehouse': str(warehouse_id), 'p_sme': str(sme_id), 'p_value': body.model_dump(mode='json')})
 
 class OrderAction(DTO):
     action: Literal['accept', 'reject', 'cancel']
@@ -55,7 +89,13 @@ def orders(request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUI
 @router.post('', response_model=dict, status_code=201, operation_id='submitOrder')
 def submit(body: OrderInput, request: Request, identity: Identity, key: Key):
     identity.require_tenant_read(body.warehouse_id, body.sme_id)
-    return call(request, identity, 'sme_order_command', {'p_warehouse': str(body.warehouse_id), 'p_key': str(key), 'p_order': None, 'p_body': body.model_dump(mode='json')})
+    payload = body.model_dump(mode='json', exclude_none=True)
+    if body.order_kind is None:
+        # Existing clients and saved uncertain submissions retain their wire shape.
+        payload['customer_name'] = payload.pop('recipient_name')
+        payload['customer_phone'] = payload.pop('recipient_phone')
+        payload.pop('save_delivery_profile', None)
+    return call(request, identity, 'sme_order_command', {'p_warehouse': str(body.warehouse_id), 'p_key': str(key), 'p_order': None, 'p_body': payload})
 
 @router.post('/{order_id}/actions', response_model=dict, operation_id='actOnOrder')
 def act(order_id: UUID, body: OrderAction, request: Request, identity: Identity, key: Key, warehouse_id: UUID):

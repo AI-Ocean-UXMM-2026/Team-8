@@ -4502,6 +4502,193 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/orders/catalog": {
+      "get": {
+        "tags": [
+          "SME orders"
+        ],
+        "summary": "Catalog",
+        "operationId": "warehouseCatalog",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WarehouseCatalogItem"
+                  },
+                  "title": "Response Warehousecatalog"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/orders/delivery-profile": {
+      "get": {
+        "tags": [
+          "SME orders"
+        ],
+        "summary": "Profile",
+        "operationId": "getSMEDeliveryProfile",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "sme_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sme Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DeliveryProfile"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getsmedeliveryprofile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      },
+      "put": {
+        "tags": [
+          "SME orders"
+        ],
+        "summary": "Save Profile",
+        "operationId": "saveSMEDeliveryProfile",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "sme_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sme Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryProfile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/orders": {
       "get": {
         "tags": [
@@ -5230,9 +5417,16 @@
             "type": "string"
           },
           "sme_id": {
-            "format": "uuid",
-            "title": "Sme Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sme Id"
           },
           "entity_id": {
             "format": "uuid",
@@ -5348,8 +5542,15 @@
             "title": "Warehouse Id"
           },
           "sme_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Sme Id"
           },
           "sku": {
@@ -7019,7 +7220,14 @@
             "title": "Warehouse Id"
           },
           "sme_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Sme Id"
           },
           "name": {
@@ -7448,6 +7656,22 @@
               }
             ],
             "title": "Scheduled At"
+          },
+          "lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReturnLine"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lines"
           }
         },
         "additionalProperties": false,
@@ -7487,6 +7711,62 @@
           "label"
         ],
         "title": "DeliveryDestination"
+      },
+      "DeliveryProfile": {
+        "properties": {
+          "recipient_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Recipient Name"
+          },
+          "recipient_phone": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 3,
+            "title": "Recipient Phone"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Address"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          },
+          "maps_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Maps Url",
+            "default": ""
+          },
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "recipient_name",
+          "recipient_phone",
+          "address",
+          "latitude",
+          "longitude"
+        ],
+        "title": "DeliveryProfile"
       },
       "EvidenceReservation": {
         "properties": {
@@ -7642,22 +7922,6 @@
         "title": "Metadata"
       },
       "MetadataCommand": {
-          },
-          "lines": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ReturnLine"
-                },
-                "type": "array",
-                "maxItems": 100,
-                "minItems": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lines"
         "properties": {
           "description": {
             "type": "string",
@@ -7732,27 +7996,17 @@
       },
       "OrderInput": {
         "properties": {
-          "warehouse_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Warehouse Id"
-          },
-          "sme_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Sme Id"
-          },
-          "customer_name": {
+          "recipient_name": {
             "type": "string",
             "maxLength": 120,
             "minLength": 1,
-            "title": "Customer Name"
+            "title": "Recipient Name"
           },
-          "customer_phone": {
+          "recipient_phone": {
             "type": "string",
             "maxLength": 40,
             "minLength": 3,
-            "title": "Customer Phone"
+            "title": "Recipient Phone"
           },
           "address": {
             "type": "string",
@@ -7784,6 +8038,33 @@
             "minimum": -180.0,
             "title": "Longitude"
           },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "sme_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sme Id"
+          },
+          "order_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "sme_self_delivery"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Kind"
+          },
+          "save_delivery_profile": {
+            "type": "boolean",
+            "title": "Save Delivery Profile",
+            "default": false
+          },
           "lines": {
             "items": {
               "$ref": "#/components/schemas/CreateLine"
@@ -7797,13 +8078,13 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "warehouse_id",
-          "sme_id",
-          "customer_name",
-          "customer_phone",
+          "recipient_name",
+          "recipient_phone",
           "address",
           "latitude",
           "longitude",
+          "warehouse_id",
+          "sme_id",
           "lines"
         ],
         "title": "OrderInput"
@@ -7898,6 +8179,33 @@
           "size_bytes"
         ],
         "title": "RegisterEvidence"
+      },
+      "ReturnLine": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "received_qty": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Received Qty"
+          },
+          "damaged_qty": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Damaged Qty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "received_qty",
+          "damaged_qty"
+        ],
+        "title": "ReturnLine"
       },
       "ReviewCommand": {
         "properties": {
@@ -8166,33 +8474,6 @@
         "required": [
           "items",
           "next_cursor",
-      "ReturnLine": {
-        "properties": {
-          "product_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Product Id"
-          },
-          "received_qty": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Received Qty"
-          },
-          "damaged_qty": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Damaged Qty"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "product_id",
-          "received_qty",
-          "damaged_qty"
-        ],
-        "title": "ReturnLine"
-      },
           "server_now"
         ],
         "title": "SLAPage"
@@ -8576,6 +8857,43 @@
           "fact"
         ],
         "title": "Verification"
+      },
+      "WarehouseCatalogItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "available_qty": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Available Qty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "warehouse_id",
+          "sku",
+          "name",
+          "available_qty"
+        ],
+        "title": "WarehouseCatalogItem"
       }
     },
     "securitySchemes": {

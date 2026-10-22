@@ -35,6 +35,7 @@ try{
   if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
   assert.equal(request.headers().authorization,'Bearer '+sme.token);
   const reply=json=>route.fulfill({status:200,headers,json});
+  if(path==='/api/orders/catalog')return reply(overviewState==='empty'?[]:fixture.inventory.map(i=>({id:i.id,warehouse_id:warehouseId,name:i.name,sku:i.sku,available_qty:i.available_qty})));
   if(path==='/api/me')return reply({actor_id:ids.actor,memberships:[{warehouse_id:warehouseId,role:'sme',sme_id:smeId}]});
   if(path==='/api/sme/overview'){
    assert.equal(url.searchParams.get('sme_id'),smeId);

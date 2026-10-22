@@ -1,3 +1,4 @@
+import {createSharedStockDemo} from './shared-stock-demo';
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import {ApiError,type Transport,type ApiRequest,type Schemas,validateRequest} from './transport';
 import {checkedOrder,type SmeOrder,type OrderInput} from './orders';
@@ -8,18 +9,20 @@ type State={cases:Schemas['CaseDetail'][];orders:SmeOrder[];replay:Record<string
 const storageKey='parcelcare.sme.demo.reports.v1';
 export function createSmeTrackingMockTransport(storage?:Pick<Storage,'getItem'|'setItem'>):Transport{
  const data=structuredClone(fixture.body),warehouse=data.directory.warehouse_id,sme=data.directory.smes[1].id;
+ const shared=createSharedStockDemo(warehouse,sme,storage);
  let state:State={cases:[],orders:[],replay:{}};
  try{const saved=storage?.getItem(storageKey);if(saved)state=JSON.parse(saved);}catch{throw new ApiError(0,'DEMO_STORAGE_UNAVAILABLE','SME demo storage is unavailable.');}
  const deny=():never=>{throw new ApiError(403,'FORBIDDEN','This resource is not available in the SME preview.');};
- const ownShipment=(id:string)=>{const s=data.shipments.find(s=>s.id===id&&s.sme_id===sme);if(!s)return deny();return s;};
+ const ownShipment=(id:string)=>{const s=[...data.shipments,...shared.snapshot().shipments].find(s=>s.id===id&&s.sme_id===sme);if(!s)return deny();return s;};
  const inventory=()=>data.inventory.filter(i=>i.sme_id===sme).map(i=>({...i,available_qty:i.available_qty-state.orders.filter(o=>o.status==='pending').flatMap(o=>o.payload.lines).filter(l=>l.product_id===i.id).reduce((n,l)=>n+l.expected_qty,0)}));
  return async<T>(request:ApiRequest)=>{
   validateRequest(request);request.signal?.throwIfAborted();
+  const managed=shared.handle(request);if(managed)return structuredClone(managed.value) as T;
   const url=new URL(request.path,'https://demo.invalid'),path=url.pathname;
   let value:unknown;
   if(request.method==='GET'){
    if(path==='/api/me')value={actor_id:'10000000-0000-4000-8000-000000000098',memberships:[{warehouse_id:warehouse,sme_id:sme,role:'sme'}]};
-   else if(path==='/api/sme/overview'&&url.searchParams.get('sme_id')===sme)value={inventory:inventory(),shipments:[...demoInboundShipments(storage).filter(s=>s.sme_id===sme),...data.shipments.filter(s=>s.sme_id===sme)],cases:state.cases,approvals:[]};
+   else if(path==='/api/sme/overview'&&url.searchParams.get('sme_id')===sme)value={inventory:inventory(),shipments:[...demoInboundShipments(storage).filter(s=>s.sme_id===sme),...data.shipments.filter(s=>s.sme_id===sme),...shared.snapshot().shipments.filter(s=>s.sme_id===sme)],cases:state.cases,approvals:[]};
    else if(/^\/api\/deliveries\/[^/]+$/.test(path))value={shipment:ownShipment(path.split('/')[3]),session_id:null};
    else if(/^\/api\/exceptions\/[^/]+$/.test(path)){value=state.cases.find(c=>c.id===path.split('/')[3]);if(!value)return deny();}
    else if(path==='/api/orders'&&url.searchParams.get('warehouse_id')===warehouse&&url.searchParams.get('sme_id')===sme)value=state.orders;

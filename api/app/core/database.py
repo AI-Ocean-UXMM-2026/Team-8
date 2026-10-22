@@ -17,7 +17,7 @@ class SupabaseUserDatabase:
 
     def rpc(self, function: str, parameters: dict) -> object:
         # Call only reviewed atomic commands; no arbitrary SQL or general table writes.
-        if function not in {'receive_shipment', 'decide_approval', 'register_evidence',
+        if function not in {'warehouse_catalog', 'sme_delivery_profile', 'sme_order_command', 'sme_orders_read', 'order_customer', 'delivery_destination', 'receive_shipment', 'decide_approval', 'register_evidence',
                             'mark_notification_read', 'start_tracking', 'record_location',
                             'rider_report', 'case_queue_read', 'case_risk_command', 'tracking_settings', 'shipment_arrival',
                             'sla_policies_read', 'sla_policy_write', 'sla_cases_read', 'sla_response', 'product_category_read', 'product_category_write', 'product_category_retry', 'route_plan_read', 'route_plan_write', 'get_live_location', 'stop_tracking', 'ops_read', 'ops_command',

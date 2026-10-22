@@ -1,5 +1,8 @@
 # ParcelCare Business Rules and Workflows
 
+Approved SME flow correction: **Warehouse common stock → ordering SME**. External supplier replenishment is separate and out of scope. New shared-stock orders use saved SME delivery profiles and immutable per-order address snapshots. Legacy SME-owned stock remains isolated; this does not establish hosted deployment. See [implementation and rollout](../docs/SME-SHARED-STOCK.md).
+
+
 Analysis date: 23 October 2026 (Asia/Yangon). Scope: the local workspace at `D:/slh/proj/parcelcare`, including its current files. This is a description of implementation, not an approved business policy or a deployed-system certification.
 
 Subsequent outbound update: see [Outbound workflow](../docs/OUTBOUND-WORKFLOW.md) and migration `20261023000300_be1_outbound_returns.sql`. Direct third-party handovers now debit stock once, warehouse users can create outbound shipments and cancel external deliveries, and evidenced physical returns can restore good/quarantined stock after cancellation. The R-01 and WF-04 accounting observations below describe the earlier implementation; historical unposted handovers still require reconciliation. Direct creation still does not reserve stock, and hosted deployment is not established by these local changes.
