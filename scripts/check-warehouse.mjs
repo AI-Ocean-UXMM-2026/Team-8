@@ -19,7 +19,7 @@ let browser;let lastPage;
 try {
   let ready = false;
   for (let i = 0; i < 180; i++) {
-    try { if ((await fetch(`${origin}/api/health`)).ok) { ready = true; break; } } catch {}
+    try { if ((await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(2000) })).ok) { ready = true; break; } } catch {}
     if (server.exitCode !== null) throw new Error(output);
     await new Promise(r => setTimeout(r, 250));
   }
@@ -94,6 +94,7 @@ try {
   // including pending-submit recovery, 401/403/error/empty states. No real provider calls.
   const live = await context.newPage(); live.on('pageerror', err => errors.push(err.message));
   let identityStatus = 200; let readError = 0; let empty = false; let receiptReply = ''; let denyNextReceipt = false; let receiptCalls = 0;
+  let workspaceRole = 'staff';
   const receiptKeys = [];
   const mock = createMockTransport({ dataset: 'warehouse' });
   const user = { id: '10000000-0000-4000-8000-000000000099', aud: 'authenticated', role: 'authenticated', email: 'staff@example.test', app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: {}, created_at: new Date().toISOString() };
@@ -101,6 +102,7 @@ try {
   const token = `${Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')}.${Buffer.from(JSON.stringify({ sub: user.id, aud: 'authenticated', role: 'authenticated', exp, iat: exp - 3600 })).toString('base64url')}.fixture-signature`;
   await live.route(`${authOrigin}/**`, route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.startsWith('/rest/v1/')) return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, json: path.endsWith('/smes') ? [{ name: 'Golden Bloom' }] : [] });
     return route.fulfill({ status: path.includes('logout') ? 204 : 200, headers: { 'Access-Control-Allow-Origin': '*' }, ...(path.includes('logout') ? {} : { json: path.endsWith('/user') ? user : { access_token: token, refresh_token: 'fixture-refresh', expires_in: 3600, expires_at: exp, token_type: 'bearer', user } }) });
   });
   await live.route(`${apiOrigin}/api/**`, async route => {
@@ -109,6 +111,8 @@ try {
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { ...headers, 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } });
     assert.equal(request.headers().authorization, `Bearer ${token}`);
     if ((path === '/api/me' && identityStatus !== 200) || (readError && request.method() === 'GET' && path !== '/api/me')) return route.fulfill({ status: path === '/api/me' ? identityStatus : readError, headers, json: { error: { code: identityStatus === 403 || readError === 403 ? 'FORBIDDEN' : readError === 401 ? 'UNAUTHENTICATED' : 'SERVICE_UNAVAILABLE', message: 'Fixture access or service error.' } } });
+    if (path === '/api/sme/overview') return route.fulfill({ status: 200, headers, json: { inventory: [], shipments: [], cases: [], approvals: [] } });
+    if (path === '/api/rider/assignments') return route.fulfill({ status: 200, headers, json: [] });
     if (empty && path === '/api/inventory') return route.fulfill({ status: 200, headers, json: { items: [], next_cursor: null } });
     if (request.method() === 'POST' && path.includes('/receipts/')) {
       receiptKeys.push(request.headers()['idempotency-key']);
@@ -120,6 +124,7 @@ try {
     try {
       const body = request.postDataJSON() ?? undefined;
       const result = await mock({ method: request.method(), path: `${path}${url.search}`, body, idempotencyKey: request.headers()['idempotency-key'] });
+      if (path === '/api/me' && workspaceRole !== 'staff') return route.fulfill({ status: 200, headers, json: { ...result, memberships: [{ ...result.memberships[0], role: workspaceRole }] } });
       if (request.method() === 'POST' && path.includes('/receipts/')) {
         receiptCalls++;
         const reply = receiptReply; receiptReply = '';
@@ -214,6 +219,22 @@ try {
   assert.equal(await staticLogin.getByLabel('Email', { exact: true }).isEnabled(), false, 'Credentials must not be accepted before the sign-in handler hydrates');
   assert.equal(await staticLogin.locator('form button[type="submit"]').isDisabled(), true);
   await noJavaScript.close();
+  for (const role of ['sme', 'rider']) {
+    workspaceRole = role;
+    await live.goto(`${origin}/login`);
+    await live.getByLabel('Email', { exact: true }).fill(`${role}@example.test`);
+    await live.getByLabel('Password', { exact: true }).fill('fictitious-password');
+    await live.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await live.waitForURL(`${origin}/${role}`);
+    await live.getByRole('heading', { name: role === 'sme' ? 'SME dashboard' : 'Rider tasks', exact: true }).waitFor();
+    if (role === 'rider') await live.getByText('No active rider assignments.', { exact: true }).waitFor();
+    await live.goto(`${origin}/${role === 'sme' ? 'rider' : 'sme'}`);
+    await live.getByText('An active membership is required', { exact: false }).waitFor();
+    await live.getByRole('link', { name: 'Go to my workspace', exact: true }).click();
+    await live.waitForURL(`${origin}/${role}`);
+    await live.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await live.waitForURL(`${origin}/login`);
+  }
   assert.deepEqual(errors, [], 'Warehouse browser runtime errors');
   console.log('PASS warehouse: rapid filters, persistence, mobile/dialog accessibility, live sessions, committed receipt HTTP 408/reload/denied retry replay, malformed success recovery, dispatch and empty/401/403/503 states; no runtime errors.');
 } catch (error) {

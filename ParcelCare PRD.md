@@ -80,6 +80,10 @@ Warehouse records courier handover and tracking reference. A reported or detecte
 
 # 7. Functional requirements
 
+## MVP authentication and account provisioning
+
+Accounts for warehouse staff, SMEs, and in-house riders are provisioned by a trusted operator through Supabase, including warehouse and SME memberships. Users sign in with email and password on one login page and are routed according to verified active memberships. Users cannot assign or change their own roles. Public signup, SME business registration/approval, and in-app account management are outside the MVP scope.
+
 | ID | Requirement | Priority |
 |----|----|----|
 | FR-01 | Authorized users can view shipment, inventory context and exceptions within their organization scope. | Must |

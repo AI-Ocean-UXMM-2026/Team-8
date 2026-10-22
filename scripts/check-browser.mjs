@@ -36,7 +36,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US', timezoneId: 'Asia/Yangon' });
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(`${port}: ${error.message}`));
-    await page.goto(`http://127.0.0.1:${port}`);
+    await page.goto(`http://127.0.0.1:${port}${port === 3100 ? '/demo/workspace' : ''}`);
     await page.waitForSelector('#nav button');
     await page.waitForFunction(() => document.querySelector('#role option[value="manager"]'));
     await page.waitForTimeout(700);
