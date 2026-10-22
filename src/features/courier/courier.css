@@ -6,3 +6,5 @@
 .courierWorkspace .warehouseNavigation button[aria-current=page]:hover{background:color-mix(in srgb,var(--primary) 20%,white)}
 .courierMetrics strong{font-size:38px;line-height:1.1;font-weight:650;letter-spacing:-.03em}
 @media(max-width:600px){.courierMetrics strong{font-size:34px}}
+
+@media(min-width:768px){.sidebarCollapsed .courierScope{display:none}}
