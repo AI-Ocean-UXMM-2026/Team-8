@@ -8,9 +8,21 @@ def calculate_route(key, body):
     if not key:
         raise AppError(503, 'ROUTING_NOT_CONFIGURED', 'Route planning is not available yet. Ask your operator to finish setup. GPS tracking remains available.')
     try:
-        response = httpx.post('https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson', headers={'Authorization': key},
-            json={'coordinates': [[body.origin_longitude, body.origin_latitude],
-                  [body.destination_longitude, body.destination_latitude]], 'instructions': False}, timeout=15, follow_redirects=False)
+        for mode, profile in [('driving-car', 'car'), ('cycling-regular', 'bicycle'), ('foot-walking', 'walking')]:
+            response = httpx.post(f'https://api.heigit.org/openrouteservice/v2/directions/{mode}/geojson', headers={'Authorization': key},
+                json={'coordinates': [[body.origin_longitude, body.origin_latitude],
+                      [body.destination_longitude, body.destination_latitude]], 'instructions': False}, timeout=15, follow_redirects=False)
+            # Only a verified no-route/snap failure permits another transport mode.
+            if response.status_code in (400, 404):
+                try:
+                    code = response.json().get('error', {}).get('code')
+                except Exception:
+                    code = None
+                if code in (2009, 2010):
+                    continue
+            break
+        else:
+            raise AppError(422, 'NO_ROUTE', 'No car, bicycle or walking route found. Check the destination. No straight-line route is available.')
         if response.status_code in (401, 403):
             raise AppError(503, 'ROUTING_CONFIGURATION', 'Route planning could not connect. Ask your operator to check the routing service connection.')
         if response.status_code == 429:
@@ -31,7 +43,7 @@ def calculate_route(key, body):
         distance, duration = feature['properties']['summary']['distance'], feature['properties']['summary']['duration']
         if not all(isinstance(n, (int, float)) and not isinstance(n, bool) and math.isfinite(n) and n >= 0 for n in [distance, duration]):
             raise ValueError()
-        return {'provider': 'openrouteservice', 'profile': 'car', 'coordinates': points,
+        return {'provider': 'openrouteservice', 'profile': profile, 'coordinates': points,
                 'distance_m': distance, 'duration_ms': duration * 1000, 'traffic_aware': False,
                 'destination_source': 'courier_selected'}
     except AppError:

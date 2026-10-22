@@ -1,3 +1,4 @@
+import {checkedSettings,checkedArrival,type TrackingSettings} from './tracking-control';
 import {checkedRoute,checkedSharedRoute,checkedCalculatedRoute,type RouteRequest} from './route';
 import {checkedPosition} from './tracking';
 import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
@@ -29,6 +30,10 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
+    async getTrackingSettings(id:string){return checkedSettings(await transport<unknown>({method:'GET',path:`/api/warehouses/${entity(id)}/tracking-settings`}));},
+    async setTrackingSettings(id:string,body:TrackingSettings){return checkedSettings(await transport<unknown>({method:'PUT',path:`/api/warehouses/${entity(id)}/tracking-settings`,body}));},
+    async getArrival(id:string){return checkedArrival(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}/arrival`}),id);},
+    async confirmArrival(id:string){const value=checkedArrival(await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/arrival`,idempotencyKey:crypto.randomUUID()}),id);if(!value)throw new ApiError(502,'INVALID_RESPONSE','Arrival confirmation could not be verified.');return value;},
     async getSharedRoute(id:string,signal?:AbortSignal){return checkedSharedRoute(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}/route`,signal}),id);},
     async calculateDeliveryRoute(id:string,body:RouteRequest,signal?:AbortSignal){return checkedCalculatedRoute(await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/route`,body,idempotencyKey:crypto.randomUUID(),signal}),id);},
     async getTrackingShipment(id:string,signal?:AbortSignal){

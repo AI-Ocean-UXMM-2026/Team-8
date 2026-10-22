@@ -26,11 +26,18 @@ Date: 22 October 2026. Target: https://parcelcare-team8.onrender.com
 
 These public HTTP checks do not execute browser JavaScript and do not prove map rendering or a phone GPS journey.
 
-## Not executed / blocker
+## Deployed browser follow-up after app restart
 
-Browser-rendered desktop/mobile checks, console-error checks, authenticated route calculation, phone permission/capture, and real cross-account location delivery remain NOT RUN. The browser tool reports “Local browser use is disabled in Work settings”, even while the supplied Settings screenshot shows Browser ON. Resetting the automation session did not resolve the mismatch.
+Browser access was restored. Verified on parcelcare-team8.onrender.com:
 
-Do not report these manual cases as passed until the connection is restored and they are run.
+- SME tracking rendered OpenStreetMap tiles successfully (all four inspected tiles loaded), route and markers; console warnings/errors were empty.
+- Courier PC-OUT-0003 replay restarted the completed simulation. The cyan marker advanced; Warehouse and SME displayed the same shared simulation. Completion returned the Replay control.
+- Warehouse PC-OUT-0004 did not inherit the illustrative route or location: it displayed GPS unavailable and a neutral Yangon reference map. Switching back restored PC-OUT-0003.
+- SME zoom in/out worked. Myanmar mobile layout had no document horizontal overflow; map remained inside its container. Tablet viewport switching and returning to the normal viewport completed without map errors.
+- Courier and Warehouse captured console warning/error lists were empty.
+- Evidence: Team-8/test-results/gps-warehouse-live-browser.png.
+
+These are deployed demo-browser tests, not proof of real phone GPS or authenticated ORS routing. Real permission/capture, authenticated route calculation, cross-account GPS delivery, provider/network failures and full desktop/tablet/mobile visual QA remain NOT RUN. No precise location permission was granted or transmitted during this follow-up.
 
 ## Manual live test checklist
 

@@ -4,9 +4,10 @@ import { useSession } from '../auth/session';
 import {startWithFirstPosition,positionPayload} from '../../shared/api/location-start';
 import { ApiError } from '../../shared/api';
 import { Button, Card } from '../../shared/ui';
+import {useTrackingSettings} from './settings';
 import { registerSessionCleanup } from '../../shared/session/cleanup';
 export function LocationSharing({ assignmentId }: { assignmentId: string }) {
-  const { api,identity } = useSession(); const [consent,setConsent] = useState(false); const [sharing,setSharing] = useState(false); const [busy,setBusy] = useState(false); const [message,setMessage] = useState('');
+  const { api,identity } = useSession();const settings=useTrackingSettings(); const [consent,setConsent] = useState(false); const [sharing,setSharing] = useState(false); const [busy,setBusy] = useState(false); const [message,setMessage] = useState('');
   const watch = useRef<number | null>(null); const session = useRef<string | null>(null); const generation=useRef(0); const sending=useRef(false); const lastSent=useRef(0); const locked=useRef(false); const stopping=useRef<Promise<void>|null>(null);
   const storageKey=`parcelcare.gps.${identity!.actor_id}.${assignmentId}`;
   const clearWatch=()=>{generation.current++;if(watch.current!==null){navigator.geolocation.clearWatch(watch.current);watch.current=null;}setSharing(false);};
@@ -29,8 +30,9 @@ export function LocationSharing({ assignmentId }: { assignmentId: string }) {
     document.addEventListener('visibilitychange',pause);window.addEventListener('offline',offline);window.addEventListener('pagehide',offline);
     return ()=>{unregister();document.removeEventListener('visibilitychange',pause);window.removeEventListener('offline',offline);window.removeEventListener('pagehide',offline);void stop();};
   },[assignmentId]);
+  useEffect(()=>{if(settings.value&&!settings.value.live_gps_enabled)void stoppedMessage('Live GPS disabled by warehouse staff.');},[settings.value?.live_gps_enabled]);
   async function start() {
-    if(locked.current || !consent)return;
+    if(locked.current || !consent||!settings.value?.live_gps_enabled)return;
     if(!navigator.geolocation||!window.isSecureContext||!navigator.onLine){setMessage('GPS requires an online secure connection and location permission.');return;}
     locked.current=true;setBusy(true);setMessage('');
     try {
@@ -55,5 +57,5 @@ export function LocationSharing({ assignmentId }: { assignmentId: string }) {
     } catch(error) { await stoppedMessage(error instanceof Error ? error.message : 'Location permission denied or unavailable.'); }
     finally{locked.current=false;setBusy(false);}
   }
-  return <Card className="my-5"><h2 className="font-semibold">Share delivery location / တည်နေရာမျှဝေရန်</h2><p className="my-3 text-sm">Only while this page is visible. Leaving the page or going offline stops local capture. Your warehouse and associated SME can view the active delivery.</p><label className="block text-sm"><input type="checkbox" checked={consent} disabled={sharing || busy} onChange={e=>setConsent(e.target.checked)} /> I consent for this delivery / ဤပို့ဆောင်မှုအတွက် သဘောတူပါသည်</label><div className="my-4 flex gap-3"><Button disabled={!consent || sharing || busy} onClick={()=>void start()}>Start sharing</Button><Button variant="outline" onClick={()=>void stop()}>Stop sharing</Button></div><p role="status" className="text-sm">{sharing ? 'Sharing while visible. ' : ''}{message}</p></Card>;
+  return <Card className="my-5"><h2 className="font-semibold">Share delivery location / တည်နေရာမျှဝေရန်</h2><p className="my-3 text-sm">Only while this page is visible. Leaving the page or going offline stops local capture. Your warehouse and associated SME can view the active delivery.</p><label className="block text-sm"><input type="checkbox" checked={consent} disabled={sharing || busy} onChange={e=>setConsent(e.target.checked)} /> I consent for this delivery / ဤပို့ဆောင်မှုအတွက် သဘောတူပါသည်</label><div className="my-4 flex gap-3"><Button disabled={!consent || sharing || busy || !settings.value?.live_gps_enabled} onClick={()=>void start()}>Start sharing</Button><Button variant="outline" onClick={()=>void stop()}>Stop sharing</Button></div><p role="status" className="text-sm">{settings.error}{settings.value&&!settings.value.live_gps_enabled?'Live GPS disabled in Warehouse Admin settings. ':''}{sharing ? 'Sharing while visible. ' : ''}{message}</p></Card>;
 }

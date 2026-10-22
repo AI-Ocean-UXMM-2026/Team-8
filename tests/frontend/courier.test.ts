@@ -78,17 +78,16 @@ test('SME GPS preview exposes only its own shipments and never supplies live GPS
  await assert.rejects(api.getTrackingShipment('10000000-0000-4000-8000-000000000020'),(e:ApiError)=>e.status===403);
  await assert.rejects(api.startTracking(crypto.randomUUID()),(e:ApiError)=>e.status===403);
 });
-import {demoRouteSnapshot,setDemoRouteSharing,demoShipmentId} from '../../src/shared/api/demo-route';
+import {demoRouteSnapshot,demoShipmentId,advanceDemoRoute,confirmDemoArrival,confirmDemoReceipt,resetDemoRoute} from '../../src/shared/api/demo-route';
 import {checkedSharedRoute} from '../../src/shared/api/route';
-test('demo route movement is shared across role views, stops at its last example point, and is never real GPS',()=>{
- const storage=store(),start=100000;
- assert.equal(demoRouteSnapshot(storage,start).sharing,false);
- setDemoRouteSharing(storage,true,start);
- assert.equal(demoRouteSnapshot(storage,start+8000).index,2);
- assert.deepEqual(demoRouteSnapshot(storage,start+8000).coordinates,demoRouteSnapshot(storage,start).coordinates);
- setDemoRouteSharing(storage,false,start+8000);
- assert.equal(demoRouteSnapshot(storage,start+90000).index,2);assert.equal(demoRouteSnapshot(storage,start+90000).sharing,false);
- assert.equal(demoRouteSnapshot(storage,start+90000).position.length,2);
+test('demo moves only one road segment per click and ignores repeated clicks while moving',()=>{
+ const storage=store(),start=100000;advanceDemoRoute(storage,start);advanceDemoRoute(storage,start+100);
+ assert.equal(demoRouteSnapshot(storage,start+100).step,1);
+ assert.equal(demoRouteSnapshot(storage,start+900).moving,false);
+ assert.equal(demoRouteSnapshot(storage,start+90000).step,1);
+ assert.ok(demoRouteSnapshot(storage,start).coordinates.length>100);
+ confirmDemoArrival(storage,start+90000);confirmDemoReceipt(storage);
+ assert.equal(demoRouteSnapshot(storage,start+90000).stage,'transit');
 });
 test('shared route decoder binds saved geometry and destination to the requested shipment',()=>{
  const id=crypto.randomUUID(),route={provider:'openrouteservice',profile:'car',coordinates:[[96.1,16.8],[96.2,16.9]],distance_m:1200,duration_ms:180000,traffic_aware:false,destination_source:'courier_selected',shipment_id:id,assignment_id:crypto.randomUUID(),saved_at:new Date().toISOString(),expires_at:new Date(Date.now()+86400000).toISOString(),origin:[96.1,16.8],destination:[96.2,16.9]};
@@ -101,14 +100,22 @@ test('courier shared demo shipment uses the same reference and id as warehouse a
 });
 
 
-test('completed demo route stops sharing and can replay without clearing browser storage',()=>{
+test('arrival is yellow/pending until explicit SME receipt and reset starts a fresh demo',()=>{
  const storage=store(),start=100000;
- setDemoRouteSharing(storage,true,start);
- const completed=demoRouteSnapshot(storage,start+30000);
- assert.equal(completed.completed,true);assert.equal(completed.sharing,false);
- assert.deepEqual(completed.position,completed.destination);
- setDemoRouteSharing(storage,true,start+31000);
- const restarted=demoRouteSnapshot(storage,start+31000);
- assert.equal(restarted.completed,false);assert.equal(restarted.sharing,true);assert.equal(restarted.index,0);
- assert.equal(demoRouteSnapshot(storage,start+39000).index,2);
+ for(let i=0;i<10;i++)advanceDemoRoute(storage,start+i*1000);
+ const arrived=demoRouteSnapshot(storage,start+11000);assert.equal(arrived.completed,true);assert.equal(arrived.canArrive,true);assert.deepEqual(arrived.position,arrived.destination);
+ confirmDemoReceipt(storage);assert.equal(demoRouteSnapshot(storage,start+11000).stage,'transit');
+ confirmDemoArrival(storage,start+11000);assert.equal(demoRouteSnapshot(storage,start+11000).stage,'arrived');
+ confirmDemoReceipt(storage);assert.equal(demoRouteSnapshot(storage,start+11000).stage,'delivered');
+ advanceDemoRoute(storage,start+12000);assert.equal(demoRouteSnapshot(storage,start+12000).step,10);
+ resetDemoRoute(storage);assert.equal(demoRouteSnapshot(storage,start+12000).step,0);
+});
+
+import {checkedSettings,checkedArrival} from '../../src/shared/api/tracking-control';
+test('tracking control responses fail closed on wrong shipment, invalid coordinates or non-boolean switches',()=>{
+ const id=crypto.randomUUID();assert.equal(checkedSettings({live_gps_enabled:false,demo_simulation_enabled:true}).live_gps_enabled,false);
+ assert.throws(()=>checkedSettings({live_gps_enabled:'true',demo_simulation_enabled:true}));
+ const arrival={shipment_id:id,arrived_at:new Date().toISOString(),latitude:16.8,longitude:96.1,delivered:false};
+ assert.equal(checkedArrival(arrival,id)?.delivered,false);assert.equal(checkedArrival(null,id),null);
+ for(const patch of [{shipment_id:crypto.randomUUID()},{latitude:100},{longitude:Infinity},{arrived_at:'bad'},{delivered:'true'}])assert.throws(()=>checkedArrival({...arrival,...patch},id));
 });
