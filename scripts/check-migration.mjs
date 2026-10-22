@@ -9,7 +9,12 @@ const read = (file) => fs.readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
 const withoutBrand = html => html.replace(/<a href="(?:#|\/)"[^>]*>.*?<\/a>/s, '');
 assert.equal(withoutBrand(read('src/features/workspace/shell.html')), withoutBrand(baseline.match(/<body>(.*?)<script>/s)[1]));
 assert.equal(read('src/features/workspace/styles.css'), baseline.match(/<style>(.*?)<\/style>/s)[1]);
-assert.equal(read('src/features/workspace/runtime.js'), baseline.match(/<body>.*?<script>(.*?)<\/script>/s)[1]);
+// The empty-state illustration adds only a CSS hook; all runtime behavior stays intact.
+const runtime = read('src/features/workspace/runtime.js');
+const baselineRuntime = baseline.match(/<body>.*?<script>(.*?)<\/script>/s)[1];
+const baselineEmptyClass = 'class="text-center muted py-10">No matching orders.';
+assert.ok(baselineRuntime.includes(baselineEmptyClass), 'Baseline empty-state markup changed');
+assert.equal(runtime, baselineRuntime.replace(baselineEmptyClass, 'class="pc-legacy-empty text-center muted py-10">No matching orders.'));
 const features = {
   reports: 'reports', 'rider-map': 'deliveries', 'rule-catalog': 'policies',
   'rule-engine': 'policies', 'rule-controls': 'policies', 'priority-engine': 'priority',
