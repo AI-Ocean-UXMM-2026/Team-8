@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {spawn} from 'node:child_process';
+import {mkdir,readFile} from 'node:fs/promises';
+const fixture=JSON.parse(await readFile('contracts/fixtures/warehouse/initial.json','utf8')).body;
+const origin='http://127.0.0.1:3118',authOrigin='https://order-fixture.supabase.test';
+const server=spawn(process.execPath,['node_modules/next/dist/bin/next','dev','--webpack','-p','3118','-H','127.0.0.1'],{stdio:'pipe',env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:authOrigin,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture',NEXT_PUBLIC_PARCELCARE_API_URL:origin}});
+let output='',browser;server.stdout.on('data',c=>output+=c);server.stderr.on('data',c=>output+=c);
+const actor='10000000-0000-4000-8000-000000000099',w='10000000-0000-4000-8000-000000000001',s='10000000-0000-4000-8000-000000000002',p='10000000-0000-4000-8000-000000000003',id='10000000-0000-4000-8000-000000000004';
+try{
+ for(let i=0;i<160;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(server.exitCode!==null)throw Error(output);await new Promise(r=>setTimeout(r,250));}
+ for(const route of ['/login','/sme/orders','/warehouse/shipments'])assert.ok((await fetch(origin+route)).ok);
+ browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();page.setDefaultTimeout(30000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const user={id:actor,aud:'authenticated',role:'authenticated',email:'orders@test.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
+ const exp=Math.floor(Date.now()/1000)+3600,token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:actor,aud:'authenticated',role:'authenticated',exp,iat:exp-3600})).toString('base64url')+'.fixture';
+ await page.route(authOrigin+'/**',route=>route.fulfill({json:new URL(route.request().url()).pathname.endsWith('/user')?user:{access_token:token,refresh_token:'fixture',expires_in:3600,expires_at:exp,token_type:'bearer',user}}));
+ let order=null,lost=true,role='sme';const keys=[];
+ await page.route(origin+'/api/**',async route=>{
+  const req=route.request(),u=new URL(req.url()),path=u.pathname;
+  if(path==='/api/maps/resolve')return route.continue();
+  if(path==='/api/me')return route.fulfill({json:{actor_id:actor,memberships:[{warehouse_id:w,role,sme_id:role==='sme'?s:null}]}});
+  if(path==='/api/sme/overview')return route.fulfill({json:{inventory:[{id:p,warehouse_id:w,sme_id:s,name:'Test product',sku:'TEST',available_qty:order?7:10,quarantined_qty:0,shipment_ids:[]}],shipments:[],cases:[],approvals:[]}});
+  if(path==='/api/shipments')return route.fulfill({json:{items:[],next_cursor:null}});
+  if(path==='/api/warehouse/directory')return route.fulfill({json:fixture.directory});
+  if(path==='/api/orders'&&req.method()==='GET')return route.fulfill({json:order?[order]:[]});
+  if(path==='/api/orders'&&req.method()==='POST'){
+   keys.push(req.headers()['idempotency-key']);const body=req.postDataJSON();assert.equal(body.lines[0].expected_qty,3);assert.equal(body.latitude,16.84);assert.equal(body.maps_url,'https://www.google.com/maps/search/?api=1&query=16.84,96.17');
+   order={id,warehouse_id:w,sme_id:s,created_at:new Date().toISOString(),status:'pending',payload:body,note:'',shipment_id:null,reserved:true};
+   if(lost){lost=false;return route.abort('failed');}return route.fulfill({status:201,json:order});
+  }
+  if(path===`/api/orders/${id}/actions`){const action=req.postDataJSON();order={...order,status:action.action==='accept'?'accepted':action.action==='reject'?'rejected':'cancelled',reserved:action.action==='accept',note:action.note??'',shipment_id:action.action==='accept'?'10000000-0000-4000-8000-000000000005':null};return route.fulfill({json:order});}
+  return route.fulfill({status:404,json:{error:{code:'NOT_FOUND',message:'Fixture missing'}}});
+ });
+ await page.goto(origin+'/login');await page.getByLabel('Email',{exact:true}).fill('orders@test.invalid');await page.getByLabel('Password',{exact:true}).fill('fixture-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.waitForURL(origin+'/sme');
+ await page.getByRole('link',{name:/Create delivery order/}).click();
+ await page.getByLabel('Quantity for Test product').fill('3');await page.getByLabel('Name ·').fill('Customer A');await page.getByLabel('Phone ·').fill('091234567');await page.getByLabel('Address, floor').fill('Yangon, Floor 2');
+ await page.getByLabel('Google Maps link from customer').fill('https://www.google.com/maps/place/Customer');await page.getByRole('button',{name:/Read Maps link/}).click();await page.getByRole('status').filter({hasText:'no readable pin'}).waitFor();assert.equal(await page.getByLabel('Address, floor').inputValue(),'Yangon, Floor 2');
+ await page.getByLabel('Google Maps link from customer').fill('https://www.google.com/maps/search/?api=1&query=16.84,96.17');await page.getByRole('button',{name:/Read Maps link/}).click();await page.getByRole('checkbox').check();
+ await page.getByRole('button',{name:/Review order/}).click();await page.getByRole('region',{name:'Order review'}).waitFor();await page.getByRole('button',{name:/Submit order/}).click();await page.getByRole('button',{name:'Retry same order'}).waitFor();
+ await page.reload();await page.getByRole('button',{name:'Retry same order'}).click();await page.getByRole('status').filter({hasText:'Order submitted'}).waitFor();assert.equal(keys.length,2);assert.equal(keys[0],keys[1]);
+ await page.getByRole('button',{name:/Cancel order/}).click();await page.getByRole('heading',{name:/cancelled/i}).waitFor();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile overflow');await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/sme-orders-mobile.png',fullPage:true});assert.deepEqual(errors,[]);
+ role='staff';order={...order,status:'pending',note:'',shipment_id:null};await page.setViewportSize({width:1440,height:1000});await page.goto(origin+'/warehouse/shipments');await page.getByRole('button',{name:'Accept & create shipment'}).click();await page.getByRole('heading',{name:/accepted/i}).waitFor();assert.ok(await page.getByRole('link',{name:'View shipment / tracking →'}).getAttribute('href'));await page.screenshot({path:'test-results/warehouse-orders-desktop.png',fullPage:true});
+ order={...order,status:'pending',shipment_id:null};await page.reload();await page.getByLabel('Rejection reason').fill('Delivery address unavailable');await page.getByRole('button',{name:'Reject',exact:true}).click();await page.getByRole('heading',{name:/rejected/i}).waitFor();assert.deepEqual(errors,[]);
+ console.log('PASS browser orders: warehouse acceptance, shipment link and rejection reason');
+ console.log('PASS browser orders: real Maps resolver, customer pin, review, lost-response reload/replay, cancel, mobile layout');
+}catch(e){console.error(output);throw e;}finally{await browser?.close();server.kill();}

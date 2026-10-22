@@ -24,6 +24,7 @@ export function SMEDashboard() {
   if (!resource.data) return <Loading />;
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
+    {!demo&&<Card className="mb-5"><h2 className="text-lg font-semibold">Send warehouse stock to a customer</h2><Link className="mt-3 inline-flex min-h-11 items-center text-brand underline" href="/sme/orders">Create delivery order · ပို့ဆောင်ရန် အော်ဒါတင်မည် →</Link></Card>}
     <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
       {label:'Products',value:data.inventory.length,href:'#sme-stock',action:'View your stock'},
       {label:'Shipments',value:data.shipments.length,href:'#sme-shipments',action:'View your shipments'},
