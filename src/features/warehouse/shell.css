@@ -1,0 +1,34 @@
+/* Shared shell for authenticated and isolated warehouse routes. */
+.warehouseWorkspace{min-height:calc(100dvh - var(--pc-header-height,64px))}
+.warehouseLayout{display:grid;grid-template-columns:var(--pc-sidebar-width) minmax(0,1fr);max-width:var(--pc-workspace-width);margin-inline:auto;min-height:calc(100dvh - var(--pc-header-height,64px))}
+.warehouseSidebar{position:fixed;left:max(0px,calc((100% - var(--pc-workspace-width))/2));width:var(--pc-sidebar-width);top:var(--pc-header-height,64px);height:calc(100dvh - var(--pc-header-height,64px));min-height:0;align-self:start;display:grid;grid-template-rows:auto minmax(0,1fr) auto;border-right:1px solid var(--border);background:var(--background);overflow:hidden}
+.warehouseSidebarBrand{padding:24px 20px 16px;display:flex;align-items:center;gap:12px;min-width:0}
+.warehouseLogo{display:block;max-width:190px;width:100%;min-width:0;flex-shrink:1}.warehouseLogo img{display:block;width:100%;height:auto}
+.warehouseSidebarScroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 20px;scrollbar-gutter:stable}
+.warehouseNavLabel{font-size:12px;font-weight:500;color:var(--muted-foreground);line-height:1.8;margin:0 8px 12px}
+.warehouseNavigation{display:flex;flex-direction:column;gap:6px}
+.warehouseNavigation a{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:10px 12px;border-radius:var(--radius-md);border-left:3px solid transparent;font-size:13px;line-height:1.8;font-weight:500;color:var(--foreground);text-decoration:none;overflow-wrap:anywhere}
+.warehouseNavigation a[aria-current=page]{background:color-mix(in srgb,var(--primary) 20%,white)!important;color:var(--color-primary-900)!important;border-left-color:var(--color-primary-700);font-weight:600}
+.warehouseNavigation a:not([aria-current=page]):hover{background:var(--muted)!important;color:var(--foreground)}
+.warehouseSidebar :focus-visible{outline:3px solid var(--color-primary-700);outline-offset:2px}
+.warehouseCaseCount{flex-shrink:0;min-width:24px;padding:2px 6px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.warehouseSelector{margin-top:24px;padding-inline:8px}.warehouseSelector label{line-height:1.8}.warehouseSelector select{min-height:44px;width:100%;max-width:100%;font-size:12px}
+.warehouseSidebarFooter{padding:16px;border-top:1px solid var(--border);background:var(--background);min-width:0}
+.warehouseProfile{display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.8;min-width:0}.warehouseProfile>div{min-width:0;overflow-wrap:anywhere}.warehouseProfile p{margin-top:2px;font-size:11px;color:var(--muted-foreground)}
+.warehouseAvatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;background:var(--accent);border-radius:50%;font-weight:600}
+.warehouseSignOut{display:flex;width:100%;min-height:44px;margin-top:12px}
+.warehousePage{grid-column:2;min-width:0}.warehouseContextBar{display:flex;justify-content:flex-end;padding:12px 32px 0}.warehouseDemoBadge{background:color-mix(in srgb,var(--secondary) 20%,white)!important;color:var(--secondary-foreground)!important;border:1px solid var(--secondary);padding:5px 10px!important;font-size:12px!important;font-weight:600}
+.warehousePage main{min-width:0;overflow-wrap:anywhere}.warehouseMenuToggle{display:none}
+@media(max-height:600px) and (min-width:768px){.warehouseSidebarBrand{padding:12px 16px}.warehouseSidebarFooter{padding:12px 16px}.warehouseSelector{margin-top:16px}}
+@media(max-width:767px){
+ .warehouseLayout{display:block}.warehouseSidebar{position:sticky;left:auto;top:var(--pc-header-height);width:100%;height:auto;z-index:40;border-right:0;border-bottom:1px solid var(--border);grid-template-rows:auto}
+ .warehouseSidebarBrand{padding:16px;justify-content:space-between}.warehouseLogo{max-width:160px}
+ .warehouseMenuToggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 14px;border:1px solid var(--input);border-radius:var(--radius-md);font-size:13px;font-weight:600;background:var(--background);color:var(--foreground)}
+ .warehouseSidebarScroll,.warehouseSidebarFooter{display:none}.warehouseSidebarOpen{height:calc(100dvh - var(--pc-header-height,64px));grid-template-rows:auto minmax(0,1fr) auto}
+ .warehouseSidebarOpen .warehouseSidebarScroll,.warehouseSidebarOpen .warehouseSidebarFooter{display:block}.warehouseContextBar{padding:12px 20px 0}
+}
+
+/* Keep floating utilities clear of the mobile logo and menu without a header bar. */
+@media(max-width:767px){.warehouseSidebarBrand{position:relative;min-height:84px;box-sizing:border-box;align-items:flex-start}.warehouseSidebarBrand .warehouseLogo{max-width:104px}.warehouseMenuToggle{position:absolute;right:16px;bottom:4px;min-height:30px;height:30px;padding:3px 10px;font-size:12px}}
+
+.warehouseCourierPreview{display:flex;align-items:center;min-height:44px;margin:12px 8px 0;font-size:12px;font-weight:600;color:var(--color-primary-800);text-decoration:underline;text-underline-offset:3px}

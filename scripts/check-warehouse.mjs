@@ -38,16 +38,16 @@ try {
   await page.getByLabel('Damaged now').fill('2');
   await page.getByLabel('Verified shipment count / condition record').check();
   await page.getByLabel('Receiving note').fill('90 counted; two damaged, shortage verified.');
-  await page.getByText('Finalize receiving.', { exact: false }).click();
-  await page.getByRole('button', { name: 'Review final receipt' }).click();
+  await page.getByRole('button', { name: 'Finalize receiving' }).click();
   await page.getByRole('dialog').waitFor();
   // Escape closes the native dialog and restores the editable form.
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('dialog').count(), 1);
   assert.equal(await page.getByRole('dialog').isVisible(), false);
-  assert.ok(await page.getByRole('button', { name: 'Review final receipt' }).evaluate(el => el === document.activeElement), 'Escape must restore focus to the review button');
-  await page.getByRole('button', { name: 'Review final receipt' }).click();
-  await page.getByRole('button', { name: 'Confirm receipt', exact: true }).click();
+  assert.ok(await page.getByRole('button', { name: 'Finalize receiving' }).evaluate(el => el === document.activeElement), 'Escape must restore focus to the review button');
+  await page.getByRole('button', { name: 'Finalize receiving' }).click();
+  await page.getByLabel('I understand that final receiving cannot be reopened.',{exact:true}).check();
+  await page.getByRole('button', { name: 'Confirm final receipt', exact: true }).click();
   await page.getByRole('heading', { name: 'Receipt saved' }).waitFor();
   await page.getByText('TOTE-01: available 108, on hold 2', { exact: true }).waitFor();
   await page.reload();
@@ -136,7 +136,8 @@ try {
   });
   await live.goto(`${origin}/warehouse`);
   await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
-  await live.getByRole('link', { name: 'Sign in', exact: true }).click();
+  assert.equal(await live.getByRole('link', { name: 'Sign in', exact: true }).getAttribute('href'),'/login');
+  await live.goto(`${origin}/login`);
   await live.waitForURL(`${origin}/login`);
   await live.waitForLoadState('networkidle');
   await live.getByLabel('Email', { exact: true }).fill('staff@example.test');
@@ -165,10 +166,10 @@ try {
   assert.equal(await live.getByLabel('Received now').inputValue(), '90', 'Token refresh must preserve receiving counts');
   assert.equal(await live.getByLabel('Receiving note').inputValue(), 'Final verified shortage');
   assert.equal(await live.getByLabel('Verified shipment count / condition record').isChecked(), true);
-  await live.getByText('Finalize receiving.', { exact: false }).click();
-  await live.getByRole('button', { name: 'Review final receipt' }).click();
+  await live.getByRole('button', { name: 'Finalize receiving' }).click();
   receiptReply = 'timeout';
-  await live.getByRole('button', { name: 'Confirm receipt', exact: true }).click();
+  await live.getByLabel('I understand that final receiving cannot be reopened.',{exact:true}).check();
+  await live.getByRole('button', { name: 'Confirm final receipt', exact: true }).click();
   await live.getByRole('button', { name: 'Retry submitted receipt' }).waitFor();
   await live.reload();
   denyNextReceipt = true;
@@ -185,7 +186,7 @@ try {
   await live.getByLabel('Received now').fill('20'); await live.getByLabel('Damaged now').fill('0');
   await live.getByRole('button', { name: 'Review partial receipt' }).click();
   receiptReply = 'malformed';
-  await live.getByRole('button', { name: 'Confirm receipt', exact: true }).click();
+  await live.getByRole('button', { name: 'Confirm partial receipt', exact: true }).click();
   await live.getByRole('alert').filter({ hasText: 'The saved result could not be verified.' }).waitFor();
   assert.equal(await live.getByRole('heading', { name: 'Receipt saved' }).count(), 0, 'Malformed success must not be displayed as saved');
   await live.reload();

@@ -10,7 +10,9 @@ try{
   await p.goto(base+'/demo/warehouse/inventory');await p.getByRole('heading',{name:'Inventory',exact:true}).waitFor();
   assert.equal(await p.locator('.warehouseLogo img').evaluate(e=>e.complete&&e.naturalWidth>0),true);
   assert.equal(await p.getByText('Demo · fictitious data in this tab',{exact:true}).count(),0);
+  if(width<768)await p.locator('.warehouseMenuToggle').click();
   await p.locator('.warehouseCaseCount').getByText('1',{exact:true}).waitFor();
+  if(width<768)await p.locator('.warehouseMenuToggle').click();
   await p.getByLabel('Search inventory',{exact:true}).fill('000000000011');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,1);
   await p.getByLabel('Search inventory',{exact:true}).fill('Golden Bloom');await p.waitForFunction(n=>document.querySelectorAll('.inventoryTable tbody tr').length===n,2);
   await p.getByRole('button',{name:'Clear filters',exact:true}).click();await p.waitForFunction(()=>document.querySelectorAll('.inventoryTable tbody tr').length===3);

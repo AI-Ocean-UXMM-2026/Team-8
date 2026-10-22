@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createApiClient, ApiError } from '../../src/shared/api';
 import { createMockTransport } from '../../src/shared/api/mock';
-import { receiptRequest } from '../../src/features/warehouse/validation';
+import { receiptRequest, receiptLinePreview } from '../../src/features/warehouse/validation';
 import fixture from '../../contracts/fixtures/warehouse/initial.json';
 import { canReleaseCommand } from '../../src/features/warehouse/command-policy';
 import { savedReceipt, savedEvent } from '../../src/features/warehouse/saved-results';
@@ -175,4 +175,14 @@ test('malformed or wrong-case action responses remain unverified',async()=>{
   const body={action:'save_summary' as const,note:'Checked',expected_version:1,source_version:'1:1:1',policy_version:1,evidence_ids:[]};
   const bad=createApiClient(async <T,>()=>({id:caseId,warehouse_id:warehouseId,version:2}) as T);
   await assert.rejects(bad.recordCaseAction(caseId,body,{warehouseId,idempotencyKey:key()}),(e:ApiError)=>e.code==='INVALID_RESPONSE');
+});
+
+test('incremental receiving preview matches validation and never turns invalid counts into stock', async()=>{
+ const detail=await api().getShipment(inbound),item=detail.items[0];
+ assert.deepEqual(receiptLinePreview(item,{received:'40',damaged:'5'}),{received:40,damaged:5,good:35,remaining:60});
+ assert.deepEqual(receiptLinePreview({...item,received_qty:40},{received:'50',damaged:'0'}),{received:50,damaged:0,good:50,remaining:10});
+ for(const received of ['','-1','1.5','1e2','2147483648','9007199254740993'])assert.throws(()=>receiptLinePreview(item,{received,damaged:'0'}));
+ assert.throws(()=>receiptLinePreview({...item,received_qty:40},{received:'61',damaged:'0'}));
+ assert.throws(()=>receiptLinePreview(item,{received:'5',damaged:'6'}));
+ assert.throws(()=>receiptRequest({...detail,status:'received'}, {},false,[],''));
 });

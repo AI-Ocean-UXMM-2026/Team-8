@@ -1,0 +1,13 @@
+/* Floating utility controls: no full-width header or reserved content offset. */
+:root{--pc-header-height:0px;--pc-sidebar-width:230px;--pc-workspace-width:1536px}
+html{scrollbar-gutter:stable}
+body{padding-top:0}
+.globalHeader{position:fixed;top:12px;right:20px;left:auto;bottom:auto;z-index:60;display:flex;flex-direction:row;align-items:center;gap:6px;width:max-content;max-width:calc(100vw - 24px);height:auto;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.globalHeader #language-switch{position:static;inset:auto;display:inline-flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:2px;box-sizing:border-box;flex-shrink:0;width:auto;height:30px;min-height:30px;padding:2px;margin:0;border:1px solid var(--border);border-radius:999px;background:var(--background);box-shadow:none;line-height:1}
+.globalHeader #language-switch button{box-sizing:border-box;display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 auto;width:auto;height:24px;min-height:24px;margin:0;padding:2px 8px;border:0;border-radius:999px;font:500 11px/1.6 var(--font-sans);white-space:nowrap;background:transparent;color:var(--muted-foreground)}
+.globalHeader #language-switch button[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.globalHeader #language-switch button:not([aria-pressed=true]):hover{background:var(--muted);color:var(--foreground)}
+.globalHeader #language-switch button:focus-visible{outline:2px solid var(--color-primary-700);outline-offset:3px}
+.globalDemoBadge{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:24px;margin:0;padding:2px 8px;border:1px solid var(--secondary);border-radius:999px;background:color-mix(in srgb,var(--secondary) 20%,white);color:var(--secondary-foreground);font:600 10px/1.6 var(--font-sans);white-space:nowrap}
+@media(max-width:767px){.globalHeader{top:10px;right:12px;gap:4px}.globalHeader #language-switch button{padding-inline:6px}.globalDemoBadge{padding-inline:6px}}
+@media(pointer:coarse){.globalHeader #language-switch{height:34px;min-height:34px}.globalHeader #language-switch button{height:28px;min-height:28px}}

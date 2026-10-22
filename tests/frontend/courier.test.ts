@@ -1,0 +1,61 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createApiClient,ApiError} from '../../src/shared/api';
+import {createCourierMockTransport} from '../../src/shared/api/courier-mock';
+import {checkedAssignments,checkedDelivery} from '../../src/shared/api/courier';
+const store=()=>{const saved=new Map<string,string>();return{getItem:(k:string)=>saved.get(k)??null,setItem:(k:string,v:string)=>{saved.set(k,v)}}};
+const key=()=>crypto.randomUUID();
+test('courier gets own in-house assignments and accept/pickup cannot complete delivery',async()=>{
+ const api=createApiClient(createCourierMockTransport(store())),assignments=await api.listRiderAssignments();assert.equal(assignments.length,3);assert.equal((await api.getMe()).memberships[0].role,'rider');
+ const id=assignments[0].shipment_id,initial=await api.getCourierDelivery(id);assert.equal(initial.shipment.delivery_mode,'in_house');
+ await assert.rejects(api.recordCourierAction(id,{kind:'pickup',expected_version:1,note:'Pickup'},{idempotencyKey:key()}));
+ const accepted=await api.recordCourierAction(id,{kind:'accept',expected_version:1,note:'Accept assigned delivery'},{idempotencyKey:key()});assert.equal(accepted.kind,'delivery');
+ const picked=await api.recordCourierAction(id,{kind:'pickup',expected_version:2,note:'Physical pickup verified'},{idempotencyKey:key()});assert.equal(picked.kind,'delivery');if(picked.kind==='delivery')assert.equal(picked.detail.shipment.status,'picked_up');
+ await assert.rejects(api.getCourierDelivery(key()),(e:ApiError)=>e.status===403);
+});
+test('proof needs recipient and recorded evidence; replay/reload preserves one pending proof without marking delivered',async()=>{
+ const storage=store(),api=createApiClient(createCourierMockTransport(storage)),id=(await api.listRiderAssignments())[2].shipment_id,detail=await api.getCourierDelivery(id);
+ const body={kind:'proof' as const,expected_version:1,note:'Delivery evidence recorded',received_by:'Test recipient',evidence_id:detail.shipment.evidence[0].id};
+ await assert.rejects(api.recordCourierAction(id,{...body,received_by:''},{idempotencyKey:key()}));
+ const operation=key();await api.recordCourierAction(id,body,{idempotencyKey:operation});
+ const reloaded=createApiClient(createCourierMockTransport(storage));await reloaded.recordCourierAction(id,body,{idempotencyKey:operation});
+ const updated=await reloaded.getCourierDelivery(id);assert.equal(updated.shipment.status,'in_transit');assert.equal(updated.proofs.length,1);assert.equal(updated.proofs[0].confirmed_at,null);
+ await assert.rejects(reloaded.recordCourierAction(id,{...body,note:'Different payload'},{idempotencyKey:operation}),(e:ApiError)=>e.status===409);
+});
+test('repeat issue reports match a case; storage failures do not mutate assignment state',async()=>{
+ const storage=store(),api=createApiClient(createCourierMockTransport(storage)),id=(await api.listRiderAssignments())[0].shipment_id,body={kind:'report' as const,type:'recipient_unavailable' as const,note:'Recipient unavailable',evidence_ids:[]};
+ const a=await api.recordCourierAction(id,body,{idempotencyKey:key()}),b=await api.recordCourierAction(id,body,{idempotencyKey:key()});assert.deepEqual(a,b);
+ const failing=createApiClient(createCourierMockTransport({getItem:storage.getItem,setItem:()=>{throw Error('Full')}}));
+ await assert.rejects(failing.recordCourierAction(id,{kind:'accept',expected_version:1,note:'Accept'},{idempotencyKey:key()}));assert.equal((await failing.getCourierDelivery(id)).assignments[0].accepted_at,null);
+});
+test('courier response validation rejects mismatched ids, malformed timestamps and missing assignment projections',async()=>{
+ const api=createApiClient(createCourierMockTransport(store())),assignments=await api.listRiderAssignments(),id=assignments[0].shipment_id,d=await api.getCourierDelivery(id);
+ assert.throws(()=>checkedAssignments([{...assignments[0],assigned_at:'not-a-date'}]));assert.throws(()=>checkedDelivery(d,key()));assert.throws(()=>checkedDelivery({...d,assignments:null},id));assert.throws(()=>checkedDelivery(d,id,d.shipment.version));
+});
+
+// Viewer guards supplement the database's tenant-scoped tracking policies.
+import {trackingAccess,checkedPosition} from '../../src/shared/api/tracking';
+test('tracking viewer requires warehouse membership or exact SME ownership',()=>{
+ const shipment={warehouse_id:'warehouse-a',sme_id:'sme-a'};
+ assert.equal(trackingAccess([{warehouse_id:'warehouse-a',role:'staff'}],shipment),true);
+ assert.equal(trackingAccess([{warehouse_id:'warehouse-b',role:'staff'}],shipment),false);
+ assert.equal(trackingAccess([{warehouse_id:'warehouse-a',role:'sme',sme_id:'sme-a'}],shipment),true);
+ assert.equal(trackingAccess([{warehouse_id:'warehouse-a',role:'sme',sme_id:'sme-b'}],shipment),false);
+ assert.equal(trackingAccess([{warehouse_id:'warehouse-a',role:'rider'}],shipment),false);
+});
+test('GPS decoder rejects invalid coordinates and cross-session responses; unavailable clears coordinates',()=>{
+ const id=crypto.randomUUID(),p={session_id:id,status:'live',latitude:16.8,longitude:96.1,accuracy_m:12,recorded_at:new Date().toISOString()};
+ assert.equal(checkedPosition(p,id).latitude,16.8);
+ for(const patch of [{latitude:91},{longitude:Infinity},{accuracy_m:-1},{recorded_at:'bad'},{session_id:crypto.randomUUID()}])assert.throws(()=>checkedPosition({...p,...patch},id));
+ assert.equal(checkedPosition({...p,status:'unavailable'},id).latitude,null);
+});
+test('SME tracking reads use tenant-authorized delivery API, never staff-only operations',async()=>{
+ const id=crypto.randomUUID(),warehouse=crypto.randomUUID(),sme=crypto.randomUUID(),session=crypto.randomUUID();
+ const paths:string[]=[];
+ const api=createApiClient(async<T>(request:import('../../src/shared/api/transport').ApiRequest)=>{paths.push(request.path);return {shipment:{id,warehouse_id:warehouse,sme_id:sme,reference:'PC-TEST',direction:'outbound',events:[]},session_id:session} as T;});
+ assert.equal((await api.getTrackingShipment(id)).sme_id,sme);
+ assert.equal(await api.getTrackingSession(id),session);
+ assert.deepEqual(paths,[`/api/deliveries/${id}`,`/api/deliveries/${id}`]);
+ const denied=createApiClient(async()=>{throw new ApiError(403,'FORBIDDEN','Not your shipment');});
+ await assert.rejects(denied.getTrackingShipment(id),(e:ApiError)=>e.status===403);
+});

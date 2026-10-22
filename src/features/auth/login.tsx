@@ -10,7 +10,8 @@ import { workspacePath } from './roles';
 export function Login() {
   const lock = useRef(false);
   const [ready, setReady] = useState(false);
-  useEffect(() => { setReady(true); }, []);
+  const [courier,setCourier]=useState(false);
+  useEffect(() => { setReady(true);setCourier(new URLSearchParams(window.location.search).get('next')==='/courier'); }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -34,7 +35,10 @@ export function Login() {
       const identity = await api.getMe();
       const destination = workspacePath(identity.memberships);
       if (!destination) throw new Error('Your account has no active workspace. Please contact your operator.');
-      window.location.replace(destination);
+      const next=new URLSearchParams(window.location.search).get('next');
+      const courierNext=next==='/courier'&&identity.memberships.some(m=>m.role==='rider');
+      const smeNext=next&&/^\/sme\/shipments\/[0-9a-f-]{36}$/i.test(next)&&identity.memberships.some(m=>m.role==='sme');
+      window.location.replace(courierNext?'/courier':smeNext?next:destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Try again.');
       lock.current = false; setBusy(false);
@@ -48,6 +52,6 @@ export function Login() {
       <div><label htmlFor="password" className="mb-2 block text-sm">Password</label><Input id="password" name="password" type="password" autoComplete="current-password" required disabled={busy} /></div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <Button type="submit" className="w-full" disabled={!ready || busy}>{!ready ? 'Preparing sign-in…' : busy ? 'Signing in…' : 'Sign in'}</Button>
-    </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href="/demo/warehouse">Explore the demo</Link></p>
+    </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href={courier?'/demo/courier':'/demo/warehouse'}>Explore the demo</Link></p>
   </Card></main>;
 }

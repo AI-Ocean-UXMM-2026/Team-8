@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import './layout.css';
+import { GlobalHeader } from '../shared/layout/global-header';
 import Script from 'next/script';
 import { styles } from '../features/workspace/generated';
 import { GeistSans } from "geist/font/sans";
@@ -21,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <link rel="stylesheet" href="/vendor/leaflet.css" />
       </head>
-      <body style={{ fontFamily: 'var(--font-sans)', background: 'var(--background)', color: 'var(--foreground)' }}><div id="language-switch" role="group" aria-labelledby="language-label"><span id="language-label">Language</span><button type="button" disabled data-language-choice="en" aria-pressed="true" lang="en">English</button><button type="button" disabled data-language-choice="my" aria-pressed="false" lang="my">မြန်မာ</button></div>{children}<Script src="/language.js" strategy="afterInteractive" /></body>
+      <body style={{ fontFamily: 'var(--font-sans)', background: 'var(--background)', color: 'var(--foreground)' }}><GlobalHeader />{children}<Script src="/language.js" strategy="afterInteractive" /></body>
     </html>
   );
 }

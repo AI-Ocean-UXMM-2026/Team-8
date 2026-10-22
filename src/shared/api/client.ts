@@ -1,3 +1,5 @@
+import {checkedPosition} from './tracking';
+import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
 import { checkedWarehouseCase, type WarehouseCaseAction } from './case-workflow';
 import { type Transport, type Schemas, ApiError, isUUID } from './transport';
 import type { SMEOverview, Notification, Delivery, Assignment, LiveLocation } from './domain';
@@ -26,7 +28,33 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
+    async getTrackingShipment(id:string,signal?:AbortSignal){
+      // delivery_read authorizes staff OR the owning SME using the caller's JWT.
+      // Warehouse operations endpoints deliberately remain staff-only.
+      const value=await transport<{shipment:Schemas['ShipmentDetail']}>({method:'GET',path:`/api/deliveries/${entity(id)}`,signal});
+      const shipment=value?.shipment;
+      if(!shipment||shipment.id!==id||!isUUID(shipment.warehouse_id)||!isUUID(shipment.sme_id)||typeof shipment.reference!=='string'||!Array.isArray(shipment.events)||!['inbound','outbound'].includes(shipment.direction))throw new ApiError(502,'INVALID_RESPONSE','Shipment tracking details could not be verified.');
+      return shipment;
+    },
+    async getTrackingSession(id:string,signal?:AbortSignal){
+      const value=await transport<{shipment:{id:string};session_id:string|null}>({method:'GET',path:`/api/deliveries/${entity(id)}`,signal});
+      if(!value||value.shipment?.id!==id||(value.session_id!==null&&!isUUID(value.session_id)))throw new ApiError(502,'INVALID_RESPONSE','Tracking session could not be verified.');
+      return value.session_id;
+    },
+    async getLivePosition(session:string,signal?:AbortSignal){return checkedPosition(await transport<unknown>({method:'GET',path:`/api/tracking/${entity(session)}/live`,signal}),session);},
     getMe(signal?: AbortSignal) { return transport<Schemas['IdentityResponse']>({ method: 'GET', path: '/api/me', signal }); },
+    async listRiderAssignments(signal?:AbortSignal){return checkedAssignments(await transport<unknown>({method:'GET',path:'/api/rider/assignments',signal}));},
+    async getCourierDelivery(id:string,signal?:AbortSignal){return checkedDelivery(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}`,signal}),id);},
+    async recordCourierAction(id:string,body:CourierAction,options:Mutation){
+      const {kind,...payload}=body;
+      if(kind==='report'){
+        const value=await transport<unknown>({method:'POST',path:'/api/exceptions',body:{...payload,shipment_id:entity(id),stage:'outbound'},...options});
+        const c=value as {id:string;shipment_id:string};if(!c||!isUUID(c.id)||c.shipment_id!==id)throw new ApiError(502,'INVALID_RESPONSE','Case result could not be verified. Retry the same saved request.');
+        return {kind:'report' as const,id:c.id};
+      }
+      const result=await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/${kind}`,body:payload,...options});
+      return {kind:'delivery' as const,detail:checkedDelivery(result,id,'expected_version' in body?body.expected_version:0)};
+    },
     listShipments(options: ListOptions & { direction?: 'inbound' | 'outbound'; status?: string } = {}) {
       return transport<Schemas['ShipmentPage']>({ method: 'GET', path: `/api/shipments${query(options)}`, signal: options.signal });
     },
