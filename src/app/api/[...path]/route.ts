@@ -9,7 +9,7 @@ async function forward(request: Request) {
   const authorization = request.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return failure(401, 'UNAUTHENTICATED', 'Sign in to continue.');
   const configured = process.env.PARCELCARE_API_URL || process.env.NEXT_PUBLIC_PARCELCARE_API_URL;
-  if (!configured) return failure(503, 'SERVICE_UNAVAILABLE', 'Service unavailable. Please try again.');
+  if (!configured) return failure(503, 'SERVICE_UNAVAILABLE', 'Workspace service is not configured. Please contact your administrator.');
   let base: URL;
   try {
     base = new URL(configured);
@@ -45,7 +45,18 @@ async function forward(request: Request) {
     for (const key of ['content-type', 'x-correlation-id', 'content-disposition']) {
       const value = response.headers.get(key); if (value) outgoing.set(key, value);
     }
-    return new Response(response.body, { status: response.status, headers: outgoing });
+    if (response.status === 204) return new Response(null, { status: 204, headers: outgoing });
+    // Domain endpoints return JSON. Hosting error pages and an incorrectly
+    // configured frontend origin must never masquerade as successful API data.
+    const contentType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+    if (contentType !== 'application/json' && !contentType?.endsWith('+json')) {
+      await response.body?.cancel();
+      return failure(502, 'UPSTREAM_ERROR', 'Workspace service is unavailable. Please try again shortly or contact your administrator.');
+    }
+    const content = await response.text();
+    try { JSON.parse(content); }
+    catch { return failure(502, 'UPSTREAM_ERROR', 'Workspace service returned an invalid response. Please contact your administrator.'); }
+    return new Response(content, { status: response.status, headers: outgoing });
   } catch { return failure(503, 'SERVICE_UNAVAILABLE', 'Connection unavailable. Please try again.'); }
 }
 export const GET = forward;

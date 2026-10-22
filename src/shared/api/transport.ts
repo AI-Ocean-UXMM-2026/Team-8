@@ -89,7 +89,16 @@ export function createLiveTransport({ baseUrl, getAccessToken, fetcher = fetch, 
       try { data = await abortable(() => response.json(), signal); }
       catch {
         signal.throwIfAborted();
-        throw new ApiError(response.status, 'INVALID_RESPONSE', 'API returned an unreadable response.', correlationId);
+        if (response.status === 401) {
+          throw new ApiError(401, 'UNAUTHENTICATED', 'Your session expired. Sign in again.', correlationId);
+        }
+        if (response.status === 403) {
+          throw new ApiError(403, 'FORBIDDEN', 'Access denied.', correlationId);
+        }
+        if (response.status >= 500) {
+          throw new ApiError(response.status, 'SERVICE_UNAVAILABLE', 'Workspace service is unavailable. Please try again shortly.', correlationId);
+        }
+        throw new ApiError(response.status, 'INVALID_RESPONSE', 'The workspace service returned an invalid response. Please contact your warehouse operator.', correlationId);
       }
       signal.throwIfAborted();
       if (!response.ok) {

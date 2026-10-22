@@ -4,6 +4,7 @@ import { createApiClient } from '../../src/shared/api/client';
 import { createLiveTransport, ApiError } from '../../src/shared/api/transport';
 import { createMockTransport } from '../../src/shared/api/mock';
 import receipt from '../../contracts/fixtures/operations/receipt-100-90.json';
+import { GET as proxyGet } from '../../src/app/api/[...path]/route';
 
 const key = receipt.headers['Idempotency-Key'];
 test('mock receipt retries preserve original result; changed payload or fresh duplicate cannot repost stock', async () => {
@@ -64,8 +65,72 @@ test('no live token, unsafe URL/path, missing idempotency or cancellation preven
 test('network failures and non-JSON replies do not return fictitious success', async () => {
   const live = (fetcher: typeof fetch) => createLiveTransport({ baseUrl: 'https://api.example.test', getAccessToken: async () => 'token', fetcher });
   await assert.rejects(live(async () => { throw new TypeError('offline'); })({ method: 'GET', path: '/api/shipments' }), (e: ApiError) => e.code === 'NETWORK_ERROR');
-  await assert.rejects(live(async () => new Response('<html>error</html>', { status: 502 }))({ method: 'GET', path: '/api/shipments' }), (e: ApiError) => e.code === 'INVALID_RESPONSE');
+  await assert.rejects(live(async () => new Response('<html>error</html>', { status: 502 }))({ method: 'GET', path: '/api/shipments' }), (e: ApiError) => e.code === 'SERVICE_UNAVAILABLE');
+  await assert.rejects(live(async () => new Response('<html>wrong service</html>', { status: 200 }))({ method: 'GET', path: '/api/me' }), (e: ApiError) => e.code === 'INVALID_RESPONSE');
 });
+
+test('sign-in proxy rejects upstream HTML and invalid JSON, and preserves identity and auth errors', async () => {
+  const previousUrl = process.env.PARCELCARE_API_URL;
+  const previousFetch = globalThis.fetch;
+  process.env.PARCELCARE_API_URL = 'https://backend.example.test';
+  try {
+    const identity = { actor_id: 'fixture', memberships: [] };
+    for (const [upstream, status, expected] of [
+      [new Response('<html>hosting error</html>', { status: 502, headers: { 'Content-Type': 'text/html' } }), 502, 'UPSTREAM_ERROR'],
+      [new Response('<html>frontend</html>', { headers: { 'Content-Type': 'text/html' } }), 502, 'UPSTREAM_ERROR'],
+      [new Response('broken', { headers: { 'Content-Type': 'application/json' } }), 502, 'UPSTREAM_ERROR'],
+      [Response.json(identity), 200, null],
+      [Response.json({ error: { code: 'UNAUTHENTICATED', message: 'Expired.' } }, { status: 401 }), 401, 'UNAUTHENTICATED'],
+    ] as const) {
+      globalThis.fetch = async (url, options) => {
+        assert.equal(String(url), 'https://backend.example.test/api/me');
+        assert.equal(new Headers(options?.headers).get('authorization'), 'Bearer fixture-token');
+        return upstream;
+      };
+      const response = await proxyGet(new Request('https://frontend.example.test/api/me', { headers: { Authorization: 'Bearer fixture-token' } }));
+      assert.equal(response.status, status);
+      const data = await response.json();
+      if (expected) assert.equal(data.error.code, expected);
+      else assert.deepEqual(data, identity);
+      assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    }
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousUrl === undefined) delete process.env.PARCELCARE_API_URL;
+    else process.env.PARCELCARE_API_URL = previousUrl;
+  }
+});
+test('HTML auth and gateway failures retain useful status and correlation without a JSON parse message', async () => {
+  for (const [status, code] of [[401, 'UNAUTHENTICATED'], [403, 'FORBIDDEN'], [502, 'SERVICE_UNAVAILABLE'], [503, 'SERVICE_UNAVAILABLE']] as const) {
+    const transport = createLiveTransport({ baseUrl: 'https://frontend.example.test', getAccessToken: async () => 'fixture-token',
+      fetcher: async () => new Response('<html>Render error page</html>', { status, headers: { 'Content-Type': 'text/html', 'X-Correlation-ID': key } }) });
+    await assert.rejects(transport({ method: 'GET', path: '/api/me' }), (error: ApiError) =>
+      error.status === status && error.code === code && error.correlationId === key && !error.message.includes('unreadable'));
+  }
+});
+
+test('sign-in transport recovers through proxy after a gateway outage without inventing an identity', async () => {
+  const previousUrl = process.env.PARCELCARE_API_URL;
+  const previousFetch = globalThis.fetch;
+  process.env.PARCELCARE_API_URL = 'https://backend.example.test';
+  const identity = { actor_id: '10000000-0000-4000-8000-000000000099', memberships: [{ warehouse_id: '10000000-0000-4000-8000-000000000001', role: 'staff', sme_id: null }] };
+  let available = false, calls = 0;
+  try {
+    globalThis.fetch = async () => { calls++; return available ? Response.json(identity) : new Response('<html>Bad Gateway</html>', { status: 502, headers: { 'Content-Type': 'text/html' } }); };
+    const client = createApiClient(createLiveTransport({ baseUrl: 'https://frontend.example.test', getAccessToken: async () => 'fixture-token',
+      fetcher: async (url, init) => proxyGet(new Request(url, init)) }));
+    await assert.rejects(client.getMe(), (error: ApiError) => error.status === 502 && error.code === 'UPSTREAM_ERROR');
+    assert.equal(calls, 1, 'An outage must not trigger automatic retries or a demo fallback');
+    available = true;
+    assert.deepEqual(await client.getMe(), identity);
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousUrl === undefined) delete process.env.PARCELCARE_API_URL;
+    else process.env.PARCELCARE_API_URL = previousUrl;
+  }
+});
+
 test('timeout and mid-flight cancellation stop requests without a mock fallback', async () => {
   const waiting: typeof fetch = async (_url, options) => new Promise((_resolve, reject) => {
     options!.signal!.addEventListener('abort', () => reject(options!.signal!.reason), { once: true });

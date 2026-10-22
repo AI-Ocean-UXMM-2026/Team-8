@@ -9,6 +9,21 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PARCELCARE_API_URL
+        fromService:
+          type: web
+          name: parcelcare-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        fromService:
+          type: web
+          name: parcelcare-api
+          envVarKey: SUPABASE_URL
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        fromService:
+          type: web
+          name: parcelcare-api
+          envVarKey: SUPABASE_PUBLIC_KEY
   - type: web
     name: parcelcare-api
     runtime: python
@@ -19,3 +34,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLIC_KEY
+        sync: false
