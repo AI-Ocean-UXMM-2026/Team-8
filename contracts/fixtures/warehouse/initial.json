@@ -206,7 +206,13 @@
         "evidence_ids": [
           "10000000-0000-4000-8000-000000000043"
         ],
-        "summary": "Awaiting verified courier delivery update."
+        "summary": "Awaiting verified courier delivery update.",
+        "risk_context": {},
+        "priority_classification": {},
+        "priority_override": false,
+        "escalated": false,
+        "risk_score": 0,
+        "sla_risk": "unknown"
       }
     ]
   }

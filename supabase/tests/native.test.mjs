@@ -8,6 +8,7 @@ import { testOperations } from './operations.test.mjs';
 import { testCases } from './cases.test.mjs';
 import { testMakerChecker } from './maker-checker.test.mjs';
 import { testWorkflows } from './workflows.test.mjs';
+import { testRisk } from './risk.test.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 let embedded;
@@ -20,7 +21,7 @@ if(process.argv.includes('--embedded')) {
  embeddedDirectory=directory;
  config={host:'127.0.0.1',port:55439,user:'postgres',password:randomUUID(),database:'postgres'};
  embedded=new EmbeddedPostgres({databaseDir:directory,port:config.port,user:config.user,password:config.password,
-  persistent:true,initdbFlags:['--no-sync'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:message=>{if(String(message).includes('FATAL'))console.error(String(message));}});
+  persistent:true,initdbFlags:['--no-sync','--encoding=UTF8','--locale=C'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:message=>{if(String(message).includes('FATAL'))console.error(String(message));}});
  console.log('Initializing disposable native PostgreSQL (test-only --no-sync).');
  await embedded.initialise();
  console.log('Starting loopback native PostgreSQL.');
@@ -50,6 +51,7 @@ try {
  await testCases(admin);
  await testMakerChecker(admin);
  await testWorkflows(admin);
+ await testRisk(admin);
  const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
  const actor=randomUUID(),product=randomUUID(),corr=randomUUID();
  await admin.query('insert into auth.users(id,email) values($1,$2)',[actor,'race@example.test']);

@@ -2,7 +2,7 @@
 from typing import Annotated, Literal
 from uuid import UUID
 from pydantic import AwareDatetime, Field
-from ...contracts import DTO, CaseSummary
+from ...contracts import DTO, CaseSummary, CaseRiskFields
 
 Note = Annotated[str, Field(min_length=1, max_length=2000)]
 Version = Annotated[int, Field(ge=1, strict=True)]
@@ -51,7 +51,20 @@ class CaseReview(CaseCommand):
     basis: Annotated[str, Field(max_length=4000)] = ''
 
 
-class CaseDetail(DTO):
+class RiskContext(DTO):
+    perishability: Literal['unknown', 'perishable', 'non_perishable'] = 'unknown'
+    order_value_mmk: Annotated[int, Field(ge=0, le=1000000000000, strict=True)] | None = None
+    operational_impact: Literal['unknown', 'minor', 'moderate', 'severe'] = 'unknown'
+
+
+class CaseRiskCommand(CaseCommand):
+    kind: Literal['context', 'priority', 'escalation']
+    context: RiskContext | None = None
+    priority: Literal['low', 'normal', 'high', 'critical', 'automatic'] | None = None
+    escalated: bool | None = None
+
+
+class CaseDetail(CaseRiskFields):
     # The database projects authorized domain records, never arbitrary tables.
     id: UUID
     shipment_id: UUID

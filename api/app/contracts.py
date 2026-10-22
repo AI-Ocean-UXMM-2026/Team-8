@@ -48,7 +48,19 @@ class ErrorDetail(DTO):
     message: str
 
 
-class CaseSummary(DTO):
+class CaseRiskFields(DTO):
+    risk_context: dict = {}
+    priority_classification: dict = {}
+    priority_override: bool = False
+    escalated: bool = False
+    escalation_reason: str | None = None
+    escalated_at: AwareDatetime | None = None
+    escalated_by: UUID | None = None
+
+
+class CaseSummary(CaseRiskFields):
+    risk_score: int = 0
+    sla_risk: str = 'unknown'
     owner_id: UUID | None = None
     id: UUID
     shipment_id: UUID

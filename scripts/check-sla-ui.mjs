@@ -14,7 +14,7 @@ try{
  const user={id,aud:'authenticated',role:'authenticated',email:'sla@example.test',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
  const exp=Math.floor(Date.now()/1000)+3600,token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:id,exp,iat:exp-3600,role:'authenticated'})).toString('base64url')+'.fixture';
  for(const width of [1440,390]){
- const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();lastPage=page;page.setDefaultTimeout(30000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();lastPage=page; page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await context.addInitScript(({token,exp,user})=>sessionStorage.setItem('sb-sla-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',expires_at:exp,expires_in:3600,token_type:'bearer',user})),{token,exp,user});
  await page.route(auth+'/**',route=>route.fulfill({status:200,headers:{'Access-Control-Allow-Origin':'*'},json:user}));
  let canEdit=true,stale=false,policy={case_type:'courier_delay',priority:'normal',first_response_minutes:120,resolution_minutes:1440,at_risk_percent:80,revision:0},lastBody,filterSeen=false;

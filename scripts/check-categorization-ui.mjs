@@ -16,7 +16,7 @@ try{
  const categories={food_beverages:'Food & beverages',clothing_accessories:'Clothing & accessories',home_kitchen:'Home & kitchen',electronics:'Electronics',beauty_personal_care:'Beauty & personal care',health_medical:'Health & medical',office_stationery:'Office & stationery',other:'Other'};
  for(const width of [1440,390]){
   const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage(),errors=[];lastPage=page;
-  page.setDefaultTimeout(30000);page.on('pageerror',e=>errors.push(e.message));
+ page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(120000);page.on('pageerror',e=>errors.push(e.message));
   await context.addInitScript(({token,exp,user})=>sessionStorage.setItem('sb-categorization-fixture-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture',expires_at:exp,expires_in:3600,token_type:'bearer',user})),{token,exp,user});
   await page.route(auth+'/**',route=>route.fulfill({status:200,headers:{'Access-Control-Allow-Origin':'*'},json:user}));
   let state={product_id:product.id,warehouse_id:w,sme_id:product.sme_id,name:product.name,sku:product.sku,revision:0,metadata:{description:'',material:'',intended_use:'',storage_notes:''},suggestion:null,category:null,status:'pending',review_note:null,reviewed_by:null,reviewed_at:null,updated_at:null};

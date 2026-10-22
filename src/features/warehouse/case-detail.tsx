@@ -4,6 +4,7 @@ import { useSession } from '../auth/session';
 import { CasePanels, caseView } from '../exceptions';
 import { CaseControls } from '../exceptions/controls';
 import { CaseReviewForm } from '../exceptions/review';
+import { CaseRiskControls } from '../exceptions/risk-controls';
 import { EvidenceUpload } from '../portal/evidence';
 import { usePolling } from '../portal/polling';
 import { ApiError } from '../../shared/api';
@@ -20,5 +21,5 @@ export function CaseDetail({ id, embedded = false, onChanged }: { id: string; em
   if (!resource.data) return <Loading />;
   const { item, raw } = resource.data;
   const refresh = () => { resource.reload(); onChanged?.(); };
-  return <>{!embedded && <><Link className="mb-4 inline-block text-sm text-brand underline" href={`${demo ? '/demo' : ''}/warehouse/exceptions`}>Back to cases</Link><PageTitle title={human(item.type)} my="ကိစ္စအသေးစိတ်" description="Recorded facts and evidence." /></>}<CasePanels item={item} />{!demo && 'version' in raw && Array.isArray(raw.allowed_actions) && <><CaseControls detail={raw} refresh={refresh} /><CaseReviewForm detail={raw} refresh={refresh} /></>}<EvidenceUpload shipmentId={item.shipment_id} refresh={refresh} /></>;
+  return <>{!embedded && <><Link className="mb-4 inline-block text-sm text-brand underline" href={`${demo ? '/demo' : ''}/warehouse/exceptions`}>Back to cases</Link><PageTitle title={human(item.type)} my="ကိစ္စအသေးစိတ်" description="Recorded facts and evidence." /></>}<CasePanels item={item} />{!demo && 'version' in raw && Array.isArray(raw.allowed_actions) && <><CaseRiskControls key={raw.version} detail={raw} refresh={refresh} /><CaseControls detail={raw} refresh={refresh} /><CaseReviewForm detail={raw} refresh={refresh} /></>}<EvidenceUpload shipmentId={item.shipment_id} refresh={refresh} /></>;
 }
