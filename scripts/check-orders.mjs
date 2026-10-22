@@ -9,7 +9,7 @@ let output='',browser;server.stdout.on('data',c=>output+=c);server.stderr.on('da
 const actor='10000000-0000-4000-8000-000000000099',w='10000000-0000-4000-8000-000000000001',s='10000000-0000-4000-8000-000000000002',p='10000000-0000-4000-8000-000000000003',id='10000000-0000-4000-8000-000000000004';
 try{
  for(let i=0;i<160;i++){try{if((await fetch(origin+'/api/health')).ok)break;}catch{}if(server.exitCode!==null)throw Error(output);await new Promise(r=>setTimeout(r,250));}
- for(const route of ['/login','/sme/orders','/warehouse/shipments'])assert.ok((await fetch(origin+route)).ok);
+ for(const route of ['/login','/sme/orders','/warehouse/shipments','/sme/shipments/10000000-0000-4000-8000-000000000005',...(process.env.ORDER_TEST_LOCALIZATION==='1'?['/demo','/demo/sme','/demo/sme/orders','/demo/sme/reports','/demo/sme/tracking','/demo/sme/account','/api/demo/tracking']:[])])assert.ok((await fetch(origin+route)).ok);
  browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();page.setDefaultTimeout(30000);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const user={id:actor,aud:'authenticated',role:'authenticated',email:'orders@test.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
