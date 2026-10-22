@@ -1,9 +1,12 @@
 'use client';
+import { safeError } from '../../shared/i18n/errors';
 import Link from 'next/link';
 import { useState } from 'react';
 import './sme.css';
+import '../warehouse/shipments.css';
 import '../warehouse/overview.css';
 import { useSession } from '../auth/session';
+import { ShipmentStatus } from '../warehouse/shipment-status';
 import { Badge, Button, Card } from '../../shared/ui';
 import { ApiError, type Schemas } from '../../shared/api';
 import type { Approval } from '../../shared/api/domain';
@@ -22,15 +25,15 @@ export function SMEDashboard() {
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
     <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
-      {label:'Product records',value:data.inventory.length,href:'#sme-stock',action:'View your stock'},
+      {label:'Products',value:data.inventory.length,href:'#sme-stock',action:'View your stock'},
       {label:'Shipments',value:data.shipments.length,href:'#sme-shipments',action:'View your shipments'},
-      {label:'Pending decisions',value:data.approvals.filter(a=>a.status==='pending').length,href:'#sme-cases',action:'Review related cases'},
-    ].map(({label,value,href,action})=><a key={label} href={href} className={`warehouseSummaryCard ${label==='Pending decisions'&&Number(value)>0?'warehouseSummaryAttention':''}`}><span className="warehouseSummaryLabel">{label}</span><strong className="warehouseSummaryNumber">{value}</strong><span className="warehouseSummaryAction">{action} →</span></a>)}</div>
+      {label:'Decisions needed',value:data.approvals.filter(a=>a.status==='pending').length,href:'#sme-cases',action:'Review related cases'},
+    ].map(({label,value,href,action})=><a key={label} href={href} className={`warehouseSummaryCard ${label==='Decisions needed'&&Number(value)>0?'warehouseSummaryAttention':''}`}><span className="warehouseSummaryLabel">{label}</span><strong className="warehouseSummaryNumber">{value}</strong><span className="warehouseSummaryAction">{action} →</span></a>)}</div>
     <Card className="mb-5"><h2 className="text-lg font-semibold">Track your deliveries</h2><p className="mt-3 text-sm">View GPS locations for your shipments only, with last-updated and stale-location indicators.</p><Link className="mt-4 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/tracking':'/sme/tracking'}>Open shipment tracking →</Link></Card>
     <div className="smeDashboardGrid">
-    <Card id="sme-stock"><h2 className="text-lg font-semibold">Own stock / မိမိပစ္စည်းစာရင်း</h2>{data.inventory.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Own stock"><table className="smeTable"><thead><tr><th scope="col">Product</th><th scope="col">SKU</th><th scope="col">Available</th><th scope="col">Quarantined</th></tr></thead><tbody>{data.inventory.map(item=><tr key={item.id}><td>{item.name}</td><td>{item.sku}</td><td>{item.available_qty}</td><td>{item.quarantined_qty}</td></tr>)}</tbody></table></div> : <Empty />}</Card>
-    <Card id="sme-shipments"><h2 className="text-lg font-semibold">Shipments / ပို့ဆောင်မှု</h2>{data.shipments.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments"><table className="smeTable"><thead><tr><th scope="col">Reference</th><th scope="col">Direction</th><th scope="col">Status</th></tr></thead><tbody>{data.shipments.map(item=><tr key={item.id}><td>{demo&&item.direction==='inbound'?<span>{item.reference}</span>:<Link className="text-brand underline" href={demo?'/demo/sme/tracking':`/sme/shipments/${item.id}`}>{item.reference}</Link>}</td><td>{human(item.direction)}</td><td><Badge>{human(item.status)}</Badge></td></tr>)}</tbody></table></div> : <Empty />}</Card>
-    <Card className="smeCases" id="sme-cases"><h2 className="text-lg font-semibold">Cases / ကိစ္စများ</h2>{data.cases.length ? <ul className="smeCaseGrid">{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`/sme/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty />}</Card>
+    <Card id="sme-stock"><h2 className="text-lg font-semibold">Your stock</h2>{data.inventory.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Your stock"><table className="smeTable"><thead><tr><th scope="col">Product</th><th scope="col">SKU</th><th scope="col">Available</th><th scope="col">On hold</th></tr></thead><tbody>{data.inventory.map(item=><tr key={item.id}><td data-user-content>{item.name}</td><td data-user-content>{item.sku}</td><td>{item.available_qty}</td><td>{item.quarantined_qty}</td></tr>)}</tbody></table></div> : <Empty text="No products recorded yet." />}</Card>
+    <Card id="sme-shipments"><h2 className="text-lg font-semibold">Shipments</h2>{data.shipments.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments"><table className="smeTable"><thead><tr><th scope="col">Reference</th><th scope="col">Direction</th><th scope="col">Status</th></tr></thead><tbody>{data.shipments.map(item=><tr key={item.id}><td>{demo&&item.direction==='inbound'?<span>{item.reference}</span>:<Link className="text-brand underline" href={demo?'/demo/sme/tracking':`/sme/shipments/${item.id}`}>{item.reference}</Link>}</td><td>{human(item.direction)}</td><td><ShipmentStatus status={item.status}/></td></tr>)}</tbody></table></div> : <Empty text="No shipments yet." />}</Card>
+    <Card className="smeCases" id="sme-cases"><h2 className="text-lg font-semibold">Cases</h2>{data.cases.length ? <ul className="smeCaseGrid">{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`/sme/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty text="No cases yet." />}</Card>
     </div></>;
 }
 
@@ -55,5 +58,5 @@ export function Notifications() {
   const resource = usePolling(smeId,signal=>api!.listNotifications(smeId,signal));
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
-  return <><PageTitle title="Notifications" my="အကြောင်းကြားချက်များ" />{error && <p role="alert">{error}</p>}{resource.data.length ? resource.data.map(item=><Card key={item.id} className="mb-4"><Badge>{item.read ? 'Read' : 'Unread'}</Badge><p className="my-3 whitespace-pre-wrap">{item.message}</p><p className="mb-3 text-xs text-muted-foreground">{dateTime(item.created_at)} · Yangon</p><Link className="mr-4 text-brand underline" href={`/sme/exceptions/${item.case_id}`}>Open case</Link><Button variant="outline" disabled={!!busy} onClick={async()=>{setBusy(item.id);setError('');try{await api!.setNotificationRead(item.id,!item.read);resource.reload();}catch(e){setError(e instanceof Error ? e.message : 'Unable to update notification.');}finally{setBusy('');}}}>{item.read ? 'Mark unread' : 'Mark read'}</Button></Card>) : <Card><Empty text="No notifications." /></Card>}</>;
+  return <><PageTitle title="Notifications" my="အကြောင်းကြားချက်များ" />{error && <p role="alert">{error}</p>}{resource.data.length ? resource.data.map(item=><Card key={item.id} className="mb-4"><Badge>{item.read ? 'Read' : 'Unread'}</Badge><p className="my-3 whitespace-pre-wrap">{item.message}</p><p className="mb-3 text-xs text-muted-foreground">{dateTime(item.created_at)} · Yangon</p><Link className="mr-4 text-brand underline" href={`/sme/exceptions/${item.case_id}`}>Open case</Link><Button variant="outline" disabled={!!busy} onClick={async()=>{setBusy(item.id);setError('');try{await api!.setNotificationRead(item.id,!item.read);resource.reload();}catch(e){setError(safeError(e));}finally{setBusy('');}}}>{item.read ? 'Mark unread' : 'Mark read'}</Button></Card>) : <Card><Empty text="No notifications." /></Card>}</>;
 }

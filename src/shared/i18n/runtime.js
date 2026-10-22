@@ -27,6 +27,8 @@
     observer.disconnect();
     document.documentElement.lang = language;
     document.documentElement.dataset.language = language;
+    const switcher = document.querySelector('#language-switch');
+    if (switcher?.hasAttribute('aria-label')) switcher.setAttribute('aria-label', language === 'my' ? 'ဘာသာစကား ရွေးရန်' : 'Choose language');
     for (const option of document.querySelectorAll('option:not([value])')) option.setAttribute('value', option.textContent);
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {

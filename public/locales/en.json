@@ -59,8 +59,8 @@
   "Automated checks pass ဖြစ်သော်လည်း လူပြန်စစ်ရန် နမူနာရွေးချယ်ခံရခြင်း။": "This passed review was selected for a human audit.",
   "Courier delay / failed delivery ကို ဒီ Form မှာ မတင်ပါနှင့်။": "Do not use this form for courier delays or failed deliveries.",
   "ဘာဖြစ်ခဲ့တာလဲ၊ စစ်ဆေးပေးရန် အသေးစိတ်ရေးပါ။": "Describe what happened and what the warehouse should check.",
-  "မပြေလည်သေးသည့် အကြောင်းရင်းရေးပါ။": "Explain why the proposed resolution does not resolve the issue.",
-  "Sample data ဖြည့်ပြီးပါပြီ။ Review လုပ်ပြီး Submit နှိပ်ပါ။": "Sample data filled. Review it before submitting.",
+  "မပြေလည်သေးသည့် အကြောင်းရင်းရေးပါ။": "Explain why the issue is not resolved.",
+  "Sample data ဖြည့်ပြီးပါပြီ။ Review လုပ်ပြီး Submit နှိပ်ပါ။": "Sample data added. Review it before submitting.",
   "Available stock ၈ ခုသာ ကျန်ရှိပါသည်။": "Only 8 units are available.",
   "SME decision လိုအပ်ပါသည်။ Switch to SME workspace first.": "SME confirmation is required. Switch to the SME workspace first."
 }

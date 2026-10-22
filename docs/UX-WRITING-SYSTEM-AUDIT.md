@@ -125,3 +125,8 @@ TSX static JSX text occurrences: 841. Exact-key မရှိသော candidates
 - Courier arrival တစ်ခုတည်းဖြင့် success မပြရန်၊ SME receipt confirmation သာ success ဖြစ်ရန်။
 - Language switch ကြောင့် entered quantities, selected option values, backend enums နှင့် user content မပြောင်းရန်။
 - 390px/768px/desktop တွင် MM wrapping, focus order, action label truncation စစ်ရန်။
+
+
+## Implementation follow-up
+
+The approved fixes have been applied locally. See [implementation and validation](UX-WRITING-IMPLEMENTATION.md) and [ongoing writing guide](UX-WRITING-GUIDE.md). The original findings above describe the pre-fix snapshot.

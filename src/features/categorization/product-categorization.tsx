@@ -1,4 +1,5 @@
 'use client';
+import {safeError} from '../../shared/i18n/errors';
 import {useRef,useState} from 'react';
 import {useSession} from '../auth/session';
 import {ApiError,type Schemas} from '../../shared/api';
@@ -44,11 +45,11 @@ function CategoryEditor({initial,options,reload}:{initial:State;options:Schemas[
    const next=kind==='metadata'?await api!.saveProductMetadata(state.product_id,body as Schemas['MetadataCommand'],request):kind==='analyze'?await api!.analyzeProductCategory(state.product_id,body as Schemas['AnalyzeCommand'],request):await api!.reviewProductCategory(state.product_id,body as Schemas['ReviewCommand'],request);
    if(next.product_id!==state.product_id||next.warehouse_id!==warehouseId)throw new Error('The saved product could not be verified. Reload this product.');
    setState(next);setMetadata(next.metadata);setCategory(next.category??next.suggestion?.category??'');setAck(false);setNote('');retry.current=null;
-   setMessage(kind==='metadata'?'Metadata saved. Request a new suggestion or verify manually.':kind==='analyze'?'AI suggestion saved. Human verification is required.':'Category verified and saved.');
-  }catch(e){setError(e instanceof ApiError&&e.status===409?'This product changed or the request conflicted. Reload the saved record before continuing.':e instanceof Error?e.message:'Unable to save categorization.');}
+   setMessage(kind==='metadata'?'Product details saved. Request a new suggestion or verify manually.':kind==='analyze'?'AI suggestion saved. Human verification is required.':'Category verified and saved.');
+  }catch(e){setError(e instanceof ApiError&&e.status===409?'This product changed or the request conflicted. Reload the saved record before continuing.':safeError(e,!(e instanceof ApiError&&[400,401,403,404,409,422].includes(e.status))));}
   finally{setBusy('');locked.current=false;}
  }
- return <section className="categoryPanel" aria-labelledby="category-title"><div className="categoryHeading"><div><h3 id="category-title">AI-assisted stock categorization</h3><p>Classify this product from its description and metadata. Stock quantities stay unchanged.</p></div><Badge>{state.status==='verified'?'Category verified':'Needs human verification'}</Badge></div>
+ return <section className="categoryPanel" aria-labelledby="category-title"><div className="categoryHeading"><div><h3 id="category-title">AI-assisted stock categorization</h3><p>Suggest a category using the product description and details. Stock quantities stay unchanged.</p></div><Badge>{state.status==='verified'?'Category verified':'Needs human verification'}</Badge></div>
  <div className="categoryColumns"><div><h4>Product facts</h4><p className="categoryHint">Enter known facts in English or Myanmar. Leave unknown attributes blank; do not guess. Product name and these fields are sent to {options.provider==='groq'?'Groq (hosted AI)':'your configured Ollama server'} when you request a suggestion.</p>
  <fieldset disabled={!!busy} className="categoryFields">{fields.map(([key,label,max])=><label key={key}>{label}{key==='description'?<textarea rows={4} maxLength={max} value={metadata[key]??''} onChange={e=>setMetadata({...metadata,[key]:e.target.value})}/>:<Input maxLength={max} value={metadata[key]??''} onChange={e=>setMetadata({...metadata,[key]:e.target.value})}/>}</label>)}</fieldset>
  <div className="categoryActions"><Button disabled={!!busy||!dirty} onClick={()=>void run('metadata')}>{busy==='metadata'?'Savingâ€¦':'Save product facts'}</Button><Button variant="outline" disabled={!!busy||dirty||!options.ai_available} onClick={()=>void run('analyze')}>{busy==='analyze'?'Classifyingâ€¦':'Suggest category with AI'}</Button></div>
@@ -59,6 +60,6 @@ function CategoryEditor({initial,options,reload}:{initial:State;options:Schemas[
  <fieldset disabled={!!busy||dirty} className="categoryFields"><label>Verified category<select aria-label="Verified category" value={category} onChange={e=>setCategory(e.target.value as typeof category)}><option value="">Choose a category</option>{Object.entries(options.categories).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label>Verification note<Input value={note} minLength={5} maxLength={1000} placeholder="What did you check or correct?" onChange={e=>setNote(e.target.value)}/></label>{flags.length>0&&<label className="categoryAcknowledge"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>I reviewed the flags and recorded any unresolved details in my note.</label>}
  <Button disabled={!category||note.trim().length<5||(flags.length>0&&!ack)} onClick={()=>void run('review')}>{busy==='review'?'Verifyingâ€¦':'Verify category'}</Button></fieldset>
  {state.status==='verified'&&<p className="categoryVerified" role="status">Saved category: {state.category&&options.categories[state.category]}<br/>Verified {state.reviewed_at&&dateTime(state.reviewed_at)} Â· {state.reviewed_by}<br/><span data-user-content>{state.review_note}</span></p>}</div></div>
- {error&&<div role="alert" className="categoryFlags"><p>{error}</p><Button variant="outline" onClick={reload} disabled={!!busy}>Reload saved record</Button><p className="categoryHint">Reload discards unsaved form edits. Retry an unchanged action to reuse its request key.</p></div>}{message&&<p role="status">{message}</p>}
+ {error&&<div role="alert" className="categoryFlags"><p>{error}</p><Button variant="outline" onClick={reload} disabled={!!busy}>Reload saved record</Button><p className="categoryHint">Reloading discards unsaved edits. To retry, submit the same details again.</p></div>}{message&&<p role="status">{message}</p>}
  </section>;
 }

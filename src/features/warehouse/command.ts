@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { safeError } from '../../shared/i18n/errors';
 import { ApiError } from '../../shared/api';
 import { isUUID } from '../../shared/api/transport';
 import { canReleaseCommand } from './command-policy';
@@ -46,7 +47,7 @@ export function useCommand<B, R>(storageKey: string, send: (body: B, key: string
         try { sessionStorage.removeItem(storageKey); } catch { /* Preserve recoverability on reload. */ }
         if (err instanceof ApiError && err.status === 409) committed();
       }
-      setError(err instanceof ApiError ? `${err.message}${err.correlationId ? ` Reference: ${err.correlationId}` : ''}` : 'Unable to submit. Retry the same request before entering another.');
+      setError(err instanceof ApiError ? `${safeError(err, pendingRef.current !== null)}${err.correlationId ? ` Reference: ${err.correlationId}` : ''}` : 'Unable to submit. Retry the same request before entering another.');
     } finally { lock.current = false; setBusy(false); }
   }
   return { pending, ready, busy, error, result, execute, clearResult: () => setResult(null) };

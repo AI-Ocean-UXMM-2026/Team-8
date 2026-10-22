@@ -16,7 +16,7 @@ export function LocationSharing({ assignmentId }: { assignmentId: string }) {
     if(stopping.current)return stopping.current;
     const current=session.current;if(!current)return;
     const task=(async()=>{
-      try{await api!.stopTracking(current);if(session.current===current){session.current=null;sessionStorage.removeItem(storageKey)}setMessage('Location sharing ended / တည်နေရာမျှဝေမှု ရပ်ပြီးပါပြီ')}
+      try{await api!.stopTracking(current);if(session.current===current){session.current=null;sessionStorage.removeItem(storageKey)}setMessage('Location sharing ended')}
       catch{setMessage('Local sharing stopped. Server stop is unconfirmed; retry Stop before sharing again.')}
     })();
     stopping.current=task;
@@ -45,17 +45,17 @@ export function LocationSharing({ assignmentId }: { assignmentId: string }) {
         open:()=>api!.startTracking(assignmentId),opened:id=>{session.current=id;sessionStorage.setItem(storageKey,id)},
         send:(id,p)=>api!.sendLocation(id,p),stop:async()=>{await stop()}});
       if(!id)return;
-      sending.current=false;lastSent.current=Date.now();setSharing(true);setMessage('Location sent / တည်နေရာ ပို့ပြီးပါပြီ');
+      sending.current=false;lastSent.current=Date.now();setSharing(true);setMessage('Location sent');
       watch.current=navigator.geolocation.watchPosition(position=>{
         if(run!==generation.current || sending.current || document.hidden || !navigator.onLine || Date.now()-lastSent.current<10000) return;
         let payload;try{payload=positionPayload(position)}catch{void stoppedMessage('GPS position could not be verified.');return;}
         sending.current=true;lastSent.current=Date.now();
-        void api!.sendLocation(id,payload).then(()=>{if(run===generation.current)setMessage('Location sent / တည်နေရာ ပို့ပြီးပါပြီ')}).catch(error=>{
+        void api!.sendLocation(id,payload).then(()=>{if(run===generation.current)setMessage('Location sent')}).catch(error=>{
           if(run!==generation.current)return;setMessage('Location update failed. No old position was queued.');if(error instanceof ApiError && [401,403,409,422].includes(error.status))void stop();
         }).finally(()=>{if(run===generation.current)sending.current=false;});
       },()=>{void stoppedMessage('Location permission or position unavailable.')},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
-    } catch(error) { await stoppedMessage(error instanceof Error ? error.message : 'Location permission denied or unavailable.'); }
+    } catch(error) { await stoppedMessage('Location sharing could not start. Check your connection and location permission, then try again.'); }
     finally{locked.current=false;setBusy(false);}
   }
-  return <Card className="my-5"><h2 className="font-semibold">Share delivery location / တည်နေရာမျှဝေရန်</h2><p className="my-3 text-sm">Only while this page is visible. Leaving the page or going offline stops local capture. Your warehouse and associated SME can view the active delivery.</p><label className="block text-sm"><input type="checkbox" checked={consent} disabled={sharing || busy} onChange={e=>setConsent(e.target.checked)} /> I consent for this delivery / ဤပို့ဆောင်မှုအတွက် သဘောတူပါသည်</label><div className="my-4 flex gap-3"><Button disabled={!consent || sharing || busy || !settings.value?.live_gps_enabled} onClick={()=>void start()}>Start sharing</Button><Button variant="outline" onClick={()=>void stop()}>Stop sharing</Button></div><p role="status" className="text-sm">{settings.error}{settings.value&&!settings.value.live_gps_enabled?'Live GPS disabled in Warehouse Admin settings. ':''}{sharing ? 'Sharing while visible. ' : ''}{message}</p></Card>;
+  return <Card className="my-5"><h2 className="font-semibold">Share delivery location</h2><p className="my-3 text-sm">Only while this page is visible. Leaving the page or going offline stops local capture. Your warehouse and associated SME can view the active delivery.</p><label className="block text-sm"><input type="checkbox" checked={consent} disabled={sharing || busy} onChange={e=>setConsent(e.target.checked)} /> I consent for this delivery</label><div className="my-4 flex gap-3"><Button disabled={!consent || sharing || busy || !settings.value?.live_gps_enabled} onClick={()=>void start()}>Start sharing</Button><Button variant="outline" onClick={()=>void stop()}>Stop sharing</Button></div><p role="status" className="text-sm">{settings.error}{settings.value&&!settings.value.live_gps_enabled?'Live GPS disabled in Warehouse Admin settings. ':''}{sharing ? 'Sharing while visible. ' : ''}{message}</p></Card>;
 }
