@@ -59,3 +59,9 @@ test('SME tracking reads use tenant-authorized delivery API, never staff-only op
  const denied=createApiClient(async()=>{throw new ApiError(403,'FORBIDDEN','Not your shipment');});
  await assert.rejects(denied.getTrackingShipment(id),(e:ApiError)=>e.status===403);
 });
+import {checkedRoute} from '../../src/shared/api/route';
+test('routing decoder preserves ORS longitude/latitude and rejects bad or misleading routes',()=>{
+ const route={provider:'openrouteservice',profile:'car',coordinates:[[96.1,16.8],[96.2,16.9]],distance_m:1200,duration_ms:180000,traffic_aware:false,destination_source:'courier_selected'};
+ assert.equal(checkedRoute(route).coordinates[0][0],96.1);
+ for(const patch of [{coordinates:[[181,0],[96,16]]},{coordinates:[]},{duration_ms:NaN},{traffic_aware:true},{provider:'unknown'}])assert.throws(()=>checkedRoute({...route,...patch}));
+});

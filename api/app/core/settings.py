@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     supabase_public_key: str = Field(default='', validation_alias=AliasChoices('supabase_public_key', 'SUPABASE_PUBLIC_KEY', 'supabase_publishable_key', 'SUPABASE_PUBLISHABLE_KEY'))
     supabase_publishable_key: str = ''
     cors_origins: list[str] = []
+    openrouteservice_api_key: str = ''
     openai_api_key: str = ''
     openai_model: str = ''
     supabase_worker_key: str = ''

@@ -7,6 +7,8 @@ import { useSession } from '../auth/session';
 import { useCommand } from '../warehouse/command';
 import { dateTime, Empty, ErrorPanel, human, Loading, PageTitle } from '../warehouse/shared';
 import { LiveTracking } from '../tracking/live';
+import {CourierRoute} from '../tracking/courier-route';
+import {LiveCourierTracking} from '../tracking/live-tracking';
 import { LocationSharing } from '../tracking/share';
 import { usePolling } from './polling';
 import { EvidenceUpload } from './evidence';
@@ -44,8 +46,9 @@ export function DeliveryWorkspace({ id }: { id: string }) {
   const field=(name:string,label:string,type='text',required=true)=><label key={name} className="block text-sm">{label}<Input className="mt-2" name={name} aria-label={label} type={type} required={required} {...(type==='number'?{min:1,step:1}:{})}/></label>;
   const current=options.includes(kind)?kind:options[0];
   return <><PageTitle title={shipment.reference} my="ပို့ဆောင်မှု စီမံရန်"/><Badge>{human(shipment.status)}</Badge>
-    {external?<Card className="my-5"><h2 className="font-semibold">External courier / ပြင်ပပို့ဆောင်သူ</h2><p className="mt-3">Carrier: {data.courier_name??'Awaiting confirmation'} · Waybill: {data.waybill??'Not supplied'}</p>{data.tracking_url&&safeLink(data.tracking_url)&&<a className="mt-3 inline-block text-brand underline" href={data.tracking_url} target="_blank" rel="noopener noreferrer">Courier tracking</a>}<p className="mt-3 text-sm text-muted">No internal GPS or promised ETA. Responsibility remains undetermined until evidence review.</p>{data.handovers.map(h=><p key={h.id} className="mt-3 text-sm">Accepted {dateTime(h.accepted_at)} · {h.package_count} packages · {h.package_condition}</p>)}</Card>:data.session_id&&!terminal&&<LiveTracking sessionId={data.session_id}/>}
+    {external?<Card className="my-5"><h2 className="font-semibold">External courier / ပြင်ပပို့ဆောင်သူ</h2><p className="mt-3">Carrier: {data.courier_name??'Awaiting confirmation'} · Waybill: {data.waybill??'Not supplied'}</p>{data.tracking_url&&safeLink(data.tracking_url)&&<a className="mt-3 inline-block text-brand underline" href={data.tracking_url} target="_blank" rel="noopener noreferrer">Courier tracking</a>}<p className="mt-3 text-sm text-muted">No internal GPS or promised ETA. Responsibility remains undetermined until evidence review.</p>{data.handovers.map(h=><p key={h.id} className="mt-3 text-sm">Accepted {dateTime(h.accepted_at)} · {h.package_count} packages · {h.package_condition}</p>)}</Card>:audience==='rider'?data.session_id&&!terminal&&<LiveTracking sessionId={data.session_id}/>:<LiveCourierTracking key={id} shipment={shipment}/>}
     {data.capacity.map(c=><Card key={c.id} className="my-4"><h2 className="font-semibold">Capacity confirmed / အချိန်အတည်ပြုပြီး</h2><p className="mt-2">{dateTime(c.scheduled_at)} · Yangon</p><p className="mt-2">{c.instructions}</p></Card>)}
+    {audience==='rider'&&!external&&!terminal&&<CourierRoute key={id} shipmentId={id} accepted={!!assignment?.accepted_at}/>}
     {audience==='rider'&&assignment?.picked_up_at&&!external&&!terminal&&<LocationSharing assignmentId={assignment.id}/>}
     <EvidenceUpload shipmentId={id} refresh={resource.reload}/>
     {!terminal&&!demo&&<Card className="my-5"><h2 className="text-lg font-semibold">Delivery action / ဆောင်ရွက်ရန်</h2>{command.result&&<p role="status" className="my-3">Saved: {human(command.result.shipment.status)}</p>}{(error||command.error)&&<p role="alert" className="my-3">{error||command.error}</p>}{command.pending&&<Button disabled={command.busy} onClick={()=>void command.execute()}>Retry original delivery request</Button>}

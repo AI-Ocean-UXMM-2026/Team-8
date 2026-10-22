@@ -68,6 +68,33 @@ def delivery(shipment_id: UUID, request: Request, identity: Identity):
     return call(request, identity, 'delivery_read', {'p_shipment': str(shipment_id)})
 
 
+class RouteRequest(DTO):
+    origin_latitude: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
+    origin_longitude: Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
+    destination_latitude: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
+    destination_longitude: Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
+    consent: Literal[True]
+
+
+@router.post('/deliveries/{shipment_id}/route', response_model=dict, operation_id='calculateDeliveryRoute')
+def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Identity):
+    from ...core.errors import AppError
+    from .routing import calculate_route
+    # This RPC lists only the caller's current rider assignments. Client role
+    # headers and membership alone never authorize another rider's route.
+    assignments = call(request, identity, 'delivery_read', {'p_shipment': None})
+    assignment = next((a for a in assignments if a.get('shipment_id') == str(shipment_id) and a.get('accepted_at')), None)
+    if not assignment:
+        raise AppError(403, 'FORBIDDEN', 'Accept your assigned delivery before requesting a route.')
+    data = call(request, identity, 'delivery_read', {'p_shipment': str(shipment_id)})
+    shipment = data['shipment']
+    if shipment['direction'] != 'outbound' or shipment['delivery_mode'] != 'in_house' or shipment['status'] in ('delivered', 'cancelled'):
+        raise AppError(403, 'FORBIDDEN', 'Routing requires an active in-house outbound delivery.')
+    result = calculate_route(request.app.state.settings.openrouteservice_api_key, body)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(result, headers={'Cache-Control': 'no-store'})
+
+
 @router.post('/deliveries/{shipment_id}/{command}', response_model=dict, operation_id='deliveryCommand')
 def command(shipment_id: UUID, command: Literal['assign','cancel','accept','pickup','proof','confirm','handover','courier','capacity'],
             body: DeliveryCommand, request: Request, identity: Identity, key: Key):

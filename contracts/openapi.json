@@ -2653,6 +2653,67 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/deliveries/{shipment_id}/route": {
+      "post": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Route",
+        "operationId": "calculateDeliveryRoute",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Calculatedeliveryroute"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/deliveries/{shipment_id}/{command}": {
       "post": {
         "tags": [
@@ -5415,6 +5476,49 @@
           "size_bytes"
         ],
         "title": "RegisterEvidence"
+      },
+      "RouteRequest": {
+        "properties": {
+          "origin_latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Origin Latitude"
+          },
+          "origin_longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Origin Longitude"
+          },
+          "destination_latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Destination Latitude"
+          },
+          "destination_longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Destination Longitude"
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true,
+            "title": "Consent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin_latitude",
+          "origin_longitude",
+          "destination_latitude",
+          "destination_longitude",
+          "consent"
+        ],
+        "title": "RouteRequest"
       },
       "StartTracking": {
         "properties": {
