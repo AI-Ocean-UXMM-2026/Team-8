@@ -1166,5 +1166,7 @@
   "This delivery uses a third-party courier. No in-house GPS position is available.": "ဤပို့ဆောင်မှုကို ပြင်ပပို့ဆောင်သူက ဆောင်ရွက်သည်။ ကိုယ်ပိုင်ပို့ဆောင်သူ၏ GPS တည်နေရာ မရှိပါ။",
   "View handover details": "လွှဲပြောင်းမှု အသေးစိတ်ကြည့်ရန်",
   "This confirms receipt for": "လက်ခံရရှိကြောင်း အတည်ပြုမည့် ပို့ဆောင်မှု —",
-  "The delivery will be marked successful.": "ပို့ဆောင်မှုကို အောင်မြင်ပြီးအဖြစ် သတ်မှတ်မည်။"
+  "The delivery will be marked successful.": "ပို့ဆောင်မှုကို အောင်မြင်ပြီးအဖြစ် သတ်မှတ်မည်။",
+  "Demo account": "နမူနာအကောင့်",
+  "Current demo account": "လက်ရှိ နမူနာအကောင့်"
 }
