@@ -18,7 +18,7 @@ Queue risk is calculated at read time; stored classification explains when prior
 
 ## Database and deployment
 
-Apply `20261023000200_be2_case_risk.sql` after the preceding migrations, then deploy matching API and frontend code. The API uses the caller's JWT; no worker key is exposed to the browser. Worker setup, provider keys, actual model calls and production migrations require deployment acceptance separately. GitHub merge does not establish that those steps occurred.
+Apply `20261023050000_be2_case_risk.sql` after the preceding migrations, then deploy matching API and frontend code. The API uses the caller's JWT; no worker key is exposed to the browser. Worker setup, provider keys, actual model calls and production migrations require deployment acceptance separately. GitHub merge does not establish that those steps occurred.
 
 ## Acceptance workflow
 
