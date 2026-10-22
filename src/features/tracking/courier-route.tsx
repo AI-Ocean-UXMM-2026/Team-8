@@ -17,7 +17,7 @@ export function CourierRoute({shipmentId,accepted}:{shipmentId:string;accepted:b
  const request=useRef<AbortController|null>(null);useEffect(()=>()=>request.current?.abort(),[shipmentId]);
  useEffect(()=>{
   if(demo||!api)return;const controller=new AbortController();
-  void api.getSharedRoute(shipmentId,controller.signal).then(saved=>{if(saved&&!controller.signal.aborted&&!edited.current){setLatitude(String(saved.destination[1]));setLongitude(String(saved.destination[0]));setOrigin([saved.origin[1],saved.origin[0]]);setResult(saved);setShared(true);}}).catch(()=>{if(!controller.signal.aborted)setError('Saved route unavailable. Calculate and share a route to retry.');});
+  void Promise.all([api.getDestination(shipmentId,controller.signal),api.getSharedRoute(shipmentId,controller.signal)]).then(([pin,saved])=>{if(controller.signal.aborted||edited.current)return;if(pin){setLatitude(String(pin.latitude));setLongitude(String(pin.longitude));}else if(saved){setLatitude(String(saved.destination[1]));setLongitude(String(saved.destination[0]));}if(saved&&(!pin||(pin.latitude===saved.destination[1]&&pin.longitude===saved.destination[0]))){setOrigin([saved.origin[1],saved.origin[0]]);setResult(saved);setShared(true);}}).catch(()=>{if(!controller.signal.aborted)setError('Saved destination or route unavailable. Refresh to retry.');});
   return()=>controller.abort();
  },[api,demo,shipmentId]);
  const lat=latitude.trim()?Number(latitude):NaN,lon=longitude.trim()?Number(longitude):NaN;

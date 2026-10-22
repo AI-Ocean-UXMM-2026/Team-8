@@ -9,6 +9,7 @@ import { useCommand } from '../warehouse/command';
 import { dateTime, Empty, ErrorPanel, human, Loading, PageTitle } from '../warehouse/shared';
 import { LiveTracking } from '../tracking/live';
 import {CourierRoute} from '../tracking/courier-route';
+import {DestinationPicker} from '../tracking/destination-picker';
 import {LiveCourierTracking} from '../tracking/live-tracking';
 import {RiderIssueReport} from '../courier/issue-report';
 import { LocationSharing } from '../tracking/share';
@@ -53,6 +54,7 @@ export function DeliveryWorkspace({ id }: { id: string }) {
     {audience==='rider'&&!external&&!terminal&&<CourierRoute key={id} shipmentId={id} accepted={!!assignment?.accepted_at}/>}
     {audience==='rider'&&assignment?.picked_up_at&&!external&&!terminal&&<LocationSharing assignmentId={assignment.id}/>}
     {audience==='rider'&&assignment?.accepted_at&&!external&&!terminal&&!demo&&<RiderIssueReport key={assignment.id} shipmentId={id} evidence={shipment.evidence} refresh={resource.reload}/>}
+    {audience==='warehouse'&&shipment.direction==='outbound'&&!terminal&&<DestinationPicker key={id} shipmentId={id}/>}
     <EvidenceUpload shipmentId={id} refresh={resource.reload}/>
     {!terminal&&!demo&&<Card className="my-5"><h2 className="text-lg font-semibold">Delivery action</h2>{command.result&&<p role="status" className="my-3">Saved: {human(command.result.shipment.status)}</p>}{(error||command.error)&&<p role="alert" className="my-3">{error||command.error}</p>}{command.pending&&<Button disabled={command.busy} onClick={()=>void command.execute()}>Retry original delivery request</Button>}
       <form onSubmit={submit}><fieldset disabled={!command.ready||command.busy||!!command.pending} className="mt-4 space-y-4"><label className="block">Operation<select aria-label="Delivery operation" className="ml-3 rounded border p-2" value={current} onChange={e=>setKind(e.target.value as Kind)}>{options.map(option=><option key={option} value={option}>{human(option)}</option>)}</select></label>

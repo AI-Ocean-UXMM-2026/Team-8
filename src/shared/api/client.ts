@@ -103,6 +103,8 @@ export function createApiClient(transport: Transport) {
     decideApproval(id: string, body: Schemas['Decision'], key: string) { return transport<Schemas['CaseDetail']>({ method: 'POST', path: `/api/approvals/${entity(id)}/decision`, body, idempotencyKey: key }); },
     reviewCase(id: string, body: Schemas['CaseReview'], key: string) { return transport<Schemas['CaseDetail']>({ method: 'POST', path: `/api/exceptions/${entity(id)}/review`, body, idempotencyKey: key }); },
     getDelivery(id: string, signal?: AbortSignal) { return transport<Delivery>({ method: 'GET', path: `/api/deliveries/${entity(id)}`, signal }); },
+    getDestination(id: string, signal?: AbortSignal) { return transport<{latitude:number;longitude:number;label:string}|null>({method:'GET',path:`/api/deliveries/${entity(id)}/destination`,signal}); },
+    saveDestination(id: string, body:{latitude:number;longitude:number;label:string}) { return transport<{latitude:number;longitude:number;label:string}>({method:'PUT',path:`/api/deliveries/${entity(id)}/destination`,body}); },
     listAssignments(signal?: AbortSignal) { return transport<Assignment[]>({ method: 'GET', path: '/api/rider/assignments', signal }); },
     deliveryCommand(id: string, command: 'assign' | 'cancel' | 'accept' | 'pickup' | 'proof' | 'confirm' | 'handover' | 'courier' | 'capacity', body: Schemas['DeliveryCommand'], key: string) { return transport<Delivery>({ method: 'POST', path: `/api/deliveries/${entity(id)}/${command}`, body, idempotencyKey: key }); },
     startTracking(assignmentId: string) { return transport<string>({ method: 'POST', path: '/api/tracking/start', body: { assignment_id: entity(assignmentId), consent: true }, idempotencyKey: crypto.randomUUID() }); },

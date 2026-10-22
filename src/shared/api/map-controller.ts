@@ -16,7 +16,7 @@ export function createMapController(l:Leaflet,node:HTMLElement,callbacks:{destin
    const points=route&&route.length>=2&&route.length<=10000&&route.every(valid)?route:[];
    if(lastStage!==stage+mode){position?.remove();position=null;lastStage=stage+mode;}
    if(valid(p)){if(position)position.setLatLng(p);else{position=(l.marker&&l.divIcon?l.marker(p,{icon:l.divIcon({className:'deliveryVehicleIcon',html:`<span role="img" aria-label="${stage==='delivered'?'SME confirmed':stage==='arrived'?'Arrived, awaiting SME':'Delivery vehicle'}" style="background:${stage==='delivered'?'#16a34a':stage==='arrived'?'#ffc738':'#25cbd1'}">${stage==='delivered'?'✓':mode==='walking'?'🚶':mode==='bicycle'?'🚲':'🚚'}</span>`,iconSize:[32,32],iconAnchor:[16,16]})}):l.circleMarker(p,{radius:8,color:'#0e7490',fillColor:stage==='delivered'?'#16a34a':stage==='arrived'?'#ffc738':'#25cbd1',fillOpacity:1})).addTo(map);if(!points.length)map.setView(p,14)}}else{position?.remove();position=null}
-   if(valid(d)){if(destination)destination.setLatLng(d);else{destination=l.circleMarker(d,{radius:9,color:'#92400e',fillColor:'#ffc738',fillOpacity:1}).addTo(map);if(!points.length)map.setView(d,14)}}else{destination?.remove();destination=null}
+   if(valid(d)){if(destination)destination.setLatLng(d);else{destination=l.circleMarker(d,{radius:9,color:'#92400e',fillColor:'#ffc738',fillOpacity:1}).addTo(map);}if(!points.length)map.setView(d,14)}else{destination?.remove();destination=null}
    const next=JSON.stringify(points);
    if(next!==key){line?.remove();line=null;key=next;if(points.length){line=l.polyline(points,{color:'#0e7490',weight:5}).addTo(map);map.fitBounds(points,{padding:[24,24],maxZoom:15})}}
   },
