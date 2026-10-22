@@ -1,0 +1,6 @@
+PASS: 7 slides, 7 Burmese notes, 300-second narration plan.
+PASS: PPTX structural validation.
+PASS: embedded MP4 matches standalone file; duration 110 seconds.
+PASS: every slide rendered and visually inspected; slide 4 poster corrected for PDF rendering.
+PASS: no borrowed TAM/revenue values or filler placeholders.
+LIMIT: no presenter voice, no continuous screen recording, no PowerPoint playback acceptance test, no three timed presenter rehearsals.
