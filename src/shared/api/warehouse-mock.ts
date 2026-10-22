@@ -7,6 +7,30 @@ type Data = Schemas['WarehouseFixture'];
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 type State = { data: Data; replay: Record<string, { fingerprint: string; result: unknown }>; caseDetails?: Record<string, WarehouseCase> };
 const storageKey = 'parcelcare.warehouse.demo.v1';
+export function demoInboundShipments(storage?: Store) {
+  const saved = storage?.getItem(storageKey);
+  const data = saved ? (JSON.parse(saved) as State).data : fixture.body;
+  return data.shipments.filter(s => s.reference.startsWith('PC-DEMO-IN-'));
+}
+
+export function generateDemoInbound(storage: Store, smeId: string, warehouseId: string) {
+  const saved = storage.getItem(storageKey);
+  const state: State = saved ? JSON.parse(saved) : {data: structuredClone(fixture.body), replay: {}};
+  const product = state.data.inventory.find(p => p.sme_id === smeId);
+  if (state.data.directory.warehouse_id !== warehouseId || !product) throw new Error('Demo SME or warehouse is unavailable.');
+  const id = crypto.randomUUID(), stamp = new Date().toISOString();
+  const shipment: Schemas['ShipmentDetail'] = {
+    id, warehouse_id: warehouseId, sme_id: smeId, reference: `PC-DEMO-IN-${id.slice(0,8)}`,
+    direction: 'inbound', delivery_mode: null, status: 'expected', version: 1, created_at: stamp,
+    items: [{product_id: product.id, sku: product.sku, name: product.name, expected_qty: 10, received_qty: 0, damaged_qty: 0}],
+    evidence_ids: [], evidence: [], allowed_events: [],
+    events: [{id: crypto.randomUUID(), type: 'created', notes: 'Demo SME pickup: Mingalar Taung Nyunt, Yangon (16.796187, 96.164116) → Yangon hub warehouse (16.790504, 96.156483). 10 units expected.', verified_at: stamp, recorded_at: stamp, evidence_ids: []}],
+  };
+  state.data.shipments.unshift(shipment);
+  product.shipment_ids.push(id);
+  storage.setItem(storageKey, JSON.stringify(state));
+  return shipment;
+}
 const fingerprint = (value: unknown) => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
 const fail = (status: number, code: string, text: string): never => { throw new ApiError(status, code, text); };
 

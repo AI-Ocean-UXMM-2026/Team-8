@@ -1,6 +1,7 @@
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import {ApiError,type Transport,type ApiRequest,type Schemas,validateRequest} from './transport';
 import {checkedOrder,type SmeOrder,type OrderInput} from './orders';
+import {demoInboundShipments} from './warehouse-mock';
 
 // Fictitious SME session data. Never used by authenticated live sessions.
 type State={cases:Schemas['CaseDetail'][];orders:SmeOrder[];replay:Record<string,{fingerprint:string;result:unknown}>};
@@ -18,7 +19,7 @@ export function createSmeTrackingMockTransport(storage?:Pick<Storage,'getItem'|'
   let value:unknown;
   if(request.method==='GET'){
    if(path==='/api/me')value={actor_id:'10000000-0000-4000-8000-000000000098',memberships:[{warehouse_id:warehouse,sme_id:sme,role:'sme'}]};
-   else if(path==='/api/sme/overview'&&url.searchParams.get('sme_id')===sme)value={inventory:inventory(),shipments:data.shipments.filter(s=>s.sme_id===sme),cases:state.cases,approvals:[]};
+   else if(path==='/api/sme/overview'&&url.searchParams.get('sme_id')===sme)value={inventory:inventory(),shipments:[...demoInboundShipments(storage).filter(s=>s.sme_id===sme),...data.shipments.filter(s=>s.sme_id===sme)],cases:state.cases,approvals:[]};
    else if(/^\/api\/deliveries\/[^/]+$/.test(path))value={shipment:ownShipment(path.split('/')[3]),session_id:null};
    else if(/^\/api\/exceptions\/[^/]+$/.test(path)){value=state.cases.find(c=>c.id===path.split('/')[3]);if(!value)return deny();}
    else if(path==='/api/orders'&&url.searchParams.get('warehouse_id')===warehouse&&url.searchParams.get('sme_id')===sme)value=state.orders;

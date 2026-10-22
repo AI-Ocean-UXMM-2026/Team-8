@@ -18,12 +18,27 @@ import { DecisionForm } from './decision';
 import { EvidenceUpload, EvidenceDownload } from './evidence';
 
 export function SMEDashboard() {
-  const { api, smeId, demo } = useSession();
+  const { api, smeId, warehouseId, demo } = useSession();
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState('');
+  const [generateError, setGenerateError] = useState('');
+  async function generateOrder() {
+    if (!demo || generating) return;
+    setGenerating(true); setGenerateError(''); setGenerated('');
+    try {
+      const {generateDemoInbound} = await import('../../shared/api/warehouse-mock');
+      const shipment = generateDemoInbound(window.sessionStorage, smeId, warehouseId);
+      setGenerated(`${shipment.reference} · 10 units · Warehouse လက်ခံရန် စောင့်နေသည်`);
+      resource.reload();
+    } catch (error) { setGenerateError(error instanceof Error ? error.message : 'Demo order could not be saved.'); }
+    finally { setGenerating(false); }
+  }
   const resource = usePolling(smeId, signal => api!.getSMEOverview(smeId,signal));
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
+    {demo&&<Card className="mb-5"><h2 className="text-lg font-semibold">SME → Warehouse · ရန်ကုန်</h2><p className="my-3">Demo pickup: Mingalar Taung Nyunt, Yangon → Yangon hub warehouse. Botanical soap × 10. Saved in this browser session.</p><Button type="button" disabled={generating} onClick={()=>void generateOrder()}>{generating?'Generating…':'Generate demo order · နမူနာအော်ဒါ ဖန်တီးမည်'}</Button>{generated&&<p role="status" className="mt-3">{generated}</p>}{generateError&&<p role="alert" className="mt-3">{generateError}</p>}</Card>}
     <Card className="mb-5"><h2 className="text-lg font-semibold">Send warehouse stock to a customer</h2><Link className="mt-3 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/orders':'/sme/orders'}>Create delivery order · ပို့ဆောင်ရန် အော်ဒါတင်မည် →</Link><Link className="mt-3 flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/reports':'/sme/reports'}>Report Cases · ပြဿနာတင်ရန်နှင့် ကြည့်ရန် →</Link></Card>
     <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
       {label:'Products',value:data.inventory.length,href:'#sme-stock',action:'View your stock'},
