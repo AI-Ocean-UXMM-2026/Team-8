@@ -219,8 +219,8 @@ try {
   identityStatus = 401; await live.goto(`${origin}/warehouse`); await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   identityStatus = 200; await live.goto(`${origin}/warehouse`); await live.getByRole('heading', { name: 'Warehouse overview' }).waitFor();
   await live.locator('.profileTrigger').click();
-    await live.getByRole('button', { name: 'Sign out', exact: true }).click();
-    await live.getByRole('dialog').getByRole('button', { name: 'Sign out', exact: true }).click();
+  await live.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
+  await live.getByRole('dialog').getByRole('button', { name: 'Sign out', exact: true }).click();
   await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   await live.reload(); await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
   const noJavaScript = await browser.newContext({ javaScriptEnabled: false });
@@ -243,7 +243,7 @@ try {
     await live.getByRole('link', { name: 'Go to my workspace', exact: true }).click();
     await live.waitForURL(`${origin}/${role}`);
     await live.locator('.profileTrigger').click();
-    await live.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await live.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
     await live.getByRole('dialog').getByRole('button', { name: 'Sign out', exact: true }).click();
     await live.waitForURL(`${origin}/login`);
   }
