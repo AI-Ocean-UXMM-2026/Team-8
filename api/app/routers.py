@@ -17,3 +17,6 @@ router.include_router(categorization)
 
 from .features.sla.router import router as sla
 router.include_router(sla)
+
+from .features.operations.orders import router as orders
+router.include_router(orders)
