@@ -192,3 +192,15 @@ test('deadline covers a body reader that never settles and retains correlation I
     } });
   await assert.rejects(transport({ method: 'GET', path: '/api/shipments' }), (e: ApiError) => e.code === 'REQUEST_TIMEOUT' && e.correlationId === key);
 });
+
+// A read-only startup retry must never repeat password exchange or stock commands.
+test('workspace identity tolerates temporary gateway errors, preserves permission failures and stays bounded',async()=>{
+ const {loadWorkspaceIdentity}=await import('../../src/shared/api/identity');
+ let clock=0,calls=0,waiting=0;
+ const result=await loadWorkspaceIdentity(async()=>{calls++;if(calls<3)throw new ApiError(502,'UPSTREAM_ERROR','Starting');return {actor_id:'verified'};},{now:()=>clock,wait:async ms=>{clock+=ms},onWaiting:()=>waiting++});
+ assert.equal(result.actor_id,'verified');assert.equal(calls,3);assert.equal(waiting,2);
+ for(const status of [401,403,422]){calls=0;await assert.rejects(loadWorkspaceIdentity(async()=>{calls++;throw new ApiError(status,'FORBIDDEN','Denied')},{wait:async()=>{throw Error('Must not wait')}}),(e:ApiError)=>e.status===status);assert.equal(calls,1);}
+ clock=0;await assert.rejects(loadWorkspaceIdentity(async()=>{throw new ApiError(503,'SERVICE_UNAVAILABLE','Starting')},{budgetMs:4000,now:()=>clock,wait:async ms=>{clock+=ms}}),(e:ApiError)=>e.code==='WORKSPACE_STARTUP_TIMEOUT');
+ const controller=new AbortController();await assert.rejects(loadWorkspaceIdentity(async()=>{controller.abort(new Error('Cancelled'));throw new ApiError(503,'SERVICE_UNAVAILABLE','Starting')},{signal:controller.signal}),/Cancelled/);
+ await assert.rejects(loadWorkspaceIdentity(async()=>{throw new ApiError(503,'SERVICE_UNAVAILABLE','Workspace service is not configured.')},{wait:async()=>{throw Error('Must not wait')}}),/not configured/);
+});
