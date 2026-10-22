@@ -12,16 +12,21 @@ export function LiveCourierTracking({shipment}:{shipment:Schemas['ShipmentDetail
  const eligible=shipment.direction==='outbound'&&shipment.delivery_mode==='in_house'&&!['delivered','cancelled'].includes(shipment.status);
  const [state,setState]=useState<{id:string;position:Position|null;message:string}>({id:shipment.id,position:null,message:'Checking location sharing…'});
  const [attempt,retry]=useState(0);
+ // Age the label independently of responses, including while a read is pending.
+ const [now,setNow]=useState(()=>Date.now());
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
  useEffect(()=>{
   if(!allowed||!eligible||demo||!api)return;
-  let active=true;let controller:AbortController|undefined;
+  let active=true,busy=false;let controller:AbortController|undefined;
   const refresh=async()=>{
-   controller?.abort();controller=new AbortController();const request=controller;
+   if(busy)return;
+   busy=true;controller=new AbortController();const request=controller;
    try{
     const session=await api.getTrackingSession(shipment.id,request.signal);
     const position=session?await api.getLivePosition(session,request.signal):null;
     if(active&&!request.signal.aborted)setState({id:shipment.id,position,message:session?'No GPS position received yet.':'Location sharing is not active.'});
    }catch{if(active&&!request.signal.aborted)setState({id:shipment.id,position:null,message:'Tracking unavailable. Check your connection or access and retry.'});}
+   finally{busy=false;}
   };
   setState({id:shipment.id,position:null,message:'Checking location sharing…'});void refresh();
   const timer=setInterval(()=>void refresh(),15000);
@@ -29,7 +34,7 @@ export function LiveCourierTracking({shipment}:{shipment:Schemas['ShipmentDetail
  },[api,allowed,eligible,demo,shipment.id,attempt]);
  if(!allowed)return null;
  const position=state.id===shipment.id?state.position:null;
- const stale=position?.status==='stale'||!!(position?.recorded_at&&Date.now()-Date.parse(position.recorded_at)>60000);
+ const stale=position?.status==='stale'||!!(position?.recorded_at&&now-Date.parse(position.recorded_at)>60000);
  const hasPosition=eligible&&!demo&&!!position&&position.status!=='unavailable';
  const message=demo?'Demo preview — no live GPS coordinates.':!eligible?shipment.delivery_mode==='third_party'?'Use the external courier tracking reference. ParcelCare GPS is unavailable.':shipment.direction==='inbound'?'GPS tracking is available for active in-house outbound deliveries.':'Location sharing has ended for this shipment.':state.id===shipment.id?state.message:'Checking location sharing…';
  const dispatched=shipment.events.some(e=>e.type==='dispatched');
