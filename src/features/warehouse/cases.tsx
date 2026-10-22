@@ -19,7 +19,7 @@ export function Cases() {
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const items=resource.data.items;
-  const visible=items.filter(c=>(stage==='all'||c.stage===stage)&&[c.id,c.shipment_id,resource.data.references[c.shipment_id],c.type,c.summary].join(' ').toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>sort==='priority'?priorityOrder.indexOf(a.priority)-priorityOrder.indexOf(b.priority):a.id.localeCompare(b.id));
+  const visible=items.filter(c=>(stage==='all'||c.stage===stage)&&[c.id,c.shipment_id,resource.data!.references[c.shipment_id],c.type,c.summary].join(' ').toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>sort==='priority'?priorityOrder.indexOf(a.priority)-priorityOrder.indexOf(b.priority):a.id.localeCompare(b.id));
   const fields = [
     ['scope','Case scope',['open','all']],
     ['type','Issue type',['quantity_mismatch','damaged_goods','missing_stock','wrong_pick','short_pick','courier_delay','delivery_failed','recipient_unavailable','transit_damage','transit_loss']],
