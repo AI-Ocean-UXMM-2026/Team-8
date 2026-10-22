@@ -1,0 +1,37 @@
+/* SME workspaces use a persistent desktop navigation and a fluid work area. */
+.smeDesktopShell{min-height:100dvh;background:var(--muted);color:var(--foreground);display:grid;grid-template-columns:240px minmax(0,1fr)}
+.smeSidebar{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;padding:32px 20px;gap:12px;border-right:1px solid var(--border);background:var(--card);overflow-y:auto}
+.smeBrand{font-size:24px;font-weight:700;color:var(--primary)}
+.smeWorkspaceLabel{font-size:12px;color:var(--muted-foreground);margin-bottom:24px}
+.smeSidebar nav{display:grid;gap:6px}
+.smeSidebar nav a{display:flex;align-items:center;min-height:44px;padding:10px 12px;border-radius:var(--radius-md);font-size:14px;overflow-wrap:anywhere}
+.smeSidebar nav a:hover{background:var(--muted)}
+.smeSidebar nav a[aria-current=page]{background:var(--accent);color:var(--accent-foreground);font-weight:600}
+.smeSidebarFooter{margin-top:auto;display:grid;gap:24px;padding-top:32px}
+.smeSidebarFooter nav a{font-size:12px}
+.smeWorkspaceContent{min-width:0}
+.smeTopbar{min-height:100px;display:flex;align-items:center;gap:16px;padding:24px 260px 24px 32px;border-bottom:1px solid var(--border);background:var(--card)}
+.smeTopbar label{font-size:13px;white-space:nowrap;color:var(--muted-foreground)}
+.smeTopbar select{min-width:0;max-width:360px;width:100%;min-height:44px;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 12px;background:var(--background);font-size:14px}
+.smeMain{max-width:1600px;margin-inline:auto;padding:32px;min-width:0}
+.smeDashboardGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+.smeDashboardGrid>*,.smeMain>*{min-width:0}
+.smeCases{grid-column:1/-1}
+.smeCaseGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.smeTableScroll{max-width:100%;overflow-x:auto;margin-top:20px}
+.smeTable{width:100%;border-collapse:collapse;text-align:left;font-size:14px}
+.smeTable th{font-size:12px;color:var(--muted-foreground);font-weight:500;background:var(--muted)}
+.smeTable th,.smeTable td{padding:14px 12px;border-bottom:1px solid var(--border);vertical-align:middle;overflow-wrap:anywhere}
+.smeTable td:first-child{font-weight:500;min-width:130px}
+.smeTable tbody tr:last-child td{border-bottom:0}
+.smeDesktopShell :focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.smeMain .trackingDashboard{display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px;align-items:start}
+.smeMain .trackingDashboard>:first-child,.smeMain .trackingDashboard>p{grid-column:1/-1;margin-bottom:0}
+.smeMain .trackingShipments{grid-template-columns:1fr;max-height:65dvh;overflow-y:auto}
+.smeMain .trackingDashboard>section{margin-top:0;min-width:0}
+.smeMain .trackingListControls{align-items:stretch}
+.smeMain .trackingGrid{grid-template-columns:minmax(0,1fr)}
+@media(max-width:1199px){.smeDashboardGrid{grid-template-columns:1fr}.smeMain .trackingDashboard{grid-template-columns:280px minmax(0,1fr)}.smeTopbar{padding-right:32px;padding-top:52px}}
+@media(max-width:899px){.smeDesktopShell{grid-template-columns:1fr}.smeSidebar{position:static;height:auto;padding:56px 20px 20px;gap:8px;border-right:0;border-bottom:1px solid var(--border)}.smeWorkspaceLabel{margin-bottom:8px}.smeSidebar nav{display:flex;flex-wrap:wrap}.smeSidebarFooter{padding-top:12px;margin-top:0;gap:12px}.smeSidebarFooter>button{justify-self:start}.smeTopbar{min-height:80px;padding:16px 20px;flex-wrap:wrap;gap:8px}.smeMain{padding:24px 20px}.smeMain .trackingDashboard{grid-template-columns:1fr}.smeMain .trackingShipments{max-height:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}.smeCaseGrid{grid-template-columns:1fr;gap:0}}
+@media(max-width:479px){.smeMain{padding:20px 16px}.smeTopbar select{max-width:100%}.smeTable th,.smeTable td{padding:12px 8px}}
+
