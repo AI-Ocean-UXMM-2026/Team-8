@@ -26,8 +26,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:frontend
       - run: npm test
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('.node-version', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('.node-version', 'package-lock.json') }}-
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps --only-shell chromium
       - run: npm run test:browser
       - run: npm run test:warehouse
       - run: npm run test:portals
