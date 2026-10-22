@@ -1241,6 +1241,75 @@
               ],
               "title": "Owner Id"
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "risk",
+                "priority",
+                "reference"
+              ],
+              "type": "string",
+              "default": "risk",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "sla_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "at_risk",
+                "overdue",
+                "on_track",
+                "unknown"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Sla Risk"
+            }
+          },
+          {
+            "name": "escalated",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Escalated"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "inbound",
+                    "warehouse",
+                    "outbound"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage"
+            }
           }
         ],
         "responses": {
@@ -2138,6 +2207,75 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CaseReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/exceptions/{case_id}/risk": {
+      "post": {
+        "tags": [
+          "Cases and decisions"
+        ],
+        "summary": "Risk",
+        "operationId": "updateExceptionRisk",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseRiskCommand"
               }
             }
           }
@@ -4834,6 +4972,73 @@
       },
       "CaseSummary": {
         "properties": {
+          "risk_context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Risk Context",
+            "default": {}
+          },
+          "priority_classification": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Priority Classification",
+            "default": {}
+          },
+          "priority_override": {
+            "type": "boolean",
+            "title": "Priority Override",
+            "default": false
+          },
+          "escalated": {
+            "type": "boolean",
+            "title": "Escalated",
+            "default": false
+          },
+          "escalation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation Reason"
+          },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
+          },
+          "escalated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated By"
+          },
+          "risk_score": {
+            "type": "integer",
+            "title": "Risk Score",
+            "default": 0
+          },
+          "sla_risk": {
+            "type": "string",
+            "title": "Sla Risk",
+            "default": "unknown"
+          },
           "owner_id": {
             "anyOf": [
               {
@@ -6052,6 +6257,63 @@
       },
       "CaseDetail": {
         "properties": {
+          "risk_context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Risk Context",
+            "default": {}
+          },
+          "priority_classification": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Priority Classification",
+            "default": {}
+          },
+          "priority_override": {
+            "type": "boolean",
+            "title": "Priority Override",
+            "default": false
+          },
+          "escalated": {
+            "type": "boolean",
+            "title": "Escalated",
+            "default": false
+          },
+          "escalation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation Reason"
+          },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
+          },
+          "escalated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated By"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
@@ -6440,6 +6702,94 @@
           "kind"
         ],
         "title": "CaseReview"
+      },
+      "CaseRiskCommand": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "source_version": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Version"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Evidence Ids",
+            "default": []
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "context",
+              "priority",
+              "escalation"
+            ],
+            "title": "Kind"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high",
+                  "critical",
+                  "automatic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "escalated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "source_version",
+          "note",
+          "kind"
+        ],
+        "title": "CaseRiskCommand"
       },
       "CaseSLA": {
         "properties": {
@@ -7648,6 +7998,47 @@
           "type"
         ],
         "title": "RiderReportResult"
+      },
+      "RiskContext": {
+        "properties": {
+          "perishability": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "perishable",
+              "non_perishable"
+            ],
+            "title": "Perishability",
+            "default": "unknown"
+          },
+          "order_value_mmk": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Value Mmk"
+          },
+          "operational_impact": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "minor",
+              "moderate",
+              "severe"
+            ],
+            "title": "Operational Impact",
+            "default": "unknown"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RiskContext"
       },
       "RouteRequest": {
         "properties": {

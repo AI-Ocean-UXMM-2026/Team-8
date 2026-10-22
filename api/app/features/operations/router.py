@@ -8,7 +8,7 @@ from ...contracts import (Shipment, ShipmentPage, ShipmentDetail, ShipmentStatus
 from ...core.auth import AuthContext, current_identity
 from ...core.errors import AppError
 from .models import CreateShipment, StockCorrection, StockResult
-from .service import read, command
+from .service import read, command, call, scope
 
 
 router = APIRouter(prefix='/api', tags=['Warehouse operations'], responses={
@@ -61,9 +61,15 @@ def cases(request: Request, identity: Identity, warehouse_id: UUID | None = None
           limit: Annotated[int, Query(ge=1, le=100)] = 25, status: Literal['open', 'all'] = 'open',
           issue_type: str | None = None, priority: Literal['low', 'normal', 'high', 'critical'] | None = None,
           handling_mode: Literal['ai', 'human'] | None = None, state: str | None = None,
-          owner_id: UUID | Literal['unassigned'] | None = None):
-    return read(request, identity, warehouse_id, 'cases', sme_id=sme_id, cursor=cursor, limit=limit, status=status,
-                issue_type=issue_type, priority=priority, handling_mode=handling_mode, state=state, owner_id=owner_id)
+          owner_id: UUID | Literal['unassigned'] | None = None,
+          sort: Literal['risk', 'priority', 'reference'] = 'risk',
+          sla_risk: Literal['all', 'at_risk', 'overdue', 'on_track', 'unknown'] = 'all',
+          escalated: bool | None = None, stage: Literal['inbound', 'warehouse', 'outbound'] | None = None):
+    filters = dict(sme_id=sme_id, cursor=cursor, limit=limit, status=status, issue_type=issue_type,
+        priority=priority, handling_mode=handling_mode, state=state, owner_id=owner_id,
+        sort=sort, sla_risk=sla_risk, escalated=escalated, stage=stage)
+    return call(request, identity, 'case_queue_read', {'p_warehouse': scope(identity, warehouse_id),
+        'p_filters': {k: str(v) if isinstance(v, UUID) else v for k, v in filters.items() if v is not None}})
 
 
 @router.get('/shipments/{shipment_id}', response_model=ShipmentDetail, operation_id='getShipment')

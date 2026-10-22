@@ -311,6 +311,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/exceptions/{case_id}/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Risk */
+        post: operations["updateExceptionRisk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/exceptions/{case_id}/close": {
         parameters: {
             query?: never;
@@ -984,6 +1001,46 @@ export interface components {
         };
         /** CaseSummary */
         CaseSummary: {
+            /**
+             * Risk Context
+             * @default {}
+             */
+            risk_context: {
+                [key: string]: unknown;
+            };
+            /**
+             * Priority Classification
+             * @default {}
+             */
+            priority_classification: {
+                [key: string]: unknown;
+            };
+            /**
+             * Priority Override
+             * @default false
+             */
+            priority_override: boolean;
+            /**
+             * Escalated
+             * @default false
+             */
+            escalated: boolean;
+            /** Escalation Reason */
+            escalation_reason?: string | null;
+            /** Escalated At */
+            escalated_at?: string | null;
+            /** Escalated By */
+            escalated_by?: string | null;
+            /**
+             * Risk Score
+             * @default 0
+             */
+            risk_score: number;
+            /**
+             * Sla Risk
+             * @default unknown
+             */
+            sla_risk: string;
             /** Owner Id */
             owner_id?: string | null;
             /**
@@ -1480,6 +1537,36 @@ export interface components {
         /** CaseDetail */
         CaseDetail: {
             /**
+             * Risk Context
+             * @default {}
+             */
+            risk_context: {
+                [key: string]: unknown;
+            };
+            /**
+             * Priority Classification
+             * @default {}
+             */
+            priority_classification: {
+                [key: string]: unknown;
+            };
+            /**
+             * Priority Override
+             * @default false
+             */
+            priority_override: boolean;
+            /**
+             * Escalated
+             * @default false
+             */
+            escalated: boolean;
+            /** Escalation Reason */
+            escalation_reason?: string | null;
+            /** Escalated At */
+            escalated_at?: string | null;
+            /** Escalated By */
+            escalated_by?: string | null;
+            /**
              * Id
              * Format: uuid
              */
@@ -1633,6 +1720,30 @@ export interface components {
              * @default
              */
             basis: string;
+        };
+        /** CaseRiskCommand */
+        CaseRiskCommand: {
+            /** Expected Version */
+            expected_version: number;
+            /** Source Version */
+            source_version: string;
+            /** Note */
+            note: string;
+            /**
+             * Evidence Ids
+             * @default []
+             */
+            evidence_ids: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "context" | "priority" | "escalation";
+            context?: components["schemas"]["RiskContext"] | null;
+            /** Priority */
+            priority?: ("low" | "normal" | "high" | "critical" | "automatic") | null;
+            /** Escalated */
+            escalated?: boolean | null;
         };
         /** CaseSLA */
         CaseSLA: {
@@ -2080,6 +2191,23 @@ export interface components {
              * @enum {string}
              */
             type: "recipient_unavailable" | "delivery_failed" | "transit_damage" | "courier_delay";
+        };
+        /** RiskContext */
+        RiskContext: {
+            /**
+             * Perishability
+             * @default unknown
+             * @enum {string}
+             */
+            perishability: "unknown" | "perishable" | "non_perishable";
+            /** Order Value Mmk */
+            order_value_mmk?: number | null;
+            /**
+             * Operational Impact
+             * @default unknown
+             * @enum {string}
+             */
+            operational_impact: "unknown" | "minor" | "moderate" | "severe";
         };
         /** RouteRequest */
         RouteRequest: {
@@ -2894,6 +3022,10 @@ export interface operations {
                 handling_mode?: ("ai" | "human") | null;
                 state?: string | null;
                 owner_id?: string | "unassigned" | null;
+                sort?: "risk" | "priority" | "reference";
+                sla_risk?: "all" | "at_risk" | "overdue" | "on_track" | "unknown";
+                escalated?: boolean | null;
+                stage?: ("inbound" | "warehouse" | "outbound") | null;
             };
             header?: never;
             path?: never;
@@ -3482,6 +3614,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CaseReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateExceptionRisk: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseRiskCommand"];
             };
         };
         responses: {

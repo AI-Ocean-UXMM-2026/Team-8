@@ -13,12 +13,12 @@ const entity = (id: string) => {
 };
 type Mutation = { idempotencyKey: string; warehouseId?: string; signal?: AbortSignal };
 type ListOptions = { warehouseId?: string; smeId?: string; cursor?: string; limit?: number; signal?: AbortSignal };
-function query(options: ListOptions & { direction?: string; status?: string; stockStatus?: string; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string }) {
+function query(options: ListOptions & { direction?: string; status?: string; stockStatus?: string; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string; sort?: string; slaRisk?: string; escalated?: string; stage?: string }) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries({ warehouse_id: options.warehouseId, sme_id: options.smeId })) {
     if (value) params.set(key, entity(value));
   }
-  for (const [key, value] of Object.entries({ cursor: options.cursor, direction: options.direction, status: options.status, stock_status: options.stockStatus, issue_type: options.issueType, priority: options.priority, handling_mode: options.mode, state: options.state, owner_id: options.owner })) {
+  for (const [key, value] of Object.entries({ cursor: options.cursor, direction: options.direction, status: options.status, stock_status: options.stockStatus, issue_type: options.issueType, priority: options.priority, handling_mode: options.mode, state: options.state, owner_id: options.owner, sort: options.sort, sla_risk: options.slaRisk, escalated: options.escalated, stage: options.stage })) {
     if (value) params.set(key, value);
   }
   if (options.limit !== undefined) {
@@ -84,7 +84,8 @@ export function createApiClient(transport: Transport) {
     getWarehouseOverview(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['WarehouseOverview']>({ method: 'GET', path: `/api/warehouse/overview${query({ warehouseId })}`, signal }); },
     getWarehouseDirectory(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['WarehouseDirectory']>({ method: 'GET', path: `/api/warehouse/directory${query({ warehouseId })}`, signal }); },
     listInventory(options: ListOptions & { stockStatus?: 'available' | 'quarantined' } = {}) { return transport<Schemas['InventoryPage']>({ method: 'GET', path: `/api/inventory${query(options)}`, signal: options.signal }); },
-    listCases(options: ListOptions & { status?: 'open' | 'all'; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string } = {}) { return transport<Schemas['CasePage']>({ method: 'GET', path: `/api/exceptions${query(options)}`, signal: options.signal }); },
+    listCases(options: ListOptions & { status?: 'open' | 'all'; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string; sort?: string; slaRisk?: string; escalated?: string; stage?: string } = {}) { return transport<Schemas['CasePage']>({ method: 'GET', path: `/api/exceptions${query(options)}`, signal: options.signal }); },
+    updateCaseRisk(id:string,body:Schemas['CaseRiskCommand'],key:string){return transport<Schemas['CaseDetail']>({method:'POST',path:`/api/exceptions/${entity(id)}/risk`,body,idempotencyKey:key});},
     getShipment(id: string, signal?: AbortSignal, warehouseId?: string) { return transport<Schemas['ShipmentDetail']>({ method: 'GET', path: `/api/shipments/${entity(id)}${query({ warehouseId })}`, signal }); },
     recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events${query({ warehouseId: options.warehouseId })}`, body, ...options }); },
     async getWarehouseCase(id: string, warehouseId: string, signal?: AbortSignal) {

@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Request
 from ...core.auth import AuthContext, current_identity
 from ..operations.service import call
-from .models import CaseAction, CaseCommand, CaseDetail, CaseReport, CaseReview, Decision, Verification
+from .models import CaseAction, CaseCommand, CaseDetail, CaseReport, CaseReview, Decision, Verification, CaseRiskCommand
 
 router = APIRouter(prefix='/api', tags=['Cases and decisions'])
 Identity = Annotated[AuthContext, Depends(current_identity)]
@@ -39,6 +39,12 @@ def verify(case_id: UUID, body: Verification, request: Request, identity: Identi
 @router.post('/exceptions/{case_id}/review', response_model=CaseDetail, operation_id='reviewException')
 def review(case_id: UUID, body: CaseReview, request: Request, identity: Identity, key: Key):
     return call(request, identity, 'review_case', {'p_case': str(case_id), 'p_key': str(key),
+        'p_body': body.model_dump(mode='json'), 'p_correlation': str(request.state.correlation_id)})
+
+
+@router.post('/exceptions/{case_id}/risk', response_model=CaseDetail, operation_id='updateExceptionRisk')
+def risk(case_id: UUID, body: CaseRiskCommand, request: Request, identity: Identity, key: Key):
+    return call(request, identity, 'case_risk_command', {'p_case': str(case_id), 'p_key': str(key),
         'p_body': body.model_dump(mode='json'), 'p_correlation': str(request.state.correlation_id)})
 
 

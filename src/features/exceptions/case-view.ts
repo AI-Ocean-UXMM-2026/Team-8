@@ -18,7 +18,7 @@ export function caseView(value: unknown): CaseView {
     if (typeof data[key] !== 'string') throw new ApiError(502, 'INVALID_RESPONSE', 'Case information is incomplete.');
   }
   const evidence = records(data.evidence);
-  return { id: text(data.id), shipment_id: text(data.shipment_id), stage: data.stage as CaseView['stage'],
+  return { risk_context: (data.risk_context as Record<string,unknown>)??{}, priority_classification:(data.priority_classification as Record<string,unknown>)??{}, priority_override:data.priority_override===true, escalated:data.escalated===true, risk_score:typeof data.risk_score==='number'?data.risk_score:0, sla_risk:text(data.sla_risk)||'unknown', id: text(data.id), shipment_id: text(data.shipment_id), stage: data.stage as CaseView['stage'],
     type: data.type as CaseView['type'], priority: data.priority as CaseView['priority'], status: data.status as CaseView['status'],
     handling_mode: data.handling_mode as CaseView['handling_mode'], responsible_party: data.responsible_party as CaseView['responsible_party'],
     summary: text(data.summary), evidence_ids: Array.isArray(data.evidence_ids) ? data.evidence_ids.filter((v): v is string => typeof v === 'string') : evidence.map(e => text(e.id)).filter(Boolean),

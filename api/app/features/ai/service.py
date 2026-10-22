@@ -59,6 +59,9 @@ def proposal_hash(output: dict) -> str:
 def bounded_snapshot(snapshot):
     bounded = {k: deepcopy(snapshot[k]) for k in ('facts', 'shipment', 'inventory', 'allowed_actions', 'policy_version')}
     bounded['case'] = {k: deepcopy(snapshot['case'][k]) for k in ('id', 'type', 'priority', 'summary', 'evidence')}
+    for key in ('risk_context', 'priority_classification', 'priority_override', 'escalated'):
+        if key in snapshot['case']:
+            bounded['case'][key] = deepcopy(snapshot['case'][key])
     bounded['source_version'] = snapshot['source_version']
     bounded['policy_rules'] = deepcopy(snapshot.get('policy_rules', {}))
     return bounded
