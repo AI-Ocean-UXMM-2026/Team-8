@@ -93,6 +93,7 @@ try{
   if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});assert.equal(request.headers().authorization,'Bearer '+rider.token);
   const reply=json=>route.fulfill({status:200,headers,json});
   if(path==='/api/me')return reply({actor_id:ids.actor,memberships:[{warehouse_id:warehouseId,role:'rider',sme_id:null}]});
+  if(path==='/api/warehouses/'+warehouseId+'/tracking-settings')return reply({live_gps_enabled:true,demo_simulation_enabled:false});
   if(path==='/api/rider/assignments')return reply([assignment]);
   if(path==='/api/deliveries/'+outbound.id)return reply(delivery());
   if(path.endsWith('/accept')||path.endsWith('/pickup')){const body=request.postDataJSON();assert.equal(body.expected_version,outbound.version);outbound.version++;if(path.endsWith('/accept'))assignment.accepted_at=new Date().toISOString();else{assignment.picked_up_at=new Date().toISOString();outbound.status='picked_up';}return reply(delivery());}

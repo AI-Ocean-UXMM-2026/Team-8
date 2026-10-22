@@ -24,8 +24,13 @@ try {
     await new Promise(r => setTimeout(r, 250));
   }
   assert.ok(ready, output);
-  // Warm the initial route before navigation to avoid cold compilation races.
-  await fetch(`${origin}/demo/warehouse`, { signal: AbortSignal.timeout(60000) });
+  // Warm tested routes before navigation to avoid cold compilation/HMR races.
+  for (const path of ['/demo/warehouse', '/demo/warehouse/shipments', '/demo/warehouse/inventory',
+    '/demo/warehouse/exceptions', `/demo/warehouse/exceptions/${fixture.cases[0].id}`,
+    ...fixture.shipments.map(s => `/warehouse/shipments/${s.id}`), '/login', '/warehouse', '/warehouse/inventory', '/sme', '/rider']) {
+    const response = await fetch(origin + path, { signal: AbortSignal.timeout(60000) });
+    assert.ok(response.ok, path); await response.arrayBuffer();
+  }
   browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();lastPage=page; const errors = [];
