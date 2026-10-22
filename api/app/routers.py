@@ -14,3 +14,6 @@ router.include_router(deliveries)
 
 from .features.categorization.router import router as categorization
 router.include_router(categorization)
+
+from .features.sla.router import router as sla
+router.include_router(sla)
