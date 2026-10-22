@@ -7,7 +7,8 @@ export function demoRouteSnapshot(storage?:Store,now=Date.now()){
  let sharing=false,startedAt=0,index=0;
  try{const value=JSON.parse(storage?.getItem(demoRouteStorageKey)||'null');if(value&&typeof value.sharing==='boolean'&&Number.isFinite(value.startedAt)&&Number.isInteger(value.index)&&value.index>=0&&value.index<demoRoutePoints.length){sharing=value.sharing;startedAt=value.startedAt;index=value.index;}}catch{}
  if(sharing)index=Math.min(demoRoutePoints.length-1,Math.max(0,Math.floor((now-startedAt)/4000)));
- return {sharing,index,position:demoRoutePoints[index],destination:demoRoutePoints[demoRoutePoints.length-1],coordinates:demoRoutePoints};
+ const completed=sharing&&index===demoRoutePoints.length-1;
+ return {sharing:sharing&&!completed,completed,index,position:demoRoutePoints[index],destination:demoRoutePoints[demoRoutePoints.length-1],coordinates:demoRoutePoints};
 }
 export function setDemoRouteSharing(storage:Store,sharing:boolean,now=Date.now()){
  const previous=demoRouteSnapshot(storage,now);

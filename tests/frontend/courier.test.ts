@@ -99,3 +99,16 @@ test('courier shared demo shipment uses the same reference and id as warehouse a
  const api=createApiClient(createCourierMockTransport(store()));
  assert.ok((await api.listRiderAssignments()).some(a=>a.shipment_id===demoShipmentId&&a.reference==='PC-OUT-0003'));
 });
+
+
+test('completed demo route stops sharing and can replay without clearing browser storage',()=>{
+ const storage=store(),start=100000;
+ setDemoRouteSharing(storage,true,start);
+ const completed=demoRouteSnapshot(storage,start+30000);
+ assert.equal(completed.completed,true);assert.equal(completed.sharing,false);
+ assert.deepEqual(completed.position,completed.destination);
+ setDemoRouteSharing(storage,true,start+31000);
+ const restarted=demoRouteSnapshot(storage,start+31000);
+ assert.equal(restarted.completed,false);assert.equal(restarted.sharing,true);assert.equal(restarted.index,0);
+ assert.equal(demoRouteSnapshot(storage,start+39000).index,2);
+});
