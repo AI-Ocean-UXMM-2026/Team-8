@@ -11,7 +11,7 @@ try{
     await p.waitForFunction(l=>document.documentElement.lang===l,language);
     assert.ok(await p.locator('.globalHeader').evaluate(e=>e.getBoundingClientRect().height<=34));
     assert.equal(await p.evaluate(()=>getComputedStyle(document.body).paddingTop),'0px');
-    assert.equal(await p.locator('.warehouseNavigation a').count(),4);
+    assert.equal(await p.locator('.warehouseNavigation a').count(),5);
     assert.equal(await p.locator('.warehousePage>header').count(),0);
     assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     if(width<768){await p.locator('.warehouseMenuToggle').click();await p.locator('.warehouseSignOut').waitFor();}

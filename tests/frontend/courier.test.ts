@@ -65,3 +65,16 @@ test('routing decoder preserves ORS longitude/latitude and rejects bad or mislea
  assert.equal(checkedRoute(route).coordinates[0][0],96.1);
  for(const patch of [{coordinates:[[181,0],[96,16]]},{coordinates:[]},{duration_ms:NaN},{traffic_aware:true},{provider:'unknown'}])assert.throws(()=>checkedRoute({...route,...patch}));
 });
+import {createSmeTrackingMockTransport} from '../../src/shared/api/sme-tracking-mock';
+test('SME GPS preview exposes only its own shipments and never supplies live GPS or writes',async()=>{
+ const transport=createSmeTrackingMockTransport(),api=createApiClient(transport),identity=await api.getMe(),membership=identity.memberships[0];
+ assert.equal(membership.role,'sme');
+ const overview=await api.getSMEOverview(membership.sme_id!);
+ assert.ok(overview.shipments.length>0);assert.ok(overview.shipments.every(s=>s.sme_id===membership.sme_id&&s.warehouse_id===membership.warehouse_id));
+ assert.ok(overview.shipments.some(s=>s.direction==='outbound'&&s.delivery_mode==='in_house'));
+ const selected=overview.shipments[0];assert.equal((await api.getTrackingShipment(selected.id)).sme_id,membership.sme_id);
+ assert.equal(await api.getTrackingSession(selected.id),null);
+ await assert.rejects(api.getSMEOverview(crypto.randomUUID()),(e:ApiError)=>e.status===403);
+ await assert.rejects(api.getTrackingShipment('10000000-0000-4000-8000-000000000020'),(e:ApiError)=>e.status===403);
+ await assert.rejects(api.startTracking(crypto.randomUUID()),(e:ApiError)=>e.status===403);
+});

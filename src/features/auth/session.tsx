@@ -39,7 +39,7 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
     async function start() {
       if (demo) {
         const { createMockTransport } = await import('../../shared/api/mock');
-        const transport=audience==='rider'?(await import('../../shared/api/courier-mock')).createCourierMockTransport(window.sessionStorage):createMockTransport({ dataset: 'warehouse', storage: window.sessionStorage });
+        const transport=audience==='sme'?(await import('../../shared/api/sme-tracking-mock')).createSmeTrackingMockTransport():audience==='rider'?(await import('../../shared/api/courier-mock')).createCourierMockTransport(window.sessionStorage):createMockTransport({ dataset: 'warehouse', storage: window.sessionStorage });
         const client = createApiClient(transport);
         accept(client, await client.getMe());
         return;
