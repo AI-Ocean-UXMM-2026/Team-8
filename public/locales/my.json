@@ -1100,5 +1100,14 @@
   "Arrived · Demo": "ရောက်ရှိပြီ · နမူနာ",
   "Simulated GPS · Demo": "နမူနာ GPS တည်နေရာ",
   "Delivery successful": "ပို့ဆောင်မှု အောင်မြင်ပါပြီ",
-  "Arrived — awaiting SME": "ရောက်ရှိပြီ — လုပ်ငန်းရှင် အတည်ပြုရန် စောင့်နေသည်"
+  "Arrived — awaiting SME": "ရောက်ရှိပြီ — လုပ်ငန်းရှင် အတည်ပြုရန် စောင့်နေသည်",
+  "Demo dispatch": "နမူနာ ထွက်ခွာပြီး",
+  "Demo movement": "နမူနာယာဉ်ရွေ့လျားမှု",
+  "Arrived at SME": "လုပ်ငန်းရှင်နေရာသို့ ရောက်ရှိခြင်း",
+  "Courier confirmed · Demo": "ပို့ဆောင်သူ အတည်ပြုပြီး · နမူနာ",
+  "Courier arrival recorded": "ပို့ဆောင်သူ ရောက်ရှိကြောင်း မှတ်တမ်းတင်ပြီး",
+  "Awaiting courier arrival confirmation": "ပို့ဆောင်သူ ရောက်ရှိအတည်ပြုရန် စောင့်နေသည်",
+  "SME receipt": "လုပ်ငန်းရှင် လက်ခံရရှိခြင်း",
+  "SME confirmed receipt": "လုပ်ငန်းရှင် လက်ခံအတည်ပြုပြီး",
+  "Pending arrival": "ရောက်ရှိရန် စောင့်နေသည်"
 }

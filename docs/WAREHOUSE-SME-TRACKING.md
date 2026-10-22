@@ -46,4 +46,8 @@ This change is prepared locally and has NOT been deployed or applied to producti
 - Backend suite: 63 tests run, 59 passed, 4 external Supabase tests skipped.
 - Isolated database suite: passed, including settings permissions, GPS-off session termination/start rejection, arrival geofence, staff/wrong-SME receipt denial and repeat arrival.
 - Production build, TypeScript and contracts checks: passed during implementation; final rerun recorded in chat.
-- New browser visual tests and real phone/ORS end-to-end: NOT RUN. Browser tool currently reports disabled. Earlier deployed map checks are for the previous version and do not validate this new feature.
+- Local browser follow-up after control was enabled: courier click-by-click road movement, shared Warehouse/SME map, arrival gate, yellow pending-arrival icon/toast, SME confirmation to green success, reset and independent admin switches passed. Courier/Warehouse/SME/settings captured warning/error logs were empty.
+- Browser inspection exposed old placeholder timeline text; updated it to demo dispatch, movement, courier arrival and SME receipt states.
+- Evidence: Team-8/test-results/demo-arrived-yellow.png and demo-sme-confirmed-green.png.
+- Responsive override did not change the measured viewport (remained 1280 px); mobile/tablet visual coverage is NOT claimed.
+- Real phone GPS, authenticated ORS routing and production end-to-end remain NOT RUN. This is a local demo browser test, not a deployment verification.
