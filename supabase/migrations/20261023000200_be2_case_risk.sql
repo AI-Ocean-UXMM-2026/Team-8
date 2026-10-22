@@ -157,4 +157,15 @@ begin
 end $$;
 revoke all on function private.flag_sla_escalation() from public,anon,authenticated;
 create trigger flag_sla_escalation after insert on public.sla_escalations for each row execute function private.flag_sla_escalation();
+
+-- Both independent AI requests receive the same recorded risk facts and reasons.
+alter function private.analysis_source(public.exception_cases) rename to analysis_source_before_risk;
+create function private.analysis_source(c public.exception_cases) returns jsonb
+language sql stable security definer set search_path='' as $$
+ select jsonb_set(source,'{case}',source->'case'||jsonb_build_object(
+  'risk_context',c.risk_context,'priority_classification',c.priority_classification,
+  'priority_override',c.priority_override,'escalated',c.escalated))
+ from (select private.analysis_source_before_risk(c) source) x;
+$$;
+revoke all on function private.analysis_source(public.exception_cases),private.analysis_source_before_risk(public.exception_cases) from public,anon,authenticated;
 commit;

@@ -5,9 +5,22 @@ from app.core.application import create_app
 from app.core.settings import Settings
 from app.features.exceptions.models import CaseRiskCommand
 from pydantic import ValidationError
+from app.features.ai.service import bounded_snapshot
 
 
 class RiskQueueTests(unittest.TestCase):
+    def test_maker_and_checker_source_contains_recorded_risk_without_actor_data(self):
+        source = dict(facts={}, shipment={}, inventory=[], allowed_actions=[], policy_version=1, source_version='1:1:1',
+            case=dict(id=str(uid(1)), type='courier_delay', priority='high', summary='Report', evidence=[],
+                risk_context={'perishability': 'perishable'}, priority_classification={'policy_version': 1},
+                priority_override=False, escalated=True, escalated_by='private-actor'))
+        bounded = bounded_snapshot(source)
+        self.assertEqual(bounded['case']['risk_context']['perishability'], 'perishable')
+        self.assertTrue(bounded['case']['escalated'])
+        self.assertNotIn('escalated_by', bounded['case'])
+        bounded['case']['risk_context']['perishability'] = 'unknown'
+        self.assertEqual(source['case']['risk_context']['perishability'], 'perishable')
+
     def setUp(self):
         owner = self
         self.identity = staff
