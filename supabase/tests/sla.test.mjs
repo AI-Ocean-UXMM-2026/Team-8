@@ -38,5 +38,34 @@ try{
  await q('update public.memberships set active=false where profile_id=$1',[owner]);const unassigned=await create(400);await q("update public.exception_cases set status='awaiting_information' where id=$1",[unassigned]);await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
  assert.equal((await one('select manager_id from public.case_slas where case_id=$1',[unassigned])).manager_id,null);assert.equal((await one('select status from public.exception_cases where id=$1',[unassigned])).status,'awaiting_information');
  await as(staff,async()=>{const page=(await one("select public.sla_cases_read($1,null,null,1,'escalated',false) r",[w])).r;assert.equal(page.items.length,1);assert(page.next_cursor);await reject(()=>q("select public.sla_cases_read($1,null,null,101,'all',false)",[w]),'22023');});
+ // A newly configured manager must receive existing unassigned breaches once.
+ const alertCount=(await one('select count(*)::int n from public.sla_escalations where case_id=$1',[unassigned])).n;
+ await q('update public.memberships set active=true where profile_id=$1',[owner]);
+ await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
+ assert.equal((await one('select manager_id from public.case_slas where case_id=$1',[unassigned])).manager_id,owner);
+ assert.equal((await one('select owner_id,status from public.exception_cases where id=$1',[unassigned])).status,'awaiting_information');
+ assert.equal((await one('select count(*)::int n from public.sla_escalations where case_id=$1',[unassigned])).n,alertCount);
+ await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
+ assert.equal((await one("select count(*)::int n from public.case_events where case_id=$1 and type='sla_manager_assigned'",[unassigned])).n,1);
+ // Losing the only active manager clears the assignment without losing the alert.
+ await q('update public.memberships set active=false where profile_id=$1',[owner]);
+ await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
+ assert.equal((await one('select manager_id from public.case_slas where case_id=$1',[unassigned])).manager_id,null);
+ assert.equal((await one('select owner_id from public.exception_cases where id=$1',[unassigned])).owner_id,null);
+ // Replacement manager receives existing alerts; terminal cases retain their history.
+ const replacement=randomUUID();
+ await q('insert into auth.users(id,email) values($1,$2)',[replacement,'replacement@example.test']);
+ await q('insert into public.profiles(id,display_name) values($1,$2)',[replacement,'replacement manager']);
+ await q("insert into public.memberships(profile_id,warehouse_id,role) values($1,$2,'owner')",[replacement,w]);
+ await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
+ assert.equal((await one('select owner_id from public.exception_cases where id=$1',[unassigned])).owner_id,replacement);
+ assert.equal((await one('select count(*)::int n from public.sla_escalations where case_id=$1 and manager_id=$2',[unassigned,replacement])).n,alertCount);
+ await q("update public.exception_cases set status='resolved',verified_by=$2,verified_at=now(),resolution_note='Verified test outcome' where id=$1",[unassigned,staff]);
+ await q('update public.memberships set active=false where profile_id=$1',[replacement]);
+ await q('update public.memberships set active=true where profile_id=$1',[owner]);
+ await as(null,()=>q('select public.run_sla_escalations()'),'service_role');
+ assert.equal((await one('select manager_id from public.case_slas where case_id=$1',[unassigned])).manager_id,replacement);
+ assert.equal((await one('select manager_id from public.case_slas where case_id=$1',[overdue])).manager_id,owner);
+ await as(staff,()=>reject(()=>q('select private.sla_detect_escalations()'),'42501'));
  console.log('PASS SLA: 40 defaults, owner-only edits, immutable snapshots, risk/overdue boundaries, first response, completion, automatic manager assignment, deduplication, no-manager fallback, policy changes, pagination and tenant guards.');
 }catch(e){console.error(e.message,e.code,e.position,e.where);process.exitCode=1}finally{await db.close()}
