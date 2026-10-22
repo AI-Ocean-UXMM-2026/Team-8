@@ -90,6 +90,7 @@ export function createApiClient(transport: Transport) {
     recordShipmentEvent(id: string, body: Schemas['ShipmentEventRequest'], options: Mutation) { return transport<Schemas['ShipmentDetail']>({ method: 'POST', path: `/api/shipments/${entity(id)}/events${query({ warehouseId: options.warehouseId })}`, body, ...options }); },
     async getWarehouseCase(id: string, warehouseId: string, signal?: AbortSignal) {
       const value = await transport<unknown>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal });
+    createShipment(body: Schemas['CreateShipment'], options: Mutation) { return transport<Schemas['Shipment']>({ method: 'POST', path: '/api/shipments'+query({warehouseId:options.warehouseId}), body, ...options }); },
       return checkedWarehouseCase(value, id, entity(warehouseId));
     },
     async recordCaseAction(id: string, body: WarehouseCaseAction, options: Mutation & { warehouseId: string }) {
@@ -117,7 +118,7 @@ export function createApiClient(transport: Transport) {
     getDestination(id: string, signal?: AbortSignal) { return transport<{latitude:number;longitude:number;label:string}|null>({method:'GET',path:`/api/deliveries/${entity(id)}/destination`,signal}); },
     saveDestination(id: string, body:{latitude:number;longitude:number;label:string}) { return transport<{latitude:number;longitude:number;label:string}>({method:'PUT',path:`/api/deliveries/${entity(id)}/destination`,body}); },
     listAssignments(signal?: AbortSignal) { return transport<Assignment[]>({ method: 'GET', path: '/api/rider/assignments', signal }); },
-    deliveryCommand(id: string, command: 'assign' | 'cancel' | 'accept' | 'pickup' | 'proof' | 'confirm' | 'handover' | 'courier' | 'capacity', body: Schemas['DeliveryCommand'], key: string) { return transport<Delivery>({ method: 'POST', path: `/api/deliveries/${entity(id)}/${command}`, body, idempotencyKey: key }); },
+    deliveryCommand(id: string, command: 'assign' | 'cancel' | 'accept' | 'pickup' | 'proof' | 'confirm' | 'handover' | 'courier' | 'capacity' | 'return', body: Schemas['DeliveryCommand'], key: string) { return transport<Delivery>({ method: 'POST', path: `/api/deliveries/${entity(id)}/${command}`, body, idempotencyKey: key }); },
     startTracking(assignmentId: string) { return transport<string>({ method: 'POST', path: '/api/tracking/start', body: { assignment_id: entity(assignmentId), consent: true }, idempotencyKey: crypto.randomUUID() }); },
     stopTracking(id: string) { return transport<void>({ method: 'POST', path: `/api/tracking/${entity(id)}/stop`, idempotencyKey: crypto.randomUUID() }); },
     sendLocation(id: string, body: Schemas['Position']) { return transport<string>({ method: 'POST', path: `/api/tracking/${entity(id)}/locations`, body, idempotencyKey: crypto.randomUUID() }); },

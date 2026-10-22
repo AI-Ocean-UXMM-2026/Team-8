@@ -4,7 +4,9 @@ export interface Layer{addTo(m:MapHandle):Layer;remove():void;setLatLng(p:MapPoi
 export interface Leaflet{marker?(p:MapPoint,options:object):Layer;divIcon?(options:object):unknown;map(node:HTMLElement,options:object):MapHandle;tileLayer(url:string,options:object):Layer;circleMarker(p:MapPoint,options:object):Layer;polyline(points:MapPoint[],options:object):Layer}
 const valid=(p:MapPoint|null|undefined):p is MapPoint=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&Math.abs(p[0])<=90&&Math.abs(p[1])<=180;
 export function createMapController(l:Leaflet,node:HTMLElement,callbacks:{destination?:(p:MapPoint)=>void;tileError?:(failed:boolean)=>void}={}){
- const map=l.map(node,{scrollWheelZoom:false}).setView([16.8409,96.1735],11);
+ // Delivery actions can unmount the map immediately. Avoid Leaflet's delayed
+ // zoom-transition callback running after its panes have been removed.
+ const map=l.map(node,{scrollWheelZoom:false,zoomAnimation:false}).setView([16.8409,96.1735],11);
  let alive=true,position:Layer|null=null,destination:Layer|null=null,line:Layer|null=null,key='',lastStage='';
  const tiles=l.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
  tiles.on?.('tileerror',()=>{if(alive)callbacks.tileError?.(true)});

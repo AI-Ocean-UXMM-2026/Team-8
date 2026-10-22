@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node database.test.mjs && node orders.test.mjs",
+    "test": "node database.test.mjs && node orders.test.mjs && node outbound.test.mjs",
     "test:native": "node native.test.mjs",
     "test:embedded": "node native.test.mjs --embedded"
   },

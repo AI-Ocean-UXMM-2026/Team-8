@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, Header, Request
-from pydantic import AwareDatetime, Field, field_validator
+from pydantic import AwareDatetime, Field, field_validator, model_validator
 from ...contracts import DTO
 from ...core.auth import AuthContext, current_identity
 from ..operations.service import call
@@ -10,6 +10,18 @@ from ..operations.service import call
 router = APIRouter(prefix='/api', tags=['Deliveries and tracking'])
 Identity = Annotated[AuthContext, Depends(current_identity)]
 Key = Annotated[UUID, Header(alias='Idempotency-Key')]
+
+
+class ReturnLine(DTO):
+    product_id: UUID
+    received_qty: Annotated[int, Field(strict=True, gt=0)]
+    damaged_qty: Annotated[int, Field(strict=True, ge=0)]
+
+    @model_validator(mode='after')
+    def valid_damage(self):
+        if self.damaged_qty > self.received_qty:
+            raise ValueError('Damage cannot exceed returned quantity')
+        return self
 
 
 class DeliveryCommand(DTO):
@@ -28,6 +40,7 @@ class DeliveryCommand(DTO):
     package_count: Annotated[int, Field(strict=True, ge=1)] | None = None
     status: Literal['handed_over', 'delayed', 'failed', 'delivered'] | None = None
     scheduled_at: AwareDatetime | None = None
+    lines: Annotated[list[ReturnLine], Field(min_length=1, max_length=100)] | None = None
 
     @field_validator('tracking_url')
     @classmethod
@@ -178,8 +191,12 @@ def confirm_arrival(shipment_id: UUID, request: Request, identity: Identity):
 
 
 @router.post('/deliveries/{shipment_id}/{command}', response_model=dict, operation_id='deliveryCommand')
-def command(shipment_id: UUID, command: Literal['assign','cancel','accept','pickup','proof','confirm','handover','courier','capacity'],
+def command(shipment_id: UUID, command: Literal['assign','cancel','accept','pickup','proof','confirm','handover','courier','capacity','return'],
             body: DeliveryCommand, request: Request, identity: Identity, key: Key):
+    if command == 'return':
+        from ...core.errors import AppError
+        if not body.lines or body.evidence_id is None or len({line.product_id for line in body.lines}) != len(body.lines):
+            raise AppError(422, 'VALIDATION_ERROR', 'Provide uploaded evidence and distinct returned products.')
     return call(request, identity, 'delivery_command', {'p_kind': command, 'p_shipment': str(shipment_id),
         'p_key': str(key), 'p_body': body.model_dump(mode='json', exclude_none=True),
         'p_correlation': str(request.state.correlation_id)})

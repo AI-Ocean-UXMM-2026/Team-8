@@ -35,7 +35,9 @@
     "test:maps:browser": "node scripts/check-map-sync.mjs",
     "test:maps:live": "node scripts/check-map-live.mjs",
     "test:orders:browser": "node scripts/check-orders.mjs",
-    "test:orders:database": "node supabase/tests/orders.test.mjs"
+    "test:orders:database": "node supabase/tests/orders.test.mjs",
+    "test:outbound:database": "node supabase/tests/outbound.test.mjs",
+    "test:outbound:browser": "node scripts/check-outbound.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

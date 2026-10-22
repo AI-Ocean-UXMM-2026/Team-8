@@ -11,7 +11,7 @@ const origin = 'http://127.0.0.1:3112';
 const apiOrigin = origin;
 const authOrigin = 'https://parcelcare-fixture.supabase.test';
 // Test process only: all Auth/API calls are intercepted; these are fictitious public config values.
-const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--webpack', '-p', '3112', '-H', '127.0.0.1'], {
+const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', ...(process.env.PARCELCARE_TEST_PRODUCTION === '1' ? ['start'] : ['dev', '--webpack']), '-p', '3112', '-H', '127.0.0.1'], {
   stdio: 'pipe', env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: authOrigin, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture', NEXT_PUBLIC_PARCELCARE_API_URL: apiOrigin },
 });
 let output = ''; server.stdout.on('data', c => { output += c; }); server.stderr.on('data', c => { output += c; });
@@ -35,6 +35,8 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();lastPage=page; const errors = [];
   page.on('pageerror', err => errors.push(err.message));
+  // Establish the demo role for receiving fixtures; selection UI has its own RBAC suite.
+  await page.addInitScript(() => sessionStorage.setItem('parcelcare.demo.role.v1', 'warehouse'));
   await page.goto(`${origin}/demo/warehouse`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'Warehouse overview' }).waitFor();
   await mkdir('test-results', { recursive: true });
@@ -143,9 +145,9 @@ try {
   });
   await live.goto(`${origin}/warehouse`);
   await live.getByRole('heading', { name: 'Please sign in' }).waitFor();
-  assert.equal(await live.getByRole('link', { name: 'Sign in', exact: true }).getAttribute('href'),'/login');
-  await live.goto(`${origin}/login`);
+  await live.getByRole('link', { name: 'Sign in', exact: true }).click();
   await live.waitForURL(`${origin}/login`);
+  await live.getByRole('heading', { name: 'Sign in to ParcelCare', exact: true }).waitFor();
   await live.waitForLoadState('networkidle');
   await live.getByLabel('Email', { exact: true }).fill('staff@example.test');
   await live.getByLabel('Password', { exact: true }).fill('fictitious-password');

@@ -1960,6 +1960,8 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+            /** Lines */
+            lines?: components["schemas"]["ReturnLine"][] | null;
         /** Me */
         Me: {
             /**
@@ -2199,6 +2201,18 @@ export interface components {
              * @default unknown
              * @enum {string}
              */
+        /** ReturnLine */
+        ReturnLine: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Received Qty */
+            received_qty: number;
+            /** Damaged Qty */
+            damaged_qty: number;
+        };
             perishability: "unknown" | "perishable" | "non_perishable";
             /** Order Value Mmk */
             order_value_mmk?: number | null;
@@ -4287,7 +4301,7 @@ export interface operations {
             };
             path: {
                 shipment_id: string;
-                command: "assign" | "cancel" | "accept" | "pickup" | "proof" | "confirm" | "handover" | "courier" | "capacity";
+                command: "assign" | "cancel" | "accept" | "pickup" | "proof" | "confirm" | "handover" | "courier" | "capacity" | "return";
             };
             cookie?: never;
         };

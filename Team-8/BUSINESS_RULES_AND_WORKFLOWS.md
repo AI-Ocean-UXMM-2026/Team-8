@@ -2,6 +2,8 @@
 
 Analysis date: 23 October 2026 (Asia/Yangon). Scope: the local workspace at `D:/slh/proj/parcelcare`, including its current files. This is a description of implementation, not an approved business policy or a deployed-system certification.
 
+Subsequent outbound update: see [Outbound workflow](../docs/OUTBOUND-WORKFLOW.md) and migration `20261023000300_be1_outbound_returns.sql`. Direct third-party handovers now debit stock once, warehouse users can create outbound shipments and cancel external deliveries, and evidenced physical returns can restore good/quarantined stock after cancellation. The R-01 and WF-04 accounting observations below describe the earlier implementation; historical unposted handovers still require reconciliation. Direct creation still does not reserve stock, and hosted deployment is not established by these local changes.
+
 ## 1. Reading guide and business overview
 
 Business readers should start with sections 1–3 and 5. Developers should also read the rule register, implementation boundaries, and inventories. QA should use section 7 together with the stable rule IDs. References are relative to the project root unless a Markdown link says otherwise.

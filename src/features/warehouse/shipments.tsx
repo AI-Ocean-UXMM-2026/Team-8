@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import {CreateOutboundShipment} from './create-shipment';
 import {OrderList} from '../portal/orders';
 import './shipments.css';
 import { ShipmentStatus } from './shipment-status';
@@ -17,7 +18,7 @@ export function Shipments() {
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const { page, directory } = resource.data; const base = demo ? '/demo/warehouse' : '/warehouse';
-  return <div className="shipmentWorkspace"><PageTitle title="Shipments" my="ပို့ဆောင်မှုစာရင်း" description="Review expected receipts and verified outbound events." />{!demo&&<OrderList/>}<Card className="shipmentPanel"><div className="shipmentFilters">
+  return <div className="shipmentWorkspace"><PageTitle title="Shipments" my="ပို့ဆောင်မှုစာရင်း" description="Review expected receipts and verified outbound events." />{!demo&&<CreateOutboundShipment smes={directory.smes} refresh={resource.reload}/>}<OrderList/><Card className="shipmentPanel"><div className="shipmentFilters">
     <div><label htmlFor="shipment-sme" className="mb-2 block text-xs text-muted">SME</label><select id="shipment-sme" className={selectClass} value={smeId} onChange={e => set('sme_id', e.target.value)}><option value="">All SMEs</option>{directory.smes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
     <div><label htmlFor="shipment-direction" className="mb-2 block text-xs text-muted">Direction</label><select id="shipment-direction" className={selectClass} value={direction} onChange={e => set('direction', e.target.value)}><option value="">All directions</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option></select></div>
     <div><label htmlFor="shipment-status" className="mb-2 block text-xs text-muted">Status</label><select id="shipment-status" className={selectClass} value={status} onChange={e => set('status', e.target.value)}><option value="">All statuses</option>{['expected', 'partially_received', 'received', 'received_with_discrepancies', 'ready', 'assigned', 'picked_up', 'in_transit', 'delayed', 'failed', 'delivered', 'cancelled', 'handed_over'].map(s => <option key={s} value={s}>{human(s)}</option>)}</select></div></div>

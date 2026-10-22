@@ -3358,7 +3358,8 @@
                 "confirm",
                 "handover",
                 "courier",
-                "capacity"
+                "capacity",
+                "return"
               ],
               "type": "string",
               "title": "Command"
@@ -7641,6 +7642,22 @@
         "title": "Metadata"
       },
       "MetadataCommand": {
+          },
+          "lines": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReturnLine"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lines"
         "properties": {
           "description": {
             "type": "string",
@@ -8149,6 +8166,33 @@
         "required": [
           "items",
           "next_cursor",
+      "ReturnLine": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "received_qty": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Received Qty"
+          },
+          "damaged_qty": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Damaged Qty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "received_qty",
+          "damaged_qty"
+        ],
+        "title": "ReturnLine"
+      },
           "server_now"
         ],
         "title": "SLAPage"
