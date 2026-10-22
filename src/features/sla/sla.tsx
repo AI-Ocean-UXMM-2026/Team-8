@@ -7,6 +7,7 @@ import {Button,Card,Input,Badge} from '../../shared/ui';
 import type {Schemas} from '../../shared/api';
 import {dateTime,ErrorPanel,Loading,PageTitle,human} from '../warehouse/shared';
 import './sla.css';
+import { DemoDeadlines } from './demo-deadlines';
 type Policy=Schemas['SLAPolicy'];type Case=Schemas['CaseSLA'];
 function Flag({value}:{value:string}){return <Badge className={`slaFlag sla-${value}`}>{human(value)}</Badge>}
 function Deadline({label,due,done,flag}:{label:string;due:string;done:string|null;flag:string}){return <div className="slaDeadline"><strong>{label}</strong><Flag value={flag}/><p>Due {dateTime(due)} · Yangon</p>{done&&<p>Recorded {dateTime(done)}</p>}</div>}
@@ -27,7 +28,7 @@ function LiveCaseSLA({id,onChanged}:{id:string;onChanged?:()=>void}){
 }
 export function SLAWorkspace(){
  const {demo}=useSession();
- if(demo)return <Card><h1>SLA policies</h1><p>Use the signed-in warehouse workspace to configure policies and monitor real case deadlines.</p></Card>;
+ if(demo)return <DemoDeadlines/>;
  return <LiveSLAWorkspace/>;
 }
 function LiveSLAWorkspace(){
