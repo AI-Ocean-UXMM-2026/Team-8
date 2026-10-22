@@ -44,9 +44,9 @@ export function SessionProvider({ demo = false, audience = 'warehouse', children
         return;
       }
       const auth = browserAuth();
-      const origin = process.env.NEXT_PUBLIC_PARCELCARE_API_URL;
-      if (!auth || !origin) { if (active) setStatus('unavailable'); return; }
-      const client = createApiClient(createLiveTransport({ baseUrl: origin, getAccessToken: async () => {
+      const origin = window.location.origin;
+      if (!auth) { if (active) setStatus('unavailable'); return; }
+      const client = createApiClient(createLiveTransport({ baseUrl: origin, timeoutMs: 75_000, getAccessToken: async () => {
         const result = await auth.auth.getSession();
         if (result.error) throw new ApiError(401, 'UNAUTHENTICATED', 'Your session expired. Sign in again.');
         return result.data.session?.access_token ?? null;

@@ -13,7 +13,6 @@ export function Login() {
   useEffect(() => { setReady(true); }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (lock.current) return;
     lock.current = true; setBusy(true); setError('');
@@ -30,8 +29,7 @@ export function Login() {
           : result.error.status === 429 ? 'Too many sign-in attempts. Please wait a few minutes and try again.'
           : 'The sign-in service is unavailable. Please try again shortly.');
       }
-      const origin = process.env.NEXT_PUBLIC_PARCELCARE_API_URL;
-      if (!origin) throw new Error('Workspace connection is unavailable. Please contact your operator.');
+      const origin = window.location.origin;
       const api = createApiClient(createLiveTransport({ baseUrl: origin, timeoutMs: 75_000, getAccessToken: async () => result.data.session?.access_token ?? null }));
       const identity = await api.getMe();
       const destination = workspacePath(identity.memberships);
@@ -47,7 +45,7 @@ export function Login() {
     <h1 className="mt-6 text-2xl font-semibold">Sign in to ParcelCare</h1><p className="mt-2 text-sm text-muted">For warehouse staff, SMEs, and riders.</p>
     <form onSubmit={submit} className="mt-6" aria-busy={busy}><fieldset disabled={!ready || busy} className="space-y-4">
       <div><label htmlFor="email" className="mb-2 block text-sm">Email</label><Input id="email" name="email" type="email" autoComplete="username" required disabled={busy} /></div>
-      <div><label htmlFor="password" className="mb-2 block text-sm">Password</label><Input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required disabled={busy} /><button type="button" className="mt-2 text-sm text-brand underline" aria-controls="password" aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? 'Hide password' : 'Show password'}</button></div>
+      <div><label htmlFor="password" className="mb-2 block text-sm">Password</label><Input id="password" name="password" type="password" autoComplete="current-password" required disabled={busy} /></div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <Button type="submit" className="w-full" disabled={!ready || busy}>{!ready ? 'Preparing sign-in…' : busy ? 'Signing in…' : 'Sign in'}</Button>
     </fieldset></form><p className="mt-5 text-sm text-muted">Need an account? Contact your warehouse operator. Accounts are created for you.</p><p className="mt-6 text-sm"><Link className="text-brand underline" href="/demo/warehouse">Explore the demo</Link></p>
