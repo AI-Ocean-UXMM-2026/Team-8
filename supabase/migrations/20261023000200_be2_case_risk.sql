@@ -32,8 +32,8 @@ begin
  select * into sla from public.case_slas where case_id=c.id;
  if sla.case_id is not null then
   if (sla.first_response_at is null and sla.first_response_due_at<=p_at) or (sla.resolved_at is null and sla.resolution_due_at<=p_at) then flag:='overdue';sla_score:=40;
-  elsif (sla.first_response_at is null and p_at>=sla.first_response_due_at-make_interval(mins=>sla.first_response_minutes*(100-sla.at_risk_percent)/100))
-   or (sla.resolved_at is null and p_at>=sla.resolution_due_at-make_interval(mins=>sla.resolution_minutes*(100-sla.at_risk_percent)/100)) then flag:='at_risk';sla_score:=25;
+  elsif (sla.first_response_at is null and p_at>=sla.first_response_due_at-make_interval(secs=>sla.first_response_minutes*60.0*(100-sla.at_risk_percent)/100.0))
+   or (sla.resolved_at is null and p_at>=sla.resolution_due_at-make_interval(secs=>sla.resolution_minutes*60.0*(100-sla.at_risk_percent)/100.0)) then flag:='at_risk';sla_score:=25;
   else flag:='on_track'; end if;
  end if;
  score:=category_score+description_score+perishability_score+value_score+impact_score+sla_score;

@@ -52,6 +52,8 @@ export async function testRisk(db){
   c=await command(c,{kind:'priority',priority:'automatic'});assert.equal(c.priority,'critical');assert.equal(c.priority_override,false);
   assert(c.events.some(e=>e.type==='risk_escalation'));
  });
+ await db.query("update public.case_slas set first_response_minutes=1,resolution_minutes=2,first_response_due_at=now()+interval '10 seconds',resolution_due_at=now()+interval '70 seconds' where case_id=$1",[ordinary.id]);
+ await user(staff,async()=>{const page=await queue({sla_risk:'at_risk'});assert(page.items.some(c=>c.id===ordinary.id),'Short SLA windows retain fractional-minute risk boundaries');});
  await db.query("update public.case_slas set first_response_due_at=now()-interval '1 minute' where case_id=$1",[ordinary.id]);
  await user(staff,async()=>{const page=await queue({sla_risk:'overdue'});assert(page.items.some(c=>c.id===ordinary.id));});
  await db.query("insert into public.sla_escalations(case_id,warehouse_id,milestone) values($1,$2,'first_response')",[ordinary.id,w]);
