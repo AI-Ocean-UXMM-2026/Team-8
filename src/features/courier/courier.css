@@ -3,3 +3,6 @@
 @media(max-width:767px){.courierMetrics{grid-template-columns:1fr;gap:12px}.courierFilters{grid-template-columns:1fr}.courierFilters>label:first-child{grid-column:auto}.courierDeliveryCard{gap:12px;padding-block:20px}.courierDeliveryCard>div:first-child{grid-column:1/-1}.courierDeliveryCard>.courierNext{grid-column:1/-1}.courierDeliveryCard>button:last-child{grid-column:1/-1;width:100%}.courierDetailHeader{align-items:flex-start;flex-wrap:wrap}.courierDetail .pc-card{padding:16px}.courierActions button{min-height:44px}.courierForm button[type=submit]{width:100%;min-height:44px}.courierDialog .courierActions{flex-direction:column}}
 
 .courierDeliveryCard>.shipmentStatus{justify-self:start}.courierDetailHeader>.shipmentStatus{flex-shrink:0}
+.courierWorkspace .warehouseNavigation button[aria-current=page]:hover{background:color-mix(in srgb,var(--primary) 20%,white)}
+.courierMetrics strong{font-size:38px;line-height:1.1;font-weight:650;letter-spacing:-.03em}
+@media(max-width:600px){.courierMetrics strong{font-size:34px}}

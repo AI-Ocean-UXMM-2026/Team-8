@@ -34,3 +34,19 @@
 
 #parcelcare-workspace.managerWorkspace .managerRoleLinks{order:4;display:grid;gap:12px;margin:20px 8px;font-size:12px;font-weight:600;color:var(--color-primary-800)}
 @media(max-width:767px){#parcelcare-workspace.managerWorkspace aside .managerRoleLinks{display:none}#parcelcare-workspace.managerWorkspace aside.workspaceNavOpen .managerRoleLinks{display:grid}}
+#parcelcare-workspace.managerWorkspace .reportToolbar{display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr) auto;gap:16px;align-items:end}
+#parcelcare-workspace.managerWorkspace .reportToolbar .field,#parcelcare-workspace.managerWorkspace .reportToolbar>button{height:44px;min-height:44px;box-sizing:border-box}
+#parcelcare-workspace.managerWorkspace .reportToolbar label{min-width:0}
+#parcelcare-workspace.managerWorkspace .reportToolbar .field{width:100%}
+#parcelcare-workspace.managerWorkspace .reportMetrics dd{font-size:38px;line-height:1.1;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+#parcelcare-workspace.managerWorkspace #nav button.active:hover{background:color-mix(in srgb,var(--primary) 20%,white)}
+#parcelcare-workspace.managerWorkspace .managerRoleLinks a{display:flex;align-items:center;min-height:44px}
+@media(max-width:767px){
+ #parcelcare-workspace.managerWorkspace aside{min-height:84px}
+ #parcelcare-workspace.managerWorkspace #workspaceMenu{position:absolute;right:16px;top:50px;min-height:30px;height:30px;padding:3px 10px;font-size:12px}
+ #parcelcare-workspace.managerWorkspace aside>a:first-child{margin:0;min-height:52px}
+ #parcelcare-workspace.managerWorkspace .reportMetrics{grid-template-columns:1fr;gap:12px}
+ #parcelcare-workspace.managerWorkspace .reportMetrics dd{font-size:34px}
+ #parcelcare-workspace.managerWorkspace .reportToolbar{grid-template-columns:1fr}
+ #parcelcare-workspace.managerWorkspace .reportToolbar label:first-child{grid-column:auto}
+}

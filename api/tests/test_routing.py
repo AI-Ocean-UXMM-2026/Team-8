@@ -13,6 +13,7 @@ class RoutingTests(unittest.TestCase):
         self.assigned = True
         self.write_failure = False
         self.terminal = False
+        self.gps_enabled = True
         self.calls = []
         rider = AuthContext(uid(3), (Membership(uid(2), 'rider'),), 'token')
         class Verifier:
@@ -23,6 +24,10 @@ class RoutingTests(unittest.TestCase):
                 return self
             def rpc(self, name, params):
                 owner.calls.append((name, params))
+                if name == 'shipment_arrival':
+                    return {'arrived_at': '2026-10-22T00:00:00Z', 'latitude': 16.9, 'longitude': 96.2, 'delivered': False}
+                if name == 'tracking_settings':
+                    return {'live_gps_enabled': owner.gps_enabled, 'demo_simulation_enabled': True}
                 if name == 'route_plan_write':
                     if owner.write_failure:
                         from app.core.errors import AppError
@@ -32,7 +37,7 @@ class RoutingTests(unittest.TestCase):
                     return None
                 if params['p_shipment'] is None:
                     return [{'shipment_id': str(uid(5)), 'accepted_at': '2026-10-22T00:00:00Z'}] if owner.assigned else []
-                return {'shipment': {'direction': 'outbound', 'delivery_mode': 'in_house', 'status': 'delivered' if owner.terminal else 'in_transit'}}
+                return {'shipment': {'warehouse_id': str(uid(2)), 'direction': 'outbound', 'delivery_mode': 'in_house', 'status': 'delivered' if owner.terminal else 'in_transit'}}
         self.app = create_app(Settings(_env_file=None, openrouteservice_api_key='server-secret'), Verifier(), Database())
         self.client = TestClient(self.app)
         self.url = '/api/deliveries/' + str(uid(5)) + '/route'
@@ -105,3 +110,33 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()['sharing_status'], 'unconfirmed')
         self.assertNotIn('saved_at', result.json())
+
+    @patch('app.features.deliveries.routing.httpx.post')
+    def test_fallback_car_bicycle_walking_and_no_straight_line(self, post):
+        missing = Mock(status_code=404)
+        missing.json.return_value = {'error': {'code': 2010}}
+        ok = Mock(status_code=200)
+        ok.json.return_value = {'features': [{'geometry': {'type': 'LineString', 'coordinates': [[96.1,16.8],[96.2,16.9]]}, 'properties': {'summary': {'distance': 2400, 'duration': 180}}}]}
+        post.side_effect = [missing, missing, ok]
+        response = self.client.post(self.url, json=self.body, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['profile'], 'walking')
+        self.assertEqual([c.args[0].split('/')[-2] for c in post.call_args_list], ['driving-car','cycling-regular','foot-walking'])
+        post.reset_mock(); post.side_effect = [missing,missing,missing]
+        response = self.client.post(self.url, json=self.body, headers=self.headers)
+        self.assertEqual(response.status_code, 422)
+        self.assertNotIn('coordinates', response.json())
+        self.assertEqual(post.call_count, 3)
+
+    @patch('app.features.deliveries.routing.httpx.post')
+    def test_admin_gps_disabled_never_calls_route_provider(self, post):
+        self.gps_enabled = False
+        self.assertEqual(self.client.post(self.url, json=self.body, headers=self.headers).status_code, 403)
+        post.assert_not_called()
+
+    def test_arrival_route_not_shadowed_by_generic_delivery_command(self):
+        response = self.client.post(self.url.replace('/route','/arrival'), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.calls[-1][0], 'shipment_arrival')
+        self.assertTrue(self.calls[-1][1]['p_confirm'])
+        self.assertFalse(response.json()['delivered'])

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 import base64
 import json
 from urllib.parse import urlparse
@@ -17,6 +18,10 @@ class Settings(BaseSettings):
     openai_api_key: str = ''
     openai_model: str = ''
     openai_checker_model: str = ''
+    categorization_provider: Literal['groq', 'ollama'] = 'groq'
+    categorization_model: str = ''
+    groq_api_key: str = ''
+    ollama_url: str = 'http://127.0.0.1:11434'
     supabase_worker_key: str = ''
     location_retention_hours: int = Field(default=24, ge=1, le=720)
     maintenance_interval_seconds: int = Field(default=60, ge=10, le=3600)

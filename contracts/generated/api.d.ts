@@ -482,6 +482,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/warehouses/{warehouse_id}/tracking-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tracking Settings */
+        get: operations["getTrackingSettings"];
+        /** Set Tracking Settings */
+        put: operations["setTrackingSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/deliveries/{shipment_id}/arrival": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Arrival */
+        get: operations["getShipmentArrival"];
+        put?: never;
+        /** Confirm Arrival */
+        post: operations["confirmShipmentArrival"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/deliveries/{shipment_id}/{command}": {
         parameters: {
             query?: never;
@@ -596,6 +632,91 @@ export interface paths {
         put?: never;
         /** Download */
         post: operations["download_api_evidence__evidence_id__download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Options */
+        get: operations["options_api_inventory_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}/categorization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_inventory__product_id__categorization_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}/categorization/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Metadata */
+        post: operations["metadata_api_inventory__product_id__categorization_metadata_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}/categorization/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze */
+        post: operations["analyze_api_inventory__product_id__categorization_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{product_id}/categorization/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review */
+        post: operations["review_api_inventory__product_id__categorization_review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1142,6 +1263,11 @@ export interface components {
              */
             as_of: string;
         };
+        /** AnalyzeCommand */
+        AnalyzeCommand: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
         /** CaseAction */
         CaseAction: {
             /** Expected Version */
@@ -1336,6 +1462,51 @@ export interface components {
              */
             basis: string;
         };
+        /** CategoryOptions */
+        CategoryOptions: {
+            /** Categories */
+            categories: {
+                [key: string]: string;
+            };
+            /** Ai Available */
+            ai_available: boolean;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+        };
+        /** CategoryState */
+        CategoryState: {
+            /** Product Id */
+            product_id: string;
+            /** Warehouse Id */
+            warehouse_id: string;
+            /** Sme Id */
+            sme_id: string;
+            /** Name */
+            name: string;
+            /** Sku */
+            sku: string;
+            /** Revision */
+            revision: number;
+            metadata: components["schemas"]["Metadata"];
+            suggestion: components["schemas"]["SavedSuggestion"] | null;
+            /** Category */
+            category: ("food_beverages" | "clothing_accessories" | "home_kitchen" | "electronics" | "beauty_personal_care" | "health_medical" | "office_stationery" | "other") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "verified";
+            /** Review Note */
+            review_note: string | null;
+            /** Reviewed By */
+            reviewed_by: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
         /** CreateLine */
         CreateLine: {
             /**
@@ -1465,6 +1636,54 @@ export interface components {
              */
             role: "owner" | "staff" | "sme" | "rider";
         };
+        /** Metadata */
+        Metadata: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Material
+             * @default
+             */
+            material: string;
+            /**
+             * Intended Use
+             * @default
+             */
+            intended_use: string;
+            /**
+             * Storage Notes
+             * @default
+             */
+            storage_notes: string;
+        };
+        /** MetadataCommand */
+        MetadataCommand: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Material
+             * @default
+             */
+            material: string;
+            /**
+             * Intended Use
+             * @default
+             */
+            intended_use: string;
+            /**
+             * Storage Notes
+             * @default
+             */
+            storage_notes: string;
+            /** Expected Revision */
+            expected_revision: number;
+        };
         /** Position */
         Position: {
             /** Latitude */
@@ -1509,6 +1728,23 @@ export interface components {
              */
             sme_visible: boolean;
         };
+        /** ReviewCommand */
+        ReviewCommand: {
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "food_beverages" | "clothing_accessories" | "home_kitchen" | "electronics" | "beauty_personal_care" | "health_medical" | "office_stationery" | "other";
+            /** Note */
+            note: string;
+            /**
+             * Acknowledge Flags
+             * @default false
+             */
+            acknowledge_flags: boolean;
+        };
         /** RouteRequest */
         RouteRequest: {
             /** Origin Latitude */
@@ -1524,6 +1760,29 @@ export interface components {
              * @constant
              */
             consent: true;
+        };
+        /** SavedSuggestion */
+        SavedSuggestion: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "food_beverages" | "clothing_accessories" | "home_kitchen" | "electronics" | "beauty_personal_care" | "health_medical" | "office_stationery" | "other";
+            /** Confidence */
+            confidence: number;
+            /** Rationale */
+            rationale: string;
+            /** Uncertain Attributes */
+            uncertain_attributes: ("description" | "material" | "intended_use" | "storage_notes")[];
+            /** Missing Attributes */
+            missing_attributes: ("description" | "material" | "intended_use" | "storage_notes")[];
+            /** Model */
+            model: string;
+            /**
+             * Requires Review
+             * @default true
+             */
+            requires_review: boolean;
         };
         /** StartTracking */
         StartTracking: {
@@ -1556,6 +1815,13 @@ export interface components {
             product: components["schemas"]["InventoryItem"];
             /** Version */
             version: number;
+        };
+        /** TrackingSettings */
+        TrackingSettings: {
+            /** Live Gps Enabled */
+            live_gps_enabled: boolean;
+            /** Demo Simulation Enabled */
+            demo_simulation_enabled: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -3203,6 +3469,142 @@ export interface operations {
             };
         };
     };
+    getTrackingSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                warehouse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setTrackingSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                warehouse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrackingSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getShipmentArrival: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    } | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirmShipmentArrival: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     deliveryCommand: {
         parameters: {
             query?: never;
@@ -3459,6 +3861,187 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    options_api_inventory_categories_get: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOptions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_inventory__product_id__categorization_get: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    metadata_api_inventory__product_id__categorization_metadata_post: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetadataCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyze_api_inventory__product_id__categorization_analyze_post: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyzeCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_api_inventory__product_id__categorization_review_post: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+            };
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryState"];
                 };
             };
             /** @description Validation Error */

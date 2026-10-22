@@ -92,6 +92,9 @@ def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Ide
     shipment = data['shipment']
     if shipment['direction'] != 'outbound' or shipment['delivery_mode'] != 'in_house' or shipment['status'] in ('delivered', 'cancelled'):
         raise AppError(403, 'FORBIDDEN', 'Routing requires an active in-house outbound delivery.')
+    settings = call(request, identity, 'tracking_settings', {'p_warehouse': shipment['warehouse_id'], 'p_value': None})
+    if not settings.get('live_gps_enabled', False):
+        raise AppError(403, 'GPS_DISABLED', 'Live GPS is disabled by warehouse staff.')
     result = calculate_route(request.app.state.settings.openrouteservice_api_key, body)
     result.update({'origin': [body.origin_longitude, body.origin_latitude], 'destination': [body.destination_longitude, body.destination_latitude]})
     try:
@@ -111,6 +114,33 @@ def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Ide
 @router.get('/deliveries/{shipment_id}/route', response_model=dict | None, operation_id='getSharedDeliveryRoute')
 def shared_route(shipment_id: UUID, request: Request, identity: Identity):
     return call(request, identity, 'route_plan_read', {'p_shipment': str(shipment_id)})
+
+
+
+class TrackingSettings(DTO):
+    live_gps_enabled: bool
+    demo_simulation_enabled: bool
+
+
+@router.get('/warehouses/{warehouse_id}/tracking-settings', response_model=dict, operation_id='getTrackingSettings')
+def get_tracking_settings(warehouse_id: UUID, request: Request, identity: Identity):
+    return call(request, identity, 'tracking_settings', {'p_warehouse': str(warehouse_id), 'p_value': None})
+
+
+@router.put('/warehouses/{warehouse_id}/tracking-settings', response_model=dict, operation_id='setTrackingSettings')
+def set_tracking_settings(warehouse_id: UUID, body: TrackingSettings, request: Request, identity: Identity):
+    identity.require_staff(warehouse_id)
+    return call(request, identity, 'tracking_settings', {'p_warehouse': str(warehouse_id), 'p_value': body.model_dump()})
+
+
+@router.get('/deliveries/{shipment_id}/arrival', response_model=dict | None, operation_id='getShipmentArrival')
+def get_arrival(shipment_id: UUID, request: Request, identity: Identity):
+    return call(request, identity, 'shipment_arrival', {'p_shipment': str(shipment_id), 'p_confirm': False})
+
+
+@router.post('/deliveries/{shipment_id}/arrival', response_model=dict, operation_id='confirmShipmentArrival')
+def confirm_arrival(shipment_id: UUID, request: Request, identity: Identity):
+    return call(request, identity, 'shipment_arrival', {'p_shipment': str(shipment_id), 'p_confirm': True})
 
 
 @router.post('/deliveries/{shipment_id}/{command}', response_model=dict, operation_id='deliveryCommand')

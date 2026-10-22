@@ -2780,6 +2780,223 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/warehouses/{warehouse_id}/tracking-settings": {
+      "get": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Get Tracking Settings",
+        "operationId": "getTrackingSettings",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Gettrackingsettings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      },
+      "put": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Set Tracking Settings",
+        "operationId": "setTrackingSettings",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackingSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Settrackingsettings"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/deliveries/{shipment_id}/arrival": {
+      "get": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Get Arrival",
+        "operationId": "getShipmentArrival",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getshipmentarrival"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      },
+      "post": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Confirm Arrival",
+        "operationId": "confirmShipmentArrival",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Confirmshipmentarrival"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/deliveries/{shipment_id}/{command}": {
       "post": {
         "tags": [
@@ -3202,6 +3419,351 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory-categories": {
+      "get": {
+        "tags": [
+          "Stock categorization"
+        ],
+        "summary": "Options",
+        "operationId": "options_api_inventory_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOptions"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory/{product_id}/categorization": {
+      "get": {
+        "tags": [
+          "Stock categorization"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_inventory__product_id__categorization_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory/{product_id}/categorization/metadata": {
+      "post": {
+        "tags": [
+          "Stock categorization"
+        ],
+        "summary": "Metadata",
+        "operationId": "metadata_api_inventory__product_id__categorization_metadata_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory/{product_id}/categorization/analyze": {
+      "post": {
+        "tags": [
+          "Stock categorization"
+        ],
+        "summary": "Analyze",
+        "operationId": "analyze_api_inventory__product_id__categorization_analyze_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
+    "/api/inventory/{product_id}/categorization/review": {
+      "post": {
+        "tags": [
+          "Stock categorization"
+        ],
+        "summary": "Review",
+        "operationId": "review_api_inventory__product_id__categorization_review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryState"
+                }
               }
             }
           },
@@ -4506,6 +5068,21 @@
         ],
         "title": "WarehouseOverview"
       },
+      "AnalyzeCommand": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "AnalyzeCommand"
+      },
       "CaseAction": {
         "properties": {
           "expected_version": {
@@ -5013,6 +5590,171 @@
         ],
         "title": "CaseReview"
       },
+      "CategoryOptions": {
+        "properties": {
+          "categories": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Categories"
+          },
+          "ai_available": {
+            "type": "boolean",
+            "title": "Ai Available"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "categories",
+          "ai_available",
+          "provider",
+          "model"
+        ],
+        "title": "CategoryOptions"
+      },
+      "CategoryState": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "title": "Warehouse Id"
+          },
+          "sme_id": {
+            "type": "string",
+            "title": "Sme Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Metadata"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedSuggestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "food_beverages",
+                  "clothing_accessories",
+                  "home_kitchen",
+                  "electronics",
+                  "beauty_personal_care",
+                  "health_medical",
+                  "office_stationery",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "verified"
+            ],
+            "title": "Status"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "warehouse_id",
+          "sme_id",
+          "name",
+          "sku",
+          "revision",
+          "metadata",
+          "suggestion",
+          "category",
+          "status",
+          "review_note",
+          "reviewed_by",
+          "reviewed_at",
+          "updated_at"
+        ],
+        "title": "CategoryState"
+      },
       "CreateLine": {
         "properties": {
           "product_id": {
@@ -5452,6 +6194,76 @@
         ],
         "title": "Membership"
       },
+      "Metadata": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Material",
+            "default": ""
+          },
+          "intended_use": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Intended Use",
+            "default": ""
+          },
+          "storage_notes": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Storage Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Metadata"
+      },
+      "MetadataCommand": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Material",
+            "default": ""
+          },
+          "intended_use": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Intended Use",
+            "default": ""
+          },
+          "storage_notes": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Storage Notes",
+            "default": ""
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "MetadataCommand"
+      },
       "Position": {
         "properties": {
           "latitude": {
@@ -5543,6 +6355,48 @@
         ],
         "title": "RegisterEvidence"
       },
+      "ReviewCommand": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "food_beverages",
+              "clothing_accessories",
+              "home_kitchen",
+              "electronics",
+              "beauty_personal_care",
+              "health_medical",
+              "office_stationery",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 5,
+            "title": "Note"
+          },
+          "acknowledge_flags": {
+            "type": "boolean",
+            "title": "Acknowledge Flags",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "category",
+          "note"
+        ],
+        "title": "ReviewCommand"
+      },
       "RouteRequest": {
         "properties": {
           "origin_latitude": {
@@ -5585,6 +6439,83 @@
           "consent"
         ],
         "title": "RouteRequest"
+      },
+      "SavedSuggestion": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "food_beverages",
+              "clothing_accessories",
+              "home_kitchen",
+              "electronics",
+              "beauty_personal_care",
+              "health_medical",
+              "office_stationery",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 1500,
+            "minLength": 1,
+            "title": "Rationale"
+          },
+          "uncertain_attributes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "description",
+                "material",
+                "intended_use",
+                "storage_notes"
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Uncertain Attributes"
+          },
+          "missing_attributes": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "description",
+                "material",
+                "intended_use",
+                "storage_notes"
+              ]
+            },
+            "type": "array",
+            "title": "Missing Attributes"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "requires_review": {
+            "type": "boolean",
+            "title": "Requires Review",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "confidence",
+          "rationale",
+          "uncertain_attributes",
+          "missing_attributes",
+          "model"
+        ],
+        "title": "SavedSuggestion"
       },
       "StartTracking": {
         "properties": {
@@ -5667,6 +6598,25 @@
           "version"
         ],
         "title": "StockResult"
+      },
+      "TrackingSettings": {
+        "properties": {
+          "live_gps_enabled": {
+            "type": "boolean",
+            "title": "Live Gps Enabled"
+          },
+          "demo_simulation_enabled": {
+            "type": "boolean",
+            "title": "Demo Simulation Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "live_gps_enabled",
+          "demo_simulation_enabled"
+        ],
+        "title": "TrackingSettings"
       },
       "ValidationError": {
         "properties": {

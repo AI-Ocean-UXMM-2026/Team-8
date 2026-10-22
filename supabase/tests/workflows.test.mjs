@@ -50,6 +50,11 @@ export async function testWorkflows(db){
  await as(customer,async()=>assert.equal(await readRoute(),null));
  await as(staff,async()=>assert.equal(await readRoute(),null));
  await as(rider,async()=>{session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);});
+ await as(staff,()=>q('select public.tracking_settings($1,$2::jsonb)',[w,JSON.stringify({live_gps_enabled:false,demo_simulation_enabled:true})]));
+ assert.equal((await one('select status from public.tracking_sessions where id=$1',[session])).status,'stopped');
+ await as(rider,()=>reject(()=>q('select public.start_tracking($1,true)',[delivery.assignments.find(a=>!a.cancelled_at).id]),'gps_disabled'));
+ await as(staff,()=>q('select public.tracking_settings($1,$2::jsonb)',[w,JSON.stringify({live_gps_enabled:true,demo_simulation_enabled:true})]));
+ await as(rider,async()=>{session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);});
  console.log('PASS SHARED ROUTE: saved/replayed route, late requests, coordinates, tenant RLS and consent-session revocation');
  await as(customer,async()=>{
   assert.equal((await one('select public.can_receive_tracking_topic($1) ok',['tracking:'+session])).ok,true);
@@ -74,6 +79,12 @@ export async function testWorkflows(db){
   assert.equal(delivery.shipment.status,'in_transit');proof=delivery.proofs[0].id;
  });
  await as(other,()=>reject(()=>deliver('confirm',shipment.id,{expected_version:8,note:'Other SME',proof_id:proof}),'forbidden'));
+ await as(customer,()=>reject(()=>deliver('confirm',shipment.id,{expected_version:8,note:'Too early',proof_id:proof}),'courier_arrival_required'));
+ await as(staff,()=>reject(()=>deliver('confirm',shipment.id,{expected_version:8,note:'Staff cannot confirm SME receipt',proof_id:proof}),'forbidden'));
+ await as(rider,()=>reject(()=>q('select public.shipment_arrival($1,true)',[shipment.id]),'outside_arrival_range'));
+ await as(other,()=>reject(()=>q('select public.shipment_arrival($1,false)',[shipment.id]),'forbidden'));
+ await q('update public.rider_locations set latitude=16.9,longitude=96.2 where session_id=$1',[session]);
+ await as(rider,async()=>{const result=(await one('select public.shipment_arrival($1,true) result',[shipment.id])).result;assert.equal(result.delivered,false);assert.deepEqual((await one('select public.shipment_arrival($1,true) result',[shipment.id])).result,result);});
  await as(customer,async()=>{
   const key=randomUUID(),request={expected_version:8,note:'Receiver confirmed physical arrival',proof_id:proof};
   delivery=await deliver('confirm',shipment.id,request,key);assert.equal(delivery.shipment.status,'delivered');
@@ -84,6 +95,10 @@ export async function testWorkflows(db){
  });
  await q("update public.shipment_route_plans set expires_at=now()-interval '1 second' where shipment_id=$1",[shipment.id]);
  await q('select public.run_retention(24)');assert.equal((await q('select * from public.shipment_route_plans where shipment_id=$1',[shipment.id])).rows.length,0);
+ await as(customer,()=>reject(()=>q('select public.tracking_settings($1,$2::jsonb)',[w,JSON.stringify({live_gps_enabled:false,demo_simulation_enabled:false})]),'forbidden'));
+ await as(staff,async()=>{const result=(await one('select public.tracking_settings($1,$2::jsonb) result',[w,JSON.stringify({live_gps_enabled:false,demo_simulation_enabled:true})])).result;assert.equal(result.live_gps_enabled,false);assert.equal(result.demo_simulation_enabled,true);});
+ await as(rider,async()=>assert.equal((await one('select public.tracking_settings($1,null) result',[w])).result.live_gps_enabled,false));
+ await as(staff,()=>q('select public.tracking_settings($1,$2::jsonb)',[w,JSON.stringify({live_gps_enabled:true,demo_simulation_enabled:true})]));
  console.log('PASS WORKFLOW: assignment, accept, pickup, dispatch, private topic scope, proof, receiver confirmation and ended sharing');
  await as(staff,async()=>{
   const external=await create('third_party');

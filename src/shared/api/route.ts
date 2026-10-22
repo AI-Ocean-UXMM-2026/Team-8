@@ -1,9 +1,9 @@
 import {ApiError,isUUID} from './transport';
-export type DeliveryRoute={provider:'openrouteservice';profile:'car';coordinates:[number,number][];distance_m:number;duration_ms:number;traffic_aware:false;destination_source:'courier_selected'};
+export type DeliveryRoute={provider:'openrouteservice';profile:'car'|'bicycle'|'walking';coordinates:[number,number][];distance_m:number;duration_ms:number;traffic_aware:false;destination_source:'courier_selected'};
 export type RouteRequest={origin_latitude:number;origin_longitude:number;destination_latitude:number;destination_longitude:number;consent:true};
 export function checkedRoute(value:unknown):DeliveryRoute{
  const r=value as DeliveryRoute;
- if(!r||r.provider!=='openrouteservice'||r.profile!=='car'||r.traffic_aware!==false||r.destination_source!=='courier_selected'||!Number.isFinite(r.distance_m)||r.distance_m<0||!Number.isFinite(r.duration_ms)||r.duration_ms<0||!Array.isArray(r.coordinates)||r.coordinates.length<2||r.coordinates.length>10000||r.coordinates.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>180||!Number.isFinite(p[1])||Math.abs(p[1])>90))throw new ApiError(502,'INVALID_RESPONSE','The route could not be verified. Try again.');
+ if(!r||r.provider!=='openrouteservice'||!['car','bicycle','walking'].includes(r.profile)||r.traffic_aware!==false||r.destination_source!=='courier_selected'||!Number.isFinite(r.distance_m)||r.distance_m<0||!Number.isFinite(r.duration_ms)||r.duration_ms<0||!Array.isArray(r.coordinates)||r.coordinates.length<2||r.coordinates.length>10000||r.coordinates.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>180||!Number.isFinite(p[1])||Math.abs(p[1])>90))throw new ApiError(502,'INVALID_RESPONSE','The route could not be verified. Try again.');
  return r;
 }
 
@@ -11,7 +11,7 @@ export type SharedDeliveryRoute=DeliveryRoute&{shipment_id:string;assignment_id:
 export function checkedSharedRoute(value:unknown,id:string):SharedDeliveryRoute|null{
  if(value===null)return null;
  const route=checkedRoute(value) as SharedDeliveryRoute;
- if(route.shipment_id!==id||!isUUID(route.assignment_id)||!Number.isFinite(Date.parse(route.saved_at))||!Number.isFinite(Date.parse(route.expires_at))||[route.origin,route.destination].some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>180||!Number.isFinite(p[1])||Math.abs(p[1])>90))throw new ApiError(502,'INVALID_RESPONSE','The shared route could not be verified.');
+ if(!isUUID(id)||route.shipment_id!==id||!isUUID(route.assignment_id)||!Number.isFinite(Date.parse(route.saved_at))||!Number.isFinite(Date.parse(route.expires_at))||Date.parse(route.expires_at)<=Date.parse(route.saved_at)||[route.origin,route.destination].some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||Math.abs(p[0])>180||!Number.isFinite(p[1])||Math.abs(p[1])>90))throw new ApiError(502,'INVALID_RESPONSE','The shared route could not be verified.');
  return route;
 }
 

@@ -35,3 +35,8 @@
 @media(max-width:899px){.smeDesktopShell{grid-template-columns:1fr}.smeSidebar{position:static;height:auto;padding:56px 20px 20px;gap:8px;border-right:0;border-bottom:1px solid var(--border)}.smeWorkspaceLabel{margin-bottom:8px}.smeSidebar nav{display:flex;flex-wrap:wrap}.smeSidebarFooter{padding-top:12px;margin-top:0;gap:12px}.smeSidebarFooter>button{justify-self:start}.smeTopbar{min-height:80px;padding:16px 20px;flex-wrap:wrap;gap:8px}.smeMain{padding:24px 20px}.smeMain .trackingDashboard{grid-template-columns:1fr}.smeMain .trackingShipments{max-height:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}.smeCaseGrid{grid-template-columns:1fr;gap:0}}
 @media(max-width:479px){.smeMain{padding:20px 16px}.smeTopbar select{max-width:100%}.smeTable th,.smeTable td{padding:12px 8px}}
 
+/* Apply table accessibility and quantity alignment inside the shared shell too. */
+.smeTableScroll:focus-visible{outline:3px solid var(--color-primary-700);outline-offset:3px}
+#sme-stock .smeTable th:nth-last-child(-n+2),#sme-stock .smeTable td:nth-last-child(-n+2){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.smeTable th{font-weight:600;color:var(--foreground)}
+@media(max-width:600px){.smeDashboardGrid{gap:16px}.smeTable th,.smeTable td{padding:12px 8px}}

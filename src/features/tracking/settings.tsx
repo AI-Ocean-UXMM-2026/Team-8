@@ -1,0 +1,15 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {getDemoPacket,sendDemoAction} from '../../shared/api/demo-sync';
+import {useSession} from '../auth/session';
+import {Card,Button} from '../../shared/ui';
+export const demoSettingsKey='parcelcare.demo.tracking-settings.v1';
+type Settings={live_gps_enabled:boolean;demo_simulation_enabled:boolean};
+const defaults:Settings={live_gps_enabled:true,demo_simulation_enabled:true};
+export function useTrackingSettings(){
+ const {api,demo,warehouseId}=useSession();const [value,setValue]=useState<Settings|null>(null),[error,setError]=useState('');
+ useEffect(()=>{let active=true;const refresh=async()=>{try{const next=demo?(await getDemoPacket()).settings:await api!.getTrackingSettings(warehouseId);if(typeof next.live_gps_enabled!=='boolean'||typeof next.demo_simulation_enabled!=='boolean')throw Error();if(active){setValue(next);setError('')}}catch{if(active){setValue(null);setError('Tracking settings unavailable. Retry before starting.')}}};void refresh();const timer=setInterval(()=>void refresh(),5000);window.addEventListener('storage',refresh);window.addEventListener('parcelcare:tracking-settings',refresh);return()=>{active=false;clearInterval(timer);window.removeEventListener('storage',refresh);window.removeEventListener('parcelcare:tracking-settings',refresh)}},[api,demo,warehouseId]);
+ async function save(next:Settings){if(demo){const current=await getDemoPacket();await sendDemoAction('settings',current.revision,next)}else await api!.setTrackingSettings(warehouseId,next);setValue(next);window.dispatchEvent(new Event('parcelcare:tracking-settings'));}
+ return {value,error,save};
+}
+export function TrackingSettingsPage(){const {demo}=useSession();const settings=useTrackingSettings();const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);async function change(key:keyof Settings,checked:boolean){if(!settings.value||busy)return;setBusy(true);try{await settings.save({...settings.value,[key]:checked});setMessage('Tracking settings saved.')}catch{setMessage('Settings could not be saved. Retry.')}finally{setBusy(false)}}return <Card><h1 className="text-2xl font-semibold">Admin settings</h1>{demo&&<p className="mt-3">Demo settings are shared across browsers on this server. They do not change production GPS.</p>}<h2 className="mt-6 font-semibold">Warehouse → SME tracking</h2><p className="my-3">Live GPS and demo simulation are separate. Live GPS always requires courier consent. Turning live GPS off ends active warehouse tracking sessions.</p>{settings.value?<fieldset disabled={busy} className="grid gap-5"><label><input type="checkbox" checked={settings.value.live_gps_enabled} onChange={e=>void change('live_gps_enabled',e.target.checked)}/> Live GPS enabled</label><label><input type="checkbox" checked={settings.value.demo_simulation_enabled} onChange={e=>void change('demo_simulation_enabled',e.target.checked)}/> Demo simulation enabled</label></fieldset>:<p role="alert">{settings.error||'Loading settings…'}</p>}<p className="mt-4" role="status">{message}</p><Button variant="outline" onClick={()=>location.reload()}>Refresh settings</Button></Card>}
