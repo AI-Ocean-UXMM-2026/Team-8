@@ -2780,6 +2780,75 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/deliveries/{shipment_id}/report": {
+      "post": {
+        "tags": [
+          "Deliveries and tracking"
+        ],
+        "summary": "Report Issue",
+        "operationId": "reportRiderException",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Shipment Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiderReport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiderReportResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/warehouses/{warehouse_id}/tracking-settings": {
       "get": {
         "tags": [
@@ -6976,6 +7045,81 @@
           "note"
         ],
         "title": "ReviewCommand"
+      },
+      "RiderReport": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "recipient_unavailable",
+              "delivery_failed",
+              "transit_damage",
+              "courier_delay"
+            ],
+            "title": "Type"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Evidence Ids",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "note"
+        ],
+        "title": "RiderReport"
+      },
+      "RiderReportResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "shipment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Shipment Id"
+          },
+          "stage": {
+            "type": "string",
+            "const": "outbound",
+            "title": "Stage"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "recipient_unavailable",
+              "delivery_failed",
+              "transit_damage",
+              "courier_delay"
+            ],
+            "title": "Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "shipment_id",
+          "stage",
+          "type"
+        ],
+        "title": "RiderReportResult"
       },
       "RouteRequest": {
         "properties": {

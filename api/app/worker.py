@@ -3,6 +3,7 @@ import argparse
 import time
 from supabase import create_client
 from .core.settings import get_settings
+from .features.ai.evidence import EvidenceReader
 from .features.ai.service import OpenAIInvestigator, OpenAIChecker, run_job
 
 
@@ -21,23 +22,39 @@ class WorkerDatabase:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--once', action='store_true')
+    parser.add_argument('--maintenance-only', action='store_true')
     args = parser.parse_args()
     settings = get_settings()
     if not settings.supabase_url or not settings.supabase_worker_key:
         raise SystemExit('Configure SUPABASE_URL and server-only SUPABASE_WORKER_KEY')
     database = WorkerDatabase(create_client(settings.supabase_url, settings.supabase_worker_key))
-    provider = OpenAIInvestigator(settings) if settings.openai_api_key and settings.openai_model else None
-    checker = OpenAIChecker(settings) if settings.openai_api_key and settings.openai_checker_model else None
+    if not args.maintenance_only and (not settings.openai_api_key or not settings.openai_model or not settings.openai_checker_model):
+        raise SystemExit('Configure OPENAI_API_KEY, OPENAI_MODEL and OPENAI_CHECKER_MODEL, or use --maintenance-only')
+    provider = None if args.maintenance_only else OpenAIInvestigator(settings)
+    checker = None if args.maintenance_only else OpenAIChecker(settings)
+    evidence_reader = EvidenceReader(settings)
     maintenance_at = 0.0
     while True:
-        # No raw coordinates, tokens, complaint text or provider errors are logged.
-        if time.monotonic() >= maintenance_at:
-            database.rpc('run_sla_escalations', {})
-            database.rpc('run_retention', {'p_hours': settings.location_retention_hours})
-            maintenance_at = time.monotonic() + settings.maintenance_interval_seconds
-        for job in database.rpc('analysis_pending', {}):
-            run_job(database, provider, job, checker)
+        # Never print SDK exceptions: they can include request data or credentials.
+        failed = False
+        try:
+            if time.monotonic() >= maintenance_at:
+                database.rpc('run_sla_escalations', {})
+                database.rpc('run_retention', {'p_hours': settings.location_retention_hours})
+                maintenance_at = time.monotonic() + settings.maintenance_interval_seconds
+            if provider is not None:
+                for job in database.rpc('analysis_pending', {}):
+                    try:
+                        run_job(database, provider, job, checker, evidence_reader)
+                    except Exception:
+                        failed = True
+                        print('Worker job could not finish; lease recovery will retry.', flush=True)
+        except Exception:
+            failed = True
+            print('Worker cycle unavailable; retrying without exposing provider details.', flush=True)
         if args.once:
+            if failed:
+                raise SystemExit(1)
             return
         time.sleep(5)
 

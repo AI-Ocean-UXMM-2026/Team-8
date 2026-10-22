@@ -55,9 +55,9 @@ export function createApiClient(transport: Transport) {
     async getCourierDelivery(id:string,signal?:AbortSignal){return checkedDelivery(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}`,signal}),id);},
     async recordCourierAction(id:string,body:CourierAction,options:Mutation){
       const {kind,...payload}=body;
-      if(kind==='report'){
-        const value=await transport<unknown>({method:'POST',path:'/api/exceptions',body:{...payload,shipment_id:entity(id),stage:'outbound'},...options});
-        const c=value as {id:string;shipment_id:string};if(!c||!isUUID(c.id)||c.shipment_id!==id)throw new ApiError(502,'INVALID_RESPONSE','Case result could not be verified. Retry the same saved request.');
+      if(body.kind==='report'){
+        const value=await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/report`,body:payload,...options});
+        const c=value as {id:string;shipment_id:string;stage:string;type:string};if(!c||!isUUID(c.id)||c.shipment_id!==id||c.stage!=='outbound'||c.type!==body.type)throw new ApiError(502,'INVALID_RESPONSE','Case result could not be verified. Retry the same saved request.');
         return {kind:'report' as const,id:c.id};
       }
       const result=await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/${kind}`,body:payload,...options});

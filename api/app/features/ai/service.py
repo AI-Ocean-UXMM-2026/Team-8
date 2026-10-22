@@ -93,6 +93,7 @@ class OpenAIInvestigator:
         if not settings.openai_api_key or not settings.openai_model:
             raise ValueError('Configure OPENAI_API_KEY and OPENAI_MODEL')
         self.model = settings.openai_model
+        self.auto_execute = settings.ai_auto_execute
         self.client = OpenAI(api_key=settings.openai_api_key, timeout=45, max_retries=0)
 
     def investigate(self, snapshot):
@@ -105,7 +106,7 @@ class OpenAIInvestigator:
                 'Recommend one permitted internal action; no SQL, physical completion, stock edits, or promises. '
                 'Do not demote recorded priority. Set requires_human true for uncertainty, missing facts, approval needs or physical actions. '
                 'Uploaded metadata is not the contents of an image/PDF: do not claim to have inspected those contents. Return a concise factual summary.'),
-            input=json.dumps(bounded), text_format=Investigation)
+            input=([{'role': 'user', 'content': [{'type': 'input_text', 'text': json.dumps(bounded)}] + snapshot['evidence_content']}] if snapshot.get('evidence_content') else json.dumps(bounded)), text_format=Investigation)
         if response.output_parsed is None:
             raise PermissionError('refusal')
         output = validate_output(response.output_parsed, snapshot)
@@ -134,7 +135,7 @@ class OpenAIChecker:
                 'Uploaded metadata does not prove image/PDF contents. Reject claims of having read content not supplied. '
                 'An approved verdict requires all four checks true. Copy the exact source_version and proposal_hash. '
                 'Provide short findings, not hidden reasoning. You cannot execute actions or grant permissions.'),
-            input=json.dumps(payload), text_format=CheckReview)
+            input=([{'role': 'user', 'content': [{'type': 'input_text', 'text': json.dumps(payload)}] + snapshot['evidence_content']}] if snapshot.get('evidence_content') else json.dumps(payload)), text_format=CheckReview)
         if response.output_parsed is None:
             raise PermissionError('refusal')
         review = validate_review(response.output_parsed, snapshot, maker)
@@ -150,7 +151,7 @@ def failure_reason(error):
     return 'timeout' if 'timeout' in type(error).__name__.lower() else 'provider_unavailable'
 
 
-def run_job(database, provider, job_id, checker=None):
+def run_job(database, provider, job_id, checker=None, evidence_reader=None):
     snapshot = database.rpc('analysis_claim', {'p_job': str(job_id)})
     if not snapshot:
         return None
@@ -159,12 +160,20 @@ def run_job(database, provider, job_id, checker=None):
         if provider is None or checker is None:
             reason = 'configuration_missing'
         else:
+            consumed, omitted = [], False
+            if evidence_reader is not None:
+                content, consumed, omitted = evidence_reader.read(snapshot)
+                snapshot = {**snapshot, 'evidence_content': content}
+            elif snapshot.get('evidence_files'):
+                omitted = True
             database.rpc('analysis_stage', {'p_job': str(job_id), 'p_token': snapshot['lease_token'], 'p_stage': 'maker', 'p_maker': None})
             maker = provider.investigate(deepcopy(snapshot))
             # Revalidate even injected/provider-fake implementations before review.
             validate_output(Investigation(**maker['output']), snapshot)
+            if omitted or not getattr(provider, 'auto_execute', True) or snapshot['case']['priority'] in ('high', 'critical'):
+                maker['output']['requires_human'] = True
             maker['proposal_hash'] = proposal_hash(maker['output'])
-            result = {'maker': maker, 'checker': None, 'checker_error': None}
+            result = {'maker': maker, 'checker': None, 'checker_error': None, 'evidence_consumed': consumed}
             database.rpc('analysis_stage', {'p_job': str(job_id), 'p_token': snapshot['lease_token'], 'p_stage': 'checker', 'p_maker': maker})
             try:
                 review = checker.review(deepcopy(snapshot), deepcopy(maker))

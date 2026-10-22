@@ -1,0 +1,25 @@
+services:
+  # Applying this worker service incurs Render worker charges. Do not create it
+  # until the operator has approved the current plan and AI usage budget.
+  - type: worker
+    name: parcelcare-team8-worker
+    runtime: python
+    plan: starter
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.worker
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_WORKER_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        sync: false
+      - key: OPENAI_CHECKER_MODEL
+        sync: false
+      - key: AI_AUTO_EXECUTE
+        value: "false"

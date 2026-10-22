@@ -26,13 +26,40 @@ export async function testWorkflows(db){
   assert.equal(delivery.shipment.status,'assigned');
  });
  await as(other,()=>reject(()=>deliver('cancel',shipment.id,{expected_version:4,note:'Forged'}),'forbidden'));
+ const reportBody={type:'courier_delay',note:'Vehicle delayed; warehouse assistance needed',evidence_ids:[]};
+ const reportKey=randomUUID();
+ const riderReport=async(body=reportBody,key=reportKey)=>(await one('select public.rider_report($1,$2,$3::jsonb,$4) result',[shipment.id,key,JSON.stringify(body),corr])).result;
+ await as(rider,()=>reject(()=>riderReport(),'report_not_allowed'));
+ await as(other,()=>reject(()=>riderReport(),'forbidden'));
+ await as(staff,()=>reject(()=>riderReport(),'forbidden'));
  await as(rider,async()=>{
   delivery=await deliver('accept',shipment.id,{expected_version:4,note:'Accepted task'});
+  const reported=await riderReport();assert.equal(reported.shipment_id,shipment.id);assert.equal(reported.stage,'outbound');
+  assert.deepEqual(await riderReport(),reported);
+  await reject(()=>riderReport({...reportBody,note:'Changed payload'}),'idempotency_conflict');
+  assert.equal((await riderReport({...reportBody,note:'Second observation'},randomUUID())).id,reported.id);
+  for(const patch of [{type:'missing_stock'},{note:'  '},{evidence_ids:[randomUUID()]}])await reject(()=>riderReport({...reportBody,...patch},randomUUID()),patch.evidence_ids?'invalid_evidence':'invalid_report');
+  await reject(()=>cases('close',reported.id,{note:'Forged closure'}),'forbidden');
   await reject(()=>deliver('proof',shipment.id,{expected_version:5,note:'Premature',received_by:'Receiver'}),'incomplete_proof');
   delivery=await deliver('pickup',shipment.id,{expected_version:5,note:'Verified pickup'});
   session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;
   await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);
  });
+ await q('update public.riders set active=false where id=$1',[riderId]);
+ await as(rider,()=>reject(()=>riderReport(),'forbidden'));
+ await q('update public.riders set active=true where id=$1',[riderId]);
+ await q("update public.memberships set active=false where profile_id=$1 and role='rider'",[rider]);
+ await as(rider,()=>reject(()=>riderReport(),'forbidden'));
+ await q("update public.memberships set active=true where profile_id=$1 and role='rider'",[rider]);
+ await q('update public.delivery_assignments set cancelled_at=now() where shipment_id=$1 and cancelled_at is null',[shipment.id]);
+ await as(rider,()=>reject(()=>riderReport(),'forbidden'));
+ await q('update public.delivery_assignments set cancelled_at=null where shipment_id=$1',[shipment.id]);
+ await as(rider,async()=>{session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);});
+ const reportRows=(await q("select actor_type,payload from public.case_events where case_id=(select id from public.exception_cases where shipment_id=$1 and type='courier_delay')",[shipment.id])).rows;
+ assert.equal(reportRows.length,2);assert.ok(reportRows.every(e=>e.actor_type==='rider'));
+ assert.equal((await one('select status from public.shipments where id=$1',[shipment.id])).status,'picked_up');
+ await as(customer,async()=>{const c=(await one("select public.case_read(id) result from public.exception_cases where shipment_id=$1 and type='courier_delay'",[shipment.id])).result;assert.equal(c.type,'courier_delay');});
+ console.log('PASS RIDER REPORT: assigned/accepted only, case matching, replay, timeline, evidence validation, tenant visibility and unchanged delivery state');
  const routePayload={provider:'openrouteservice',profile:'car',coordinates:[[96.1,16.8],[96.2,16.9]],origin:[96.1,16.8],destination:[96.2,16.9],distance_m:2400,duration_ms:180000,traffic_aware:false,destination_source:'courier_selected'};
  const routeKey=randomUUID(),routeTime=new Date().toISOString();
  const writeRoute=async(payload=routePayload,key=routeKey,time=routeTime)=>(await one('select public.route_plan_write($1,$2::jsonb,$3,$4) result',[shipment.id,JSON.stringify(payload),key,time])).result;
@@ -75,6 +102,7 @@ export async function testWorkflows(db){
  await q("insert into storage.objects(bucket_id,name) values('parcelcare-evidence',$1)",[path]);
  await as(rider,async()=>{
   await reject(()=>q('select public.evidence_upload_access($1)',[evidence]),'forbidden');
+  for(const type of ['recipient_unavailable','delivery_failed','transit_damage'])assert.equal((await riderReport({type,note:'Observed delivery issue',evidence_ids:[evidence]},randomUUID())).type,type);
   delivery=await deliver('proof',shipment.id,{expected_version:7,note:'Proof submitted, not delivered',evidence_id:evidence,received_by:'Fictitious receiver'});
   assert.equal(delivery.shipment.status,'in_transit');proof=delivery.proofs[0].id;
  });
@@ -111,14 +139,15 @@ export async function testWorkflows(db){
   assert.deepEqual(await deliver('handover',external.id,handover,key),saved);
   const update=await deliver('courier',external.id,{expected_version:2,note:'Verified carrier delay',evidence_id:record.id,status:'delayed'});assert.equal(update.shipment.status,'delayed');
  });
+ await as(rider,()=>reject(()=>riderReport(reportBody,randomUUID()),'forbidden'));
  console.log('PASS WORKFLOW: external mode rejects riders, verifies handover, replays once and records actual carrier delay without GPS');
  let c,approval,notificationId;
  await as(staff,async()=>{
   const s=await create();
   c=await cases('report',s.id,{stage:'outbound',type:'recipient_unavailable',note:'Fictitious shop closed',evidence_ids:[]});
   c=await cases('action',c.id,{...body(c),action:'request_sme_decision',policy_version:1});approval=c.approvals[0];
-  const page=(await one('select public.ops_read($1,$2,$3::jsonb) result',[w,'cases',JSON.stringify({issue_type:'recipient_unavailable',owner_id:'unassigned',limit:1})])).result;
-  assert.equal(page.items[0].id,c.id);assert.equal(page.items[0].owner_id,null);
+  const page=(await one('select public.ops_read($1,$2,$3::jsonb) result',[w,'cases',JSON.stringify({issue_type:'recipient_unavailable',owner_id:'unassigned',limit:100})])).result;
+  assert.ok(page.items.some(item=>item.id===c.id&&item.owner_id===null));
  });
  await as(staff,async()=>{c=await cases('information',c.id,body(c));});
  await as(customer,()=>reject(()=>cases('decision',approval.id,{decision:'reject',note:'Stale request',request_version:approval.requested_case_version}),'stale_version'));
@@ -170,5 +199,35 @@ export async function testWorkflows(db){
  });
  const seed=await readFile(new URL('../seeds/cases.sql',import.meta.url),'utf8');await (db.exec ? db.exec(seed) : db.query(seed));
  assert.equal((await one("select status,decision from public.approvals where id='a0000000-0000-4000-8000-000000009004'")).decision,'accept_partial');
+ // Evidence metadata extends the checkpointed independent checker protocol.
+ const priorRules=(await one('select rules from public.resolution_policies where sme_id=$1 order by version desc limit 1',[sme])).rules;
+ await q("update public.resolution_policies set rules=jsonb_set(rules,'{ai_auto_actions}',$2::jsonb) where sme_id=$1",[sme,JSON.stringify(['save_summary'])]);
+ for(const scenario of ['approved','rejected','missing_checker','high_priority','human','no_evidence']){
+  let target,job;
+  await as(staff,async()=>{
+   const sh=await create();target=await cases('report',sh.id,{stage:'outbound',type:'courier_delay',note:'Check recorded delay',evidence_ids:[]});
+   const e=(await one("select public.register_evidence($1,'image/png',8,true) result",[sh.id])).result;
+   const ep=(await one('select object_path from public.evidence where id=$1',[e.id])).object_path;
+   await q("insert into storage.objects(bucket_id,name) values('parcelcare-evidence',$1)",[ep]);
+  });
+  if(scenario==='high_priority')await q("update public.exception_cases set priority='high' where id=$1",[target.id]);
+  await as(staff,async()=>{target=(await one('select public.case_read($1) result',[target.id])).result;job=(await cases('analyze',target.id,body(target))).job_id;});
+  const snapshot=(await one('select public.analysis_claim($1) result',[job])).result;
+  assert.equal(snapshot.evidence_files.length,1);
+  const maker={policy_id:snapshot.policy_id,model:'maker-model',provider_response_id:'maker-'+job,input_tokens:10,output_tokens:10,configuration:{},proposal_hash:'a'.repeat(64),
+   output:{exception_type:'courier_delay',priority:scenario==='high_priority'?'high':'normal',summary:'Recorded operational delay.',evidence_ids:[],recommended_action:'save_summary',requires_human:['high_priority','human','no_evidence'].includes(scenario),missing_information:[]}};
+  const checker={model:'checker-model',provider_response_id:'checker-'+job,configuration:{},output:{verdict:scenario==='rejected'?'rejected':'approved',source_version:snapshot.source_version,proposal_hash:maker.proposal_hash,evidence_supported:true,classification_correct:true,priority_correct:true,action_authorized:true,findings:scenario==='rejected'?['Review required']:[]}};
+  await q("select public.analysis_stage($1,$2,'maker',null)",[job,snapshot.lease_token]);
+  await q("select public.analysis_stage($1,$2,'checker',$3::jsonb)",[job,snapshot.lease_token,JSON.stringify(maker)]);
+  const result={maker,checker:scenario==='missing_checker'?null:checker,checker_error:scenario==='missing_checker'?'provider_unavailable':null,evidence_consumed:scenario==='no_evidence'?[]:snapshot.evidence_files.map(e=>e.id)};
+  const finished=(await one('select public.analysis_finish($1,$2,$3::jsonb,null) result',[job,snapshot.lease_token,JSON.stringify(result)])).result;
+  assert.equal(finished.execution_status,scenario==='approved'?'executed':['high_priority','human','no_evidence'].includes(scenario)?'review_required':'blocked');
+  const persisted=await one('select configuration,review_status from public.ai_analyses where id=$1',[finished.analysis_id]);
+  assert.deepEqual(persisted.configuration.evidence_consumed,result.evidence_consumed);
+  assert.equal((await q('select * from public.action_executions where case_id=$1',[target.id])).rows.length,scenario==='approved'?1:0);
+  assert.deepEqual((await one('select public.analysis_finish($1,$2,$3::jsonb,null) result',[job,snapshot.lease_token,JSON.stringify(result)])).result,finished);
+ }
+ await q('update public.resolution_policies set rules=$2::jsonb where sme_id=$1',[sme,JSON.stringify(priorRules)]);
+ console.log('PASS AI PIPELINE: evidence metadata, independent approval, rejection, failure, human/high-risk and unread evidence guards');
  console.log('PASS WORKFLOW: separate repeatable operations/rider and BE2 case/approval/notification seeds');
 }

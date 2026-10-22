@@ -36,7 +36,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(result['output']['requires_human'])
         self.assertEqual(result['input_tokens'], 100)
         self.assertIn('untrusted data', calls[0]['instructions'])
-        self.assertIn('shortage_qty', calls[0]['input'])
+        self.assertIn('shortage_qty', repr(calls[0]['input']))
         self.assertFalse(calls[0]['store'])
 
     def test_invented_evidence_unknown_action_wrong_case_and_empty_summary_fail(self):

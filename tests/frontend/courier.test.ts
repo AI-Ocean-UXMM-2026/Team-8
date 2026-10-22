@@ -1,3 +1,4 @@
+import type {ApiRequest} from '../../src/shared/api/transport';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createApiClient,ApiError} from '../../src/shared/api';
@@ -23,10 +24,11 @@ test('proof needs recipient and recorded evidence; replay/reload preserves one p
  await assert.rejects(reloaded.recordCourierAction(id,{...body,note:'Different payload'},{idempotencyKey:operation}),(e:ApiError)=>e.status===409);
 });
 test('repeat issue reports match a case; storage failures do not mutate assignment state',async()=>{
- const storage=store(),api=createApiClient(createCourierMockTransport(storage)),id=(await api.listRiderAssignments())[0].shipment_id,body={kind:'report' as const,type:'recipient_unavailable' as const,note:'Recipient unavailable',evidence_ids:[]};
+ const storage=store(),api=createApiClient(createCourierMockTransport(storage)),id=(await api.listRiderAssignments())[1].shipment_id,body={kind:'report' as const,type:'recipient_unavailable' as const,note:'Recipient unavailable',evidence_ids:[]};
  const a=await api.recordCourierAction(id,body,{idempotencyKey:key()}),b=await api.recordCourierAction(id,body,{idempotencyKey:key()});assert.deepEqual(a,b);
  const failing=createApiClient(createCourierMockTransport({getItem:storage.getItem,setItem:()=>{throw Error('Full')}}));
- await assert.rejects(failing.recordCourierAction(id,{kind:'accept',expected_version:1,note:'Accept'},{idempotencyKey:key()}));assert.equal((await failing.getCourierDelivery(id)).assignments[0].accepted_at,null);
+ const unaccepted=(await failing.listRiderAssignments())[0].shipment_id;
+ await assert.rejects(failing.recordCourierAction(unaccepted,{kind:'accept',expected_version:1,note:'Accept'},{idempotencyKey:key()}));assert.equal((await failing.getCourierDelivery(unaccepted)).assignments[0].accepted_at,null);
 });
 test('courier response validation rejects mismatched ids, malformed timestamps and missing assignment projections',async()=>{
  const api=createApiClient(createCourierMockTransport(store())),assignments=await api.listRiderAssignments(),id=assignments[0].shipment_id,d=await api.getCourierDelivery(id);
@@ -99,6 +101,13 @@ test('courier shared demo shipment uses the same reference and id as warehouse a
  assert.ok((await api.listRiderAssignments()).some(a=>a.shipment_id===demoShipmentId&&a.reference==='PC-OUT-0003'));
 });
 
+test('rider reports use the narrow endpoint and reject a wrong shipment acknowledgement',async()=>{
+ const id='10000000-0000-4000-8000-000000000022',caseId='10000000-0000-4000-8000-000000000099';
+ const body={kind:'report' as const,type:'courier_delay' as const,note:'Vehicle delayed',evidence_ids:[]};let wrong=false;
+ const api=createApiClient(async<T>(request:ApiRequest)=>{assert.equal(request.path,`/api/deliveries/${id}/report`);assert.equal(request.method,'POST');assert.ok(request.idempotencyKey);assert.equal((request.body as Record<string,unknown>).stage,undefined);return {id:caseId,shipment_id:wrong?caseId:id,stage:'outbound',type:'courier_delay'} as T;});
+ assert.deepEqual(await api.recordCourierAction(id,body,{idempotencyKey:key()}),{kind:'report',id:caseId});wrong=true;
+ await assert.rejects(api.recordCourierAction(id,body,{idempotencyKey:key()}),(e:ApiError)=>e.status===502);
+});
 
 test('arrival is yellow/pending until explicit SME receipt and reset starts a fresh demo',()=>{
  const storage=store(),start=100000;

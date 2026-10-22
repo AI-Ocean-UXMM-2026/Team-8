@@ -116,6 +116,24 @@ def shared_route(shipment_id: UUID, request: Request, identity: Identity):
     return call(request, identity, 'route_plan_read', {'p_shipment': str(shipment_id)})
 
 
+class RiderReport(DTO):
+    type: Literal['recipient_unavailable', 'delivery_failed', 'transit_damage', 'courier_delay']
+    note: Annotated[str, Field(min_length=1, max_length=2000)]
+    evidence_ids: Annotated[list[UUID], Field(max_length=100)] = []
+
+
+class RiderReportResult(DTO):
+    id: UUID
+    shipment_id: UUID
+    stage: Literal['outbound']
+    type: Literal['recipient_unavailable', 'delivery_failed', 'transit_damage', 'courier_delay']
+
+
+@router.post('/deliveries/{shipment_id}/report', response_model=RiderReportResult, status_code=201, operation_id='reportRiderException')
+def report_issue(shipment_id: UUID, body: RiderReport, request: Request, identity: Identity, key: Key):
+    return call(request, identity, 'rider_report', {'p_shipment': str(shipment_id), 'p_key': str(key),
+        'p_body': body.model_dump(mode='json'), 'p_correlation': str(request.state.correlation_id)})
+
 
 class TrackingSettings(DTO):
     live_gps_enabled: bool

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ''
     openai_model: str = ''
     openai_checker_model: str = ''
+    ai_auto_execute: bool = False
     categorization_provider: Literal['groq', 'ollama'] = 'groq'
     categorization_model: str = ''
     groq_api_key: str = ''

@@ -482,6 +482,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/deliveries/{shipment_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Issue */
+        post: operations["reportRiderException"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/warehouses/{warehouse_id}/tracking-settings": {
         parameters: {
             query?: never;
@@ -1892,6 +1909,44 @@ export interface components {
              * @default false
              */
             acknowledge_flags: boolean;
+        };
+        /** RiderReport */
+        RiderReport: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "recipient_unavailable" | "delivery_failed" | "transit_damage" | "courier_delay";
+            /** Note */
+            note: string;
+            /**
+             * Evidence Ids
+             * @default []
+             */
+            evidence_ids: string[];
+        };
+        /** RiderReportResult */
+        RiderReportResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Shipment Id
+             * Format: uuid
+             */
+            shipment_id: string;
+            /**
+             * Stage
+             * @constant
+             */
+            stage: "outbound";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "recipient_unavailable" | "delivery_failed" | "transit_damage" | "courier_delay";
         };
         /** RouteRequest */
         RouteRequest: {
@@ -3666,6 +3721,43 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reportRiderException: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiderReport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiderReportResult"];
                 };
             };
             /** @description Validation Error */

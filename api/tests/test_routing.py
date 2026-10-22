@@ -140,3 +140,21 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(self.calls[-1][0], 'shipment_arrival')
         self.assertTrue(self.calls[-1][1]['p_confirm'])
         self.assertFalse(response.json()['delivered'])
+
+    def test_tracking_endpoints_use_the_production_user_database_adapter(self):
+        from app.core.database import SupabaseUserDatabaseFactory
+        client = Mock()
+        factory = Mock(return_value=client)
+        self.app.state.database_factory = SupabaseUserDatabaseFactory(factory)
+        client.rpc.return_value.execute.return_value.data = {
+            'live_gps_enabled': True, 'demo_simulation_enabled': True}
+        response = self.client.get(f'/api/warehouses/{uid(2)}/tracking-settings', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['live_gps_enabled'])
+        client.rpc.assert_called_with('tracking_settings', {'p_warehouse': str(uid(2)), 'p_value': None})
+        client.rpc.return_value.execute.return_value.data = {'delivered': False}
+        for method, confirmed in [('get', False), ('post', True)]:
+            response = getattr(self.client, method)(self.url.replace('/route', '/arrival'), headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            client.rpc.assert_called_with('shipment_arrival', {'p_shipment': str(uid(5)), 'p_confirm': confirmed})
+        factory.assert_called_with('token')
