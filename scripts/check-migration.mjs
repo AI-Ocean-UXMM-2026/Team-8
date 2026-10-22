@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import './prepare-ui.mjs';
 
 // Preserve baseline behavior/assets; the shadcn theme intentionally overrides visuals.
-const baseline = fs.readFileSync('dist/index.html', 'utf8');
-const read = (file) => fs.readFileSync(file, 'utf8');
+const baseline = fs.readFileSync('dist/index.html', 'utf8').replaceAll('\r\n', '\n');
+const read = (file) => fs.readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
 // Branding is intentionally replaced; preserve the remaining shell contract.
 const withoutBrand = html => html.replace(/<a href="(?:#|\/)"[^>]*>.*?<\/a>/s, '');
 assert.equal(withoutBrand(read('src/features/workspace/shell.html')), withoutBrand(baseline.match(/<body>(.*?)<script>/s)[1]));

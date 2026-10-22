@@ -1,5 +1,6 @@
 import { Badge, Card } from '../../shared/ui';
 import { type CaseView, text } from './case-view';
+import { MakerCheckerReview } from './maker-checker-review';
 
 const human = (value: string) => value.replaceAll('_', ' ');
 const time = (value: unknown) => {
@@ -21,8 +22,9 @@ export function CasePanels({ item }: { item: CaseView }) {
       const raw = analysis.structured_output ?? analysis.output;
       const output = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
       const missing = Array.isArray(output.missing_information) ? output.missing_information.filter((v): v is string => typeof v === 'string') : [];
-      return <div key={text(analysis.id) || index} className="mt-4 border-t border-slate-100 pt-4"><p className="text-xs text-muted-foreground">Recorded model: {text(analysis.model) || 'Unavailable'} · {time(analysis.created_at)}</p><p className="mt-2 whitespace-pre-wrap" data-user-content>{text(output.summary) || text(analysis.summary) || 'No AI summary available yet.'}</p><h3 className="mt-3 font-semibold">Missing information</h3>{missing.length ? <ul className="mt-2 list-inside list-disc">{missing.map((line, i) => <li key={i} data-user-content>{line}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">The analysis did not list missing information. Check the evidence before continuing.</p>}</div>;
+      return <div key={text(analysis.id) || index} className="mt-4 border-t border-slate-100 pt-4"><p className="text-xs text-muted-foreground">Recorded maker model: {text(analysis.model) || 'Unavailable'} · {time(analysis.created_at)}</p><p className="mt-2 whitespace-pre-wrap" data-user-content>{text(output.summary) || text(analysis.summary) || 'No AI summary available yet.'}</p><h3 className="mt-3 font-semibold">Missing information</h3>{missing.length ? <ul className="mt-2 list-inside list-disc">{missing.map((line, i) => <li key={i} data-user-content>{line}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">The analysis did not list missing information. Check the evidence before continuing.</p>}<MakerCheckerReview analysis={analysis} /></div>;
     }) : <p className="mt-3 text-sm text-muted-foreground">No AI analysis available yet. / AI စစ်ဆေးချက် မရှိသေးပါ။</p>}</Card>
+    {item.jobs.length > 0 && <Card><h2 className="text-lg font-semibold">AI workflow runs</h2><ul className="mt-3 space-y-3 text-sm">{item.jobs.map((job, index) => <li key={text(job.id) || index} className="border-t pt-3"><p>Run: <span data-user-content>{text(job.id)}</span></p><p>Stage: {human(text(job.pipeline_stage) || text(job.status))} · Status: {human(text(job.status))}</p>{text(job.review_reason) && <p role="status">Human review required: {human(text(job.review_reason))}</p>}</li>)}</ul></Card>}
     <Card><h2 className="text-lg font-semibold">Timeline</h2>{item.events.length ? <ol className="mt-3 space-y-4">{item.events.map((event, i) => {
       const payload = event.payload && typeof event.payload === 'object' ? event.payload as Record<string, unknown> : {};
       return <li key={text(event.id) || i} className="border-l-2 border-emerald-100 pl-4"><p className="font-semibold">{human(text(event.event_type) || text(event.type) || 'Recorded event')}</p><p className="mt-1 whitespace-pre-wrap text-sm" data-user-content>{text(event.note) || text(payload.note)}</p><p className="mt-1 text-xs text-muted-foreground">{time(event.created_at)} · Actor: {text(event.actor_id) || 'Unavailable'}</p></li>;

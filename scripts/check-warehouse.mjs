@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const { createMockTransport } = require('../.test-build/src/shared/api/mock.js');
 const fixture = JSON.parse(await readFile('contracts/fixtures/warehouse/initial.json', 'utf8')).body;
 const origin = 'http://127.0.0.1:3112';
-const apiOrigin = 'http://127.0.0.1:8008';
+const apiOrigin = origin;
 const authOrigin = 'https://parcelcare-fixture.supabase.test';
 // Test process only: all Auth/API calls are intercepted; these are fictitious public config values.
 const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--webpack', '-p', '3112', '-H', '127.0.0.1'], {
@@ -24,16 +24,23 @@ try {
     await new Promise(r => setTimeout(r, 250));
   }
   assert.ok(ready, output);
+  // Warm tested routes before navigation to avoid cold compilation/HMR races.
+  for (const path of ['/demo/warehouse', '/demo/warehouse/shipments', '/demo/warehouse/inventory',
+    '/demo/warehouse/exceptions', `/demo/warehouse/exceptions/${fixture.cases[0].id}`,
+    ...fixture.shipments.map(s => `/warehouse/shipments/${s.id}`), '/login', '/warehouse', '/warehouse/inventory', '/sme', '/rider']) {
+    const response = await fetch(origin + path, { signal: AbortSignal.timeout(60000) });
+    assert.ok(response.ok, path); await response.arrayBuffer();
+  }
   browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();lastPage=page; const errors = [];
   page.on('pageerror', err => errors.push(err.message));
-  await page.goto(`${origin}/demo/warehouse`);
+  await page.goto(`${origin}/demo/warehouse`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'Warehouse overview' }).waitFor();
   await mkdir('test-results', { recursive: true });
   await page.screenshot({ path: 'test-results/warehouse-overview.png', fullPage: true });
   await page.getByRole('link', { name: /Inbound shipments/ }).click();
-  await page.getByRole('link', { name: 'PC-IN-0001' }).click();
+  await page.getByRole('link', { name: 'PC-IN-0001', exact: true }).click();
   await page.getByLabel('Received now').fill('90');
   await page.getByLabel('Damaged now').fill('2');
   await page.getByLabel('Verified shipment count / condition record').check();
@@ -72,7 +79,7 @@ try {
 
   await page.goto(`${origin}/demo/warehouse/exceptions`);
   await page.getByLabel('Issue type', { exact: true }).selectOption('courier_delay');
-  await page.getByLabel('Handling mode', { exact: true }).selectOption('human');
+  await page.getByLabel('Review mode', { exact: true }).selectOption('human');
   await page.getByRole('link', { name: 'courier delay', exact: true }).waitFor();
   await page.getByLabel('Priority', { exact: true }).selectOption('critical');
   await page.getByText('No cases match these filters.', { exact: false }).waitFor();
@@ -80,7 +87,7 @@ try {
   await page.getByRole('link', { name: 'courier delay', exact: true }).click();
   await page.getByText('Evidence, analysis and verification', { exact: true }).click();
   await page.getByRole('heading', { name: 'Case facts', exact: false }).waitFor();
-  await page.getByText('No AI analysis supplied.', { exact: false }).waitFor();
+  await page.getByText('No AI analysis available yet.', { exact: false }).waitFor();
   assert.ok(await page.getByText('Uploaded; verification is separate', { exact: true }).count());
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Case panels overflow mobile viewport');
   await page.screenshot({ path: 'test-results/warehouse-case-mobile.png', fullPage: true });
@@ -124,7 +131,7 @@ try {
     try {
       const body = request.postDataJSON() ?? undefined;
       const result = await mock({ method: request.method(), path: `${path}${url.search}`, body, idempotencyKey: request.headers()['idempotency-key'] });
-      if (path === '/api/me' && workspaceRole !== 'staff') return route.fulfill({ status: 200, headers, json: { ...result, memberships: [{ ...result.memberships[0], role: workspaceRole }] } });
+      if (path === '/api/me' && workspaceRole !== 'staff') return route.fulfill({ status: 200, headers, json: { ...result, memberships: [{ ...result.memberships[0], role: workspaceRole, sme_id: workspaceRole === 'sme' ? fixture.directory.smes[0].id : null }] } });
       if (request.method() === 'POST' && path.includes('/receipts/')) {
         receiptCalls++;
         const reply = receiptReply; receiptReply = '';
@@ -174,7 +181,7 @@ try {
   await live.reload();
   denyNextReceipt = true;
   await live.getByRole('button', { name: 'Retry submitted receipt' }).click();
-  await live.getByRole('alert').filter({ hasText: 'Temporarily denied during recovery.' }).waitFor();
+  await live.getByRole('alert').filter({ hasText: 'We could not confirm whether your changes were saved.' }).waitFor();
   await live.getByRole('button', { name: 'Retry submitted receipt' }).click();
   await live.getByRole('heading', { name: 'Receipt saved' }).waitFor();
   assert.equal(receiptCalls, 2);
@@ -187,7 +194,7 @@ try {
   await live.getByRole('button', { name: 'Review partial receipt' }).click();
   receiptReply = 'malformed';
   await live.getByRole('button', { name: 'Confirm partial receipt', exact: true }).click();
-  await live.getByRole('alert').filter({ hasText: 'The saved result could not be verified.' }).waitFor();
+  await live.getByRole('alert').filter({ hasText: 'We could not confirm whether your changes were saved.' }).waitFor();
   assert.equal(await live.getByRole('heading', { name: 'Receipt saved' }).count(), 0, 'Malformed success must not be displayed as saved');
   await live.reload();
   await live.getByRole('button', { name: 'Retry submitted receipt' }).click();
@@ -227,7 +234,7 @@ try {
     await live.getByLabel('Password', { exact: true }).fill('fictitious-password');
     await live.getByRole('button', { name: 'Sign in', exact: true }).click();
     await live.waitForURL(`${origin}/${role}`);
-    await live.getByRole('heading', { name: role === 'sme' ? 'SME dashboard' : 'Rider tasks', exact: true }).waitFor();
+    await live.getByRole('heading', { name: role === 'sme' ? 'SME dashboard' : 'Assigned deliveries', exact: true }).waitFor();
     if (role === 'rider') await live.getByText('No active rider assignments.', { exact: true }).waitFor();
     await live.goto(`${origin}/${role === 'sme' ? 'rider' : 'sme'}`);
     await live.getByText('An active membership is required', { exact: false }).waitFor();

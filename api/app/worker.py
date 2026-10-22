@@ -3,11 +3,11 @@ import argparse
 import time
 from supabase import create_client
 from .core.settings import get_settings
-from .features.ai.service import OpenAIInvestigator, run_job
+from .features.ai.service import OpenAIInvestigator, OpenAIChecker, run_job
 
 
 class WorkerDatabase:
-    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_finish', 'run_retention', 'run_sla_escalations'}
+    ALLOWED = {'analysis_pending', 'analysis_claim', 'analysis_stage', 'analysis_finish', 'run_retention', 'run_sla_escalations'}
 
     def __init__(self, client):
         self.client = client
@@ -27,6 +27,7 @@ def main():
         raise SystemExit('Configure SUPABASE_URL and server-only SUPABASE_WORKER_KEY')
     database = WorkerDatabase(create_client(settings.supabase_url, settings.supabase_worker_key))
     provider = OpenAIInvestigator(settings) if settings.openai_api_key and settings.openai_model else None
+    checker = OpenAIChecker(settings) if settings.openai_api_key and settings.openai_checker_model else None
     maintenance_at = 0.0
     while True:
         # No raw coordinates, tokens, complaint text or provider errors are logged.
@@ -34,9 +35,8 @@ def main():
             database.rpc('run_sla_escalations', {})
             database.rpc('run_retention', {'p_hours': settings.location_retention_hours})
             maintenance_at = time.monotonic() + settings.maintenance_interval_seconds
-        if provider is not None:
-            for job in database.rpc('analysis_pending', {}):
-                run_job(database, provider, job)
+        for job in database.rpc('analysis_pending', {}):
+            run_job(database, provider, job, checker)
         if args.once:
             return
         time.sleep(5)

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     openrouteservice_api_key: str = ''
     openai_api_key: str = ''
     openai_model: str = ''
+    openai_checker_model: str = ''
     categorization_provider: Literal['groq', 'ollama'] = 'groq'
     categorization_model: str = ''
     groq_api_key: str = ''

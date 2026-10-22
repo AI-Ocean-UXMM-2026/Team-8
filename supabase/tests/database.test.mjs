@@ -5,6 +5,7 @@ import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { testOperations } from './operations.test.mjs';
 import { testCases } from './cases.test.mjs';
+import { testMakerChecker } from './maker-checker.test.mjs';
 import { testWorkflows } from './workflows.test.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -308,5 +309,6 @@ try {
       assert.equal((await one('select private.ack_outbox($1,$2,$3) ok',[uid(1,1),old.id,old.lease_token])).ok,false);
     },'parcelcare_worker');
   });
+  await testMakerChecker(db);
   console.log(`\n${passed} historical foundation tests plus warehouse operation tests passed. Engine: ${JSON.stringify((await one('select version()')).version)}.`);
 } finally { await db.close(); }

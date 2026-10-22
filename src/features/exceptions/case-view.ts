@@ -3,7 +3,7 @@ import { ApiError, type Schemas } from '../../shared/api';
 export type CaseView = Schemas['CaseSummary'] & {
   owner_id?: string | null; warehouse_id?: string;
   events: Record<string, unknown>[]; evidence: Record<string, unknown>[];
-  analyses: Record<string, unknown>[]; required_facts: string[];
+  analyses: Record<string, unknown>[]; jobs: Record<string, unknown>[]; required_facts: string[];
 };
 const records = (value: unknown): Record<string, unknown>[] => Array.isArray(value)
   ? value.filter((v): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)) : [];
@@ -24,7 +24,7 @@ export function caseView(value: unknown): CaseView {
     summary: text(data.summary), evidence_ids: Array.isArray(data.evidence_ids) ? data.evidence_ids.filter((v): v is string => typeof v === 'string') : evidence.map(e => text(e.id)).filter(Boolean),
     warehouse_id: typeof data.warehouse_id === 'string' ? data.warehouse_id : undefined,
     owner_id: data.owner_id === null ? null : typeof data.owner_id === 'string' ? data.owner_id : undefined,
-    evidence, events: records(data.events), analyses: records(data.analyses),
+    evidence, events: records(data.events), analyses: records(data.analyses), jobs: records(data.jobs),
     required_facts: Array.isArray(data.required_facts) ? data.required_facts.filter((v): v is string => typeof v === 'string') : [] };
 }
 

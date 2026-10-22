@@ -783,7 +783,7 @@
   "Picked up": "ပစ္စည်းယူပြီး",
   "In transit": "ပို့ဆောင်နေသည်",
   "Delayed": "နှောင့်နှေး",
-  "Failed": "မအောင်မြင်",
+  "Failed": "မအောင်မြင်ပါ",
   "Cancelled": "ပယ်ဖျက်ပြီး",
   "Awaiting an inbound receipt.": "အဝင်ပစ္စည်း လက်ခံရန် စောင့်နေသည်။",
   "A partial receipt is recorded; receiving is not final.": "တစ်စိတ်တစ်ပိုင်းလက်ခံမှုကို မှတ်တမ်းတင်ပြီးဖြစ်သော်လည်း နောက်ဆုံးလက်ခံမှု မပြီးသေးပါ။",
@@ -1331,5 +1331,15 @@
   "Shared demo state could not be verified.": "မျှဝေထားသော နမူနာအခြေအနေကို အတည်မပြုနိုင်ပါ။",
   "Shared demo unavailable. Check your connection.": "မျှဝေနမူနာ မရရှိနိုင်ပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ပါ။",
   "Demo changed in another dashboard. Refresh and retry.": "အခြားစာမျက်နှာမှ နမူနာအခြေအနေကို ပြောင်းထားပါသည်။ ပြန်လည်ရယူပြီး ထပ်စမ်းပါ။",
-  "Shared demo action could not be confirmed. Check the connection and refresh before retrying.": "မျှဝေနမူနာ လုပ်ဆောင်မှုကို အတည်မပြုနိုင်ပါ။ ချိတ်ဆက်မှုကို စစ်ပြီး ထပ်မလုပ်မီ နောက်ဆုံးအခြေအနေကို ပြန်လည်ရယူပါ။"
+  "Shared demo action could not be confirmed. Check the connection and refresh before retrying.": "မျှဝေနမူနာ လုပ်ဆောင်မှုကို အတည်မပြုနိုင်ပါ။ ချိတ်ဆက်မှုကို စစ်ပြီး ထပ်မလုပ်မီ နောက်ဆုံးအခြေအနေကို ပြန်လည်ရယူပါ။",
+  "Independent AI checker": "သီးခြား AI ပြန်လည်စစ်ဆေးသူ",
+  "AI workflow runs": "AI လုပ်ငန်းစဉ်များ",
+  "Checker model:": "ပြန်စစ်သော မော်ဒယ်:",
+  "Evidence support": "အထောက်အထား ထောက်ခံမှု",
+  "Classification": "အမျိုးအစား သတ်မှတ်ချက်",
+  "Action authorization": "လုပ်ဆောင်ခွင့် စစ်ဆေးချက်",
+  "Passed": "အောင်မြင်သည်",
+  "Not completed": "မပြီးစီးသေးပါ",
+  "This older analysis has no independent checker approval. Automatic execution is blocked.": "ဤစစ်ဆေးချက်ဟောင်းတွင် သီးခြား AI ပြန်လည်ခွင့်ပြုချက် မရှိပါ။ အလိုအလျောက် ဆောင်ရွက်မှုကို ပိတ်ထားသည်။",
+  "Checker approval alone does not execute an action. Current source data, policy authorization and human-review requirements are checked again.": "ပြန်စစ်သူ၏ ခွင့်ပြုချက်တစ်ခုတည်းဖြင့် မဆောင်ရွက်ပါ။ လက်ရှိအချက်အလက်၊ မူဝါဒခွင့်ပြုချက်နှင့် လူဖြင့်စစ်ဆေးရန် လိုအပ်ချက်တို့ကို ထပ်မံစစ်ဆေးသည်။"
 }
