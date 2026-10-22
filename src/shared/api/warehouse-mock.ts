@@ -48,7 +48,7 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     const managed=shared.handle(request);if(managed)return structuredClone(managed.value) as T;
     const common=shared.snapshot();
     for(const shipment of common.shipments)if(!state.data.shipments.some(s=>s.id===shipment.id))state.data.shipments.push(shipment);
-    for(const product of common.products)if(!state.data.inventory.some(p=>p.id===product.id))state.data.inventory.push(product);
+    for(const product of common.products){const existing=state.data.inventory.find(p=>p.id===product.id);if(existing)Object.assign(existing,product);else state.data.inventory.push(product);}
     request.signal?.throwIfAborted();
     const url = new URL(request.path, 'https://demo.invalid');
     if (url.searchParams.has('warehouse_id') && url.searchParams.get('warehouse_id') !== state.data.directory.warehouse_id) fail(403, 'FORBIDDEN', 'Access denied.');
@@ -76,7 +76,7 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     if (request.method === 'GET' && url.pathname === '/api/me') result = { actor_id: '10000000-0000-4000-8000-000000000099', memberships: [{ warehouse_id: data.directory.warehouse_id, role: 'staff', sme_id: null }] };
     else if (request.method === 'GET' && url.pathname === '/api/warehouse/directory') result = data.directory;
     else if (request.method === 'GET' && url.pathname === '/api/warehouse/overview') result = { warehouse_id: data.directory.warehouse_id, unique_skus: data.inventory.length, inbound_shipments: data.shipments.filter(s => s.direction === 'inbound').length, outbound_shipments: data.shipments.filter(s => s.direction === 'outbound').length, open_cases: data.cases.filter(c => !['resolved', 'closed'].includes(c.status)).length, as_of: new Date().toISOString() };
-    else if (request.method === 'GET' && url.pathname === '/api/inventory') result = page(scoped(data.inventory).filter(i => url.searchParams.get('stock_status') === 'available' ? i.available_qty > 0 : url.searchParams.get('stock_status') === 'quarantined' ? i.quarantined_qty > 0 : true));
+    else if (request.method === 'GET' && url.pathname === '/api/inventory') result = page(scoped(data.inventory).map(i=>i.sme_id===null?{...i,available_qty:(shared.handle({method:'GET',path:`/api/orders/catalog?warehouse_id=${data.directory.warehouse_id}`})!.value as {id:string;available_qty:number}[]).find(p=>p.id===i.id)?.available_qty??i.available_qty}:i).filter(i => url.searchParams.get('stock_status') === 'available' ? i.available_qty > 0 : url.searchParams.get('stock_status') === 'quarantined' ? i.quarantined_qty > 0 : true));
     else if (request.method === 'GET' && url.pathname === '/api/shipments') result = page(scoped(data.shipments).filter(s => (!url.searchParams.get('direction') || s.direction === url.searchParams.get('direction')) && (!url.searchParams.get('status') || s.status === url.searchParams.get('status'))).map(toShipment));
     else if (request.method === 'GET' && url.pathname === '/api/exceptions') result = page(data.cases.filter(c => (url.searchParams.get('status') !== 'open' || !['resolved', 'closed'].includes(c.status)) &&
       (!url.searchParams.get('issue_type') || c.type === url.searchParams.get('issue_type')) && (!url.searchParams.get('priority') || c.priority === url.searchParams.get('priority')) &&
@@ -170,7 +170,7 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
       next.replay[replayKey] = { fingerprint: fingerprint(request.body), result: structuredClone(result) };
       if (storage) { try { storage.setItem(storageKey, JSON.stringify(next)); } catch { fail(0, 'DEMO_STORAGE_UNAVAILABLE', 'Unable to save demo changes.'); } }
       shared.sync(next.data);
-    state = next;
+      state = next;
     }
     return structuredClone(result) as T;
   };
