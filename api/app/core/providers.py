@@ -8,7 +8,7 @@ from .settings import Settings, get_settings
 
 def create_user_client(access_token: str, settings: Settings | None = None):
     from supabase import create_client
-    from supabase.lib.client_options import ClientOptions
+    from supabase.lib.client_options import SyncClientOptions
     settings = settings or get_settings()
     if not settings.supabase_url or not settings.supabase_public_key:
         raise RuntimeError('Supabase is not configured')
@@ -17,7 +17,7 @@ def create_user_client(access_token: str, settings: Settings | None = None):
     if not access_token:
         raise ValueError('A user access token is required')
     return create_client(settings.supabase_url, settings.supabase_public_key,
-                         options=ClientOptions(headers={'Authorization': f'Bearer {access_token}'},
+                         options=SyncClientOptions(headers={'Authorization': f'Bearer {access_token}'},
                                                persist_session=False, auto_refresh_token=False))
 
 
