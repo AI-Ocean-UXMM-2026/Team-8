@@ -22,3 +22,4 @@ export function Input({ className, ...props }: React.ComponentProps<'input'>) {
 export function Badge({ className, ...props }: React.ComponentProps<'span'>) {
   return <span className={cn('pc-badge inline-flex rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800', className)} {...props} />;
 }
+export { Illustration, type IllustrationKind, type IllustrationSize } from './illustration';
