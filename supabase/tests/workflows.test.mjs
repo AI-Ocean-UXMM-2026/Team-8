@@ -25,6 +25,13 @@ export async function testWorkflows(db){
   delivery=await deliver('assign',shipment.id,{expected_version:3,note:'Assign active rider',rider_id:riderId});
   assert.equal(delivery.shipment.status,'assigned');
  });
+ const pin={latitude:16.8409,longitude:96.1735,label:'Yangon delivery entrance'};
+ const destination=async(value=null)=>(await one('select public.delivery_destination($1,$2::jsonb) result',[shipment.id,value===null?null:JSON.stringify(value)])).result;
+ await as(staff,async()=>{assert.equal(await destination(),null);assert.deepEqual(await destination(pin),pin);await reject(()=>destination({...pin,latitude:91}),'invalid_destination');});
+ await as(rider,async()=>{assert.deepEqual(await destination(),pin);await reject(()=>destination(pin),'forbidden');});
+ await as(customer,()=>reject(()=>destination(pin),'forbidden'));
+ await as(other,()=>reject(()=>destination(),'forbidden'));
+ console.log('PASS DESTINATION: warehouse saves pin, assigned rider reads, invalid coordinates and unauthorized access denied');
  await as(other,()=>reject(()=>deliver('cancel',shipment.id,{expected_version:4,note:'Forged'}),'forbidden'));
  const reportBody={type:'courier_delay',note:'Vehicle delayed; warehouse assistance needed',evidence_ids:[]};
  const reportKey=randomUUID();

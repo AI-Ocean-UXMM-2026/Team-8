@@ -68,6 +68,22 @@ def delivery(shipment_id: UUID, request: Request, identity: Identity):
     return call(request, identity, 'delivery_read', {'p_shipment': str(shipment_id)})
 
 
+class DeliveryDestination(DTO):
+    latitude: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
+    longitude: Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
+    label: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+@router.get('/deliveries/{shipment_id}/destination', response_model=dict | None)
+def get_destination(shipment_id: UUID, request: Request, identity: Identity):
+    return call(request, identity, 'delivery_destination', {'p_shipment': str(shipment_id), 'p_value': None})
+
+
+@router.put('/deliveries/{shipment_id}/destination', response_model=dict)
+def save_destination(shipment_id: UUID, body: DeliveryDestination, request: Request, identity: Identity):
+    return call(request, identity, 'delivery_destination', {'p_shipment': str(shipment_id), 'p_value': body.model_dump()})
+
+
 class RouteRequest(DTO):
     origin_latitude: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
     origin_longitude: Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]

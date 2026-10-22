@@ -464,6 +464,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/deliveries/{shipment_id}/destination": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Destination */
+        get: operations["get_destination_api_deliveries__shipment_id__destination_get"];
+        /** Save Destination */
+        put: operations["save_destination_api_deliveries__shipment_id__destination_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/deliveries/{shipment_id}/route": {
         parameters: {
             query?: never;
@@ -1747,6 +1765,15 @@ export interface components {
             status?: ("handed_over" | "delayed" | "failed" | "delivered") | null;
             /** Scheduled At */
             scheduled_at?: string | null;
+        };
+        /** DeliveryDestination */
+        DeliveryDestination: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Label */
+            label: string;
         };
         /** EvidenceReservation */
         EvidenceReservation: {
@@ -3639,6 +3666,76 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_destination_api_deliveries__shipment_id__destination_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    } | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_destination_api_deliveries__shipment_id__destination_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryDestination"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
