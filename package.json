@@ -22,6 +22,8 @@
     "test:report-locales": "node scripts/check-report-locales.mjs",
     "test:dashboard-workflows": "node scripts/check-dashboard-workflows.mjs",
     "test:sme-workspace": "node scripts/check-sme-workspace.mjs",
+    "test:categorization:database": "node supabase/tests/categorization.test.mjs",
+    "test:categorization:ui": "node scripts/check-categorization-ui.mjs",
     "test:office": "node scripts/check-office.mjs",
     "test:portals": "node scripts/check-portals.mjs"
   },

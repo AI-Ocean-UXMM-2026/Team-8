@@ -25,6 +25,8 @@ def call(request, identity, function, parameters):
         code, message = str(getattr(exc, 'code', '')), str(getattr(exc, 'message', ''))
         if code == '42501':
             raise AppError(403, 'FORBIDDEN', 'Operation is not authorized.') from exc
+        if message == 'review_flags':
+            raise AppError(422, 'REVIEW_FLAGS', 'Acknowledge missing or uncertain attributes before verifying.') from exc
         if message in ('stale_version', 'idempotency_conflict', 'stock_unavailable'):
             raise AppError(409, message.upper(), 'Refresh the record or retry the original command.') from exc
         if message == 'closure_pending':

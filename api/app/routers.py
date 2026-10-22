@@ -11,3 +11,6 @@ router.include_router(identity)
 router.include_router(operations)
 router.include_router(exceptions)
 router.include_router(deliveries)
+
+from .features.categorization.router import router as categorization
+router.include_router(categorization)

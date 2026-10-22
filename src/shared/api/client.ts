@@ -61,6 +61,11 @@ export function createApiClient(transport: Transport) {
     listShipments(options: ListOptions & { direction?: 'inbound' | 'outbound'; status?: string } = {}) {
       return transport<Schemas['ShipmentPage']>({ method: 'GET', path: `/api/shipments${query(options)}`, signal: options.signal });
     },
+    getCategoryOptions(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['CategoryOptions']>({method:'GET',path:`/api/inventory-categories${query({warehouseId})}`,signal}); },
+    getProductCategory(id: string, warehouseId: string, signal?: AbortSignal) { return transport<Schemas['CategoryState']>({method:'GET',path:`/api/inventory/${entity(id)}/categorization${query({warehouseId})}`,signal}); },
+    saveProductMetadata(id: string, body: Schemas['MetadataCommand'], options: Mutation & {warehouseId:string}) { return transport<Schemas['CategoryState']>({method:'POST',path:`/api/inventory/${entity(id)}/categorization/metadata${query(options)}`,body,...options}); },
+    analyzeProductCategory(id: string, body: Schemas['AnalyzeCommand'], options: Mutation & {warehouseId:string}) { return transport<Schemas['CategoryState']>({method:'POST',path:`/api/inventory/${entity(id)}/categorization/analyze${query(options)}`,body,...options}); },
+    reviewProductCategory(id: string, body: Schemas['ReviewCommand'], options: Mutation & {warehouseId:string}) { return transport<Schemas['CategoryState']>({method:'POST',path:`/api/inventory/${entity(id)}/categorization/review${query(options)}`,body,...options}); },
     getWarehouseOverview(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['WarehouseOverview']>({ method: 'GET', path: `/api/warehouse/overview${query({ warehouseId })}`, signal }); },
     getWarehouseDirectory(warehouseId: string, signal?: AbortSignal) { return transport<Schemas['WarehouseDirectory']>({ method: 'GET', path: `/api/warehouse/directory${query({ warehouseId })}`, signal }); },
     listInventory(options: ListOptions & { stockStatus?: 'available' | 'quarantined' } = {}) { return transport<Schemas['InventoryPage']>({ method: 'GET', path: `/api/inventory${query(options)}`, signal: options.signal }); },
