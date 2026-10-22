@@ -1,0 +1,26 @@
+.pc-illustration{display:block;object-fit:contain;max-width:100%;height:auto;pointer-events:none;user-select:none;flex-shrink:0}
+.pc-illustration--small{width:96px}
+.pc-illustration--medium{width:144px}
+.pc-illustration--large{width:240px}
+.pc-illustrated-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;min-width:0}
+.pc-illustrated-heading>div{min-width:0;overflow-wrap:anywhere}
+.pc-empty-state{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.pc-login-illustration{margin:16px auto 0}
+/* Older HTML workspaces and independent pages share the same decorative heading.
+   Backgrounds have no accessible name and reserve space rather than overlay text. */
+body h1:not(.pc-illustrated-heading h1):not(.pc-login-card h1){
+  box-sizing:border-box;min-height:64px;padding-inline-end:112px;
+  background-image:url('/illustrations/parcel.svg');background-repeat:no-repeat;
+  background-position:right center;background-size:96px 60px;overflow-wrap:anywhere;
+}
+body .office-page-heading h1,body h1#title{background-image:url('/illustrations/warehouse.svg')}
+body h1#title{min-height:120px;padding-inline-end:208px;background-size:192px 120px}
+body .office-page-heading h1{min-height:110px;padding-inline-end:192px;background-size:176px 110px}
+.courierEmpty::before,.office-empty::before,.lf-blank::before,.pc-legacy-empty::before{content:'';display:block;width:112px;height:70px;margin:0 auto 12px;background:url('/illustrations/parcel.svg') center/contain no-repeat}
+@media(max-width:767px){
+  .pc-illustrated-heading{gap:12px}
+  .pc-illustrated-heading .pc-illustration{width:80px}
+  .pc-illustrated-heading .pc-illustration--large{width:112px}
+  .pc-login-illustration{width:160px}
+  body h1:not(.pc-illustrated-heading h1):not(.pc-login-card h1),body .office-page-heading h1,body h1#title{min-height:50px;padding-inline-end:76px;background-size:64px 40px}
+}

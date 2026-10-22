@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {safeError} from '../../shared/i18n/errors';
 import Image from 'next/image';
+import { Illustration } from '../../shared/ui/illustration';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button, Card, Input } from '../../shared/ui';
 import { browserAuth } from './browser-client';
@@ -52,8 +53,9 @@ export function Login() {
       lock.current = false; setBusy(false);
     }
   }
-  return <main className="grid min-h-screen place-items-center bg-canvas p-6 text-ink"><Card className="w-full max-w-md">
+  return <main className="grid min-h-screen place-items-center bg-canvas p-6 text-ink"><Card className="pc-login-card w-full max-w-md">
     <Link href="/" aria-label="ParcelCare home" className="inline-block"><Image src="/brand/parcelcare-logo.png" alt="ParcelCare" width={2171} height={724} priority className="h-auto w-64 max-w-full" /></Link>
+    <Illustration kind="truck" size="large" className="pc-login-illustration" />
     <h1 className="mt-6 text-2xl font-semibold">Sign in to ParcelCare</h1><p className="mt-2 text-sm text-muted">For warehouse staff, SME owners and couriers.</p>
     <form onSubmit={submit} className="mt-6" aria-busy={busy}><fieldset disabled={!ready || busy} className="space-y-4">
       <div><label htmlFor="email" className="mb-2 block text-sm">Email</label><Input id="email" name="email" type="email" autoComplete="username" required disabled={busy} /></div>

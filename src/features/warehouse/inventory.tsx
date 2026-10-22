@@ -52,5 +52,5 @@ export function InventoryDetail({id}:{id:string}){
  do {const page=await api!.listInventory({warehouseId,cursor,limit:100,signal});const item=page.items.find(i=>i.id===id);if(item)return {item,directory};cursor=page.next_cursor||undefined;if(cursor&&seen.has(cursor))throw new Error('Inventory pagination did not advance.');if(cursor)seen.add(cursor);}while(cursor);
  throw new ApiError(404,'NOT_FOUND','Product unavailable in this warehouse.');});
  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;if(!resource.data)return <Loading/>;
- const {item,directory}=resource.data;return <ProductDetails item={item} sme={directory.smes.find(s=>s.id===item.sme_id)?.name||'SME'} base={demo?'/demo/warehouse':'/warehouse'}/>;
+ const {item,directory}=resource.data;return <><PageTitle title="Product details" my="ပစ္စည်းအသေးစိတ်"/><ProductDetails item={item} sme={directory.smes.find(s=>s.id===item.sme_id)?.name||'SME'} base={demo?'/demo/warehouse':'/warehouse'}/></>;
 }

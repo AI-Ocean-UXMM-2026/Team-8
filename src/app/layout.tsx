@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './layout.css';
+import '../shared/ui/illustration.css';
 import { GlobalHeader } from '../shared/layout/global-header';
 import Script from 'next/script';
 import { styles } from '../features/workspace/generated';
