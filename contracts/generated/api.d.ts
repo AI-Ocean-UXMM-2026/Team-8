@@ -471,7 +471,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Shared Route */
+        get: operations["getSharedDeliveryRoute"];
         put?: never;
         /** Route */
         post: operations["calculateDeliveryRoute"];
@@ -3130,10 +3131,45 @@ export interface operations {
             };
         };
     };
-    calculateDeliveryRoute: {
+    getSharedDeliveryRoute: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    } | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calculateDeliveryRoute: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
             path: {
                 shipment_id: string;
             };

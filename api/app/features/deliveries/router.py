@@ -77,9 +77,11 @@ class RouteRequest(DTO):
 
 
 @router.post('/deliveries/{shipment_id}/route', response_model=dict, operation_id='calculateDeliveryRoute')
-def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Identity):
+def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Identity, key: Key):
     from ...core.errors import AppError
     from .routing import calculate_route
+    from datetime import datetime, timezone
+    requested_at = datetime.now(timezone.utc).isoformat()
     # This RPC lists only the caller's current rider assignments. Client role
     # headers and membership alone never authorize another rider's route.
     assignments = call(request, identity, 'delivery_read', {'p_shipment': None})
@@ -91,8 +93,24 @@ def route(shipment_id: UUID, body: RouteRequest, request: Request, identity: Ide
     if shipment['direction'] != 'outbound' or shipment['delivery_mode'] != 'in_house' or shipment['status'] in ('delivered', 'cancelled'):
         raise AppError(403, 'FORBIDDEN', 'Routing requires an active in-house outbound delivery.')
     result = calculate_route(request.app.state.settings.openrouteservice_api_key, body)
+    result.update({'origin': [body.origin_longitude, body.origin_latitude], 'destination': [body.destination_longitude, body.destination_latitude]})
+    try:
+        saved = call(request, identity, 'route_plan_write', {'p_shipment': str(shipment_id), 'p_payload': result, 'p_key': str(key), 'p_requested_at': requested_at})
+        if not isinstance(saved, dict):
+            raise AppError(503, 'ROUTE_NOT_SAVED', 'The shared route was not saved. Try again.')
+    except AppError as error:
+        if error.status != 503:
+            raise
+        # Preserve local navigation during database setup/outages, while never
+        # claiming that an uncertain write was committed or shared.
+        saved = {**result, 'shipment_id': str(shipment_id), 'sharing_status': 'unconfirmed'}
     from fastapi.responses import JSONResponse
-    return JSONResponse(result, headers={'Cache-Control': 'no-store'})
+    return JSONResponse(saved, headers={'Cache-Control': 'no-store'})
+
+
+@router.get('/deliveries/{shipment_id}/route', response_model=dict | None, operation_id='getSharedDeliveryRoute')
+def shared_route(shipment_id: UUID, request: Request, identity: Identity):
+    return call(request, identity, 'route_plan_read', {'p_shipment': str(shipment_id)})
 
 
 @router.post('/deliveries/{shipment_id}/{command}', response_model=dict, operation_id='deliveryCommand')

@@ -1,4 +1,4 @@
-import {checkedRoute,type RouteRequest} from './route';
+import {checkedRoute,checkedSharedRoute,checkedCalculatedRoute,type RouteRequest} from './route';
 import {checkedPosition} from './tracking';
 import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
 import { checkedWarehouseCase, type WarehouseCaseAction } from './case-workflow';
@@ -29,7 +29,8 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
-    async calculateDeliveryRoute(id:string,body:RouteRequest,signal?:AbortSignal){return checkedRoute(await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/route`,body,idempotencyKey:crypto.randomUUID(),signal}));},
+    async getSharedRoute(id:string,signal?:AbortSignal){return checkedSharedRoute(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}/route`,signal}),id);},
+    async calculateDeliveryRoute(id:string,body:RouteRequest,signal?:AbortSignal){return checkedCalculatedRoute(await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/route`,body,idempotencyKey:crypto.randomUUID(),signal}),id);},
     async getTrackingShipment(id:string,signal?:AbortSignal){
       // delivery_read authorizes staff OR the owning SME using the caller's JWT.
       // Warehouse operations endpoints deliberately remain staff-only.

@@ -19,7 +19,7 @@ class SupabaseUserDatabase:
         # Call only reviewed atomic commands; no arbitrary SQL or general table writes.
         if function not in {'receive_shipment', 'decide_approval', 'register_evidence',
                             'mark_notification_read', 'start_tracking', 'record_location',
-                            'get_live_location', 'stop_tracking', 'ops_read', 'ops_command',
+                            'route_plan_read', 'route_plan_write', 'get_live_location', 'stop_tracking', 'ops_read', 'ops_command',
                             'case_read', 'case_command', 'tenant_feed', 'delivery_read',
                             'delivery_command', 'evidence_access', 'evidence_upload_access', 'mark_notification_unread', 'review_case'}:
             raise ValueError('Unregistered database command')

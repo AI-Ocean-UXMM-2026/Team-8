@@ -3,14 +3,17 @@ import {useEffect,useState} from 'react';
 import {useSession} from '../auth/session';
 import {Card} from '../../shared/ui';
 import {trackingAccess,type Position} from '../../shared/api/tracking';
-import type {Schemas} from '../../shared/api';
+import {ApiError,type Schemas} from '../../shared/api';
 import './tracking.css';
+import {useDemoRoute} from './demo-route';
+import type {SharedDeliveryRoute} from '../../shared/api/route';
 import {DeliveryMap} from './delivery-map';
 export function LiveCourierTracking({shipment}:{shipment:Schemas['ShipmentDetail']}){
  const {api,identity,demo,status}=useSession();
+ const preview=useDemoRoute(demo);
  const allowed=status==='ready'&&!!identity&&trackingAccess(identity.memberships,shipment);
  const eligible=shipment.direction==='outbound'&&shipment.delivery_mode==='in_house'&&!['delivered','cancelled'].includes(shipment.status);
- const [state,setState]=useState<{id:string;position:Position|null;message:string}>({id:shipment.id,position:null,message:'Checking location sharing…'});
+ const [state,setState]=useState<{id:string;position:Position|null;route:SharedDeliveryRoute|null;message:string}>({id:shipment.id,position:null,route:null,message:'Checking location sharing…'});
  const [attempt,retry]=useState(0);
  // Age the label independently of responses, including while a read is pending.
  const [now,setNow]=useState(()=>Date.now());
@@ -23,12 +26,12 @@ export function LiveCourierTracking({shipment}:{shipment:Schemas['ShipmentDetail
    busy=true;controller=new AbortController();const request=controller;
    try{
     const session=await api.getTrackingSession(shipment.id,request.signal);
-    const position=session?await api.getLivePosition(session,request.signal):null;
-    if(active&&!request.signal.aborted)setState({id:shipment.id,position,message:session?'No GPS position received yet.':'Location sharing is not active.'});
-   }catch{if(active&&!request.signal.aborted)setState({id:shipment.id,position:null,message:'Tracking unavailable. Check your connection or access and retry.'});}
+    const [position,route]=await Promise.all([session?api.getLivePosition(session,request.signal):Promise.resolve(null),api.getSharedRoute(shipment.id,request.signal).catch(error=>{if(error instanceof ApiError&&[401,403].includes(error.status))throw error;return null;})]);
+    if(active&&!request.signal.aborted)setState({id:shipment.id,position,route,message:session?'No GPS position received yet.':'Location sharing is not active.'});
+   }catch{if(active&&!request.signal.aborted)setState({id:shipment.id,position:null,route:null,message:'Tracking unavailable. Check your connection or access and retry.'});}
    finally{busy=false;}
   };
-  setState({id:shipment.id,position:null,message:'Checking location sharing…'});void refresh();
+  setState({id:shipment.id,position:null,route:null,message:'Checking location sharing…'});void refresh();
   const timer=setInterval(()=>void refresh(),15000);
   return()=>{active=false;controller?.abort();clearInterval(timer);};
  },[api,allowed,eligible,demo,shipment.id,attempt]);
@@ -37,7 +40,11 @@ export function LiveCourierTracking({shipment}:{shipment:Schemas['ShipmentDetail
  const stale=position?.status==='stale'||!!(position?.recorded_at&&now-Date.parse(position.recorded_at)>60000);
  const hasPosition=eligible&&!demo&&!!position&&position.status!=='unavailable';
  const message=demo?'Demo preview — no live GPS coordinates.':!eligible?shipment.delivery_mode==='third_party'?'Use the external courier tracking reference. ParcelCare GPS is unavailable.':shipment.direction==='inbound'?'GPS tracking is available for active in-house outbound deliveries.':'Location sharing has ended for this shipment.':state.id===shipment.id?state.message:'Checking location sharing…';
+ const sharedRoute=state.id===shipment.id&&state.route&&Date.parse(state.route.expires_at)>Date.now()?state.route:null;
+ const displayedRoute=demo&&eligible?preview.coordinates:sharedRoute?.coordinates;
+ const displayedDestination=demo&&eligible?preview.destination:sharedRoute?.destination;
+ const displayedPosition=demo&&eligible?preview.position:hasPosition?[position!.longitude!,position!.latitude!]:null;
  const dispatched=shipment.events.some(e=>e.type==='dispatched');
  const transit=['in_transit','delivered'].includes(shipment.status);
- return <Card className="courierTracking" ><section id="live-courier-tracking" aria-labelledby="tracking-title"><div className="trackingHeading"><h2 id="tracking-title">Live Courier Tracking</h2><span className={stale?'trackingBadge trackingStale':'trackingBadge'}>{hasPosition?stale?'Last known location':'Live location':'GPS unavailable'}</span></div><div className="mt-4"><DeliveryMap position={eligible&&!demo&&hasPosition?[position!.latitude!,position!.longitude!]:null}/></div><div className="trackingGrid"><div className="trackingMap" aria-label="GPS location status"><span aria-hidden="true" className="trackingPin">⌖</span><strong>{hasPosition?'Last reported GPS position':'Location sharing'}</strong>{hasPosition?<><p data-user-content>{position.latitude?.toFixed(5)}, {position.longitude?.toFixed(5)}</p><p>Accuracy: {Math.round(position.accuracy_m!)} m</p><p>Last updated: <time dateTime={position.recorded_at!}>{new Date(position.recorded_at!).toLocaleString('en-GB',{timeZone:'Asia/Yangon'})} · Yangon</time></p><p>{stale?'Location is stale. It does not represent the courier’s current position.':'Updates every 15 seconds while location sharing is active.'}</p></>:<p role="status">{message}</p>}</div><ol className="trackingTimeline" aria-label="Delivery progress"><li data-complete={dispatched}><strong>Dispatched</strong><span>{dispatched?'Verified dispatch recorded':'No verified dispatch recorded'}</span></li><li data-complete={transit}><strong>In transit</strong><span>{transit?'Recorded delivery status':'Not recorded yet'}</span></li><li data-complete={false}><strong>Arriving</strong><span>No verified arrival estimate available</span></li></ol></div>{eligible&&!demo&&<button type="button" className="trackingRefresh" onClick={()=>retry(n=>n+1)}>Refresh tracking</button>}</section></Card>;
+ return <Card className="courierTracking" ><section id="live-courier-tracking" aria-labelledby="tracking-title"><div className="trackingHeading"><h2 id="tracking-title">Live Courier Tracking</h2><span className={stale?'trackingBadge trackingStale':'trackingBadge'}>{demo&&eligible?preview.sharing?'Simulated GPS — demo':'Demo position — paused':hasPosition?stale?'Last known location':'Live location':'GPS unavailable'}</span></div><div className="mt-4"><DeliveryMap position={displayedPosition?[displayedPosition[1],displayedPosition[0]]:null} destination={displayedDestination?[displayedDestination[1],displayedDestination[0]]:null} route={displayedRoute?.map(([lng,lat])=>[lat,lng])}/>{demo&&eligible?<p className="mt-3 text-sm">Illustrative demo route and simulated position — not live GPS or road directions. Start movement in the courier demo to see it here.</p>:sharedRoute?<p className="mt-3 text-sm">Shared route plan · saved <time data-user-content>{new Date(sharedRoute.saved_at).toLocaleString('en-GB',{timeZone:'Asia/Yangon'})}</time> · not live traffic or a guaranteed ETA. Routing © openrouteservice / HeiGIT.</p>:<p className="mt-3 text-sm">No shared route available. The courier must calculate a route and start location sharing.</p>}</div><div className="trackingGrid"><div className="trackingMap" aria-label="GPS location status"><span aria-hidden="true" className="trackingPin">⌖</span><strong>{hasPosition?'Last reported GPS position':'Location sharing'}</strong>{hasPosition?<><p data-user-content>{position.latitude?.toFixed(5)}, {position.longitude?.toFixed(5)}</p><p>Accuracy: {Math.round(position.accuracy_m!)} m</p><p>Last updated: <time dateTime={position.recorded_at!}>{new Date(position.recorded_at!).toLocaleString('en-GB',{timeZone:'Asia/Yangon'})} · Yangon</time></p><p>{stale?'Location is stale. It does not represent the courier’s current position.':'Updates every 15 seconds while location sharing is active.'}</p></>:<p role="status">{message}</p>}</div><ol className="trackingTimeline" aria-label="Delivery progress"><li data-complete={dispatched}><strong>Dispatched</strong><span>{dispatched?'Verified dispatch recorded':'No verified dispatch recorded'}</span></li><li data-complete={transit}><strong>In transit</strong><span>{transit?'Recorded delivery status':'Not recorded yet'}</span></li><li data-complete={false}><strong>Arriving</strong><span>No verified arrival estimate available</span></li></ol></div>{eligible&&!demo&&<button type="button" className="trackingRefresh" onClick={()=>retry(n=>n+1)}>Refresh tracking</button>}</section></Card>;
 }

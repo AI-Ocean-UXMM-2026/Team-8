@@ -33,6 +33,24 @@ export async function testWorkflows(db){
   session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;
   await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);
  });
+ const routePayload={provider:'openrouteservice',profile:'car',coordinates:[[96.1,16.8],[96.2,16.9]],origin:[96.1,16.8],destination:[96.2,16.9],distance_m:2400,duration_ms:180000,traffic_aware:false,destination_source:'courier_selected'};
+ const routeKey=randomUUID(),routeTime=new Date().toISOString();
+ const writeRoute=async(payload=routePayload,key=routeKey,time=routeTime)=>(await one('select public.route_plan_write($1,$2::jsonb,$3,$4) result',[shipment.id,JSON.stringify(payload),key,time])).result;
+ const readRoute=async()=>(await one('select public.route_plan_read($1) result',[shipment.id])).result;
+ await as(rider,async()=>{
+  const saved=await writeRoute();assert.equal(saved.shipment_id,shipment.id);assert.equal(saved.destination[0],96.2);
+  assert.deepEqual(await writeRoute(),saved);
+  await reject(()=>writeRoute({...routePayload,coordinates:[[200,16],[96,17]]},randomUUID()),'invalid_route');
+  const older=await writeRoute({...routePayload,distance_m:1},randomUUID(),new Date(Date.parse(routeTime)-1000).toISOString());assert.equal(older.distance_m,2400);
+ });
+ await as(customer,async()=>{assert.equal((await readRoute()).distance_m,2400);assert.equal((await q('select * from public.shipment_route_plans')).rows.length,1);});
+ await as(staff,async()=>{assert.equal((await readRoute()).distance_m,2400);await reject(()=>writeRoute(),'forbidden');});
+ await as(other,async()=>{await reject(()=>readRoute(),'forbidden');assert.equal((await q('select * from public.shipment_route_plans')).rows.length,0);});
+ await as(rider,async()=>{await q('select public.stop_tracking($1)',[session]);assert.ok(await readRoute());});
+ await as(customer,async()=>assert.equal(await readRoute(),null));
+ await as(staff,async()=>assert.equal(await readRoute(),null));
+ await as(rider,async()=>{session=(await one('select public.start_tracking($1,true) id',[delivery.assignments.find(a=>!a.cancelled_at).id])).id;await q('select public.record_location($1,16.8,96.1,5,$2)',[session,new Date().toISOString()]);});
+ console.log('PASS SHARED ROUTE: saved/replayed route, late requests, coordinates, tenant RLS and consent-session revocation');
  await as(customer,async()=>{
   assert.equal((await one('select public.can_receive_tracking_topic($1) ok',['tracking:'+session])).ok,true);
   await q("select set_config('realtime.topic',$1,false)",['tracking:'+session]);
@@ -62,7 +80,10 @@ export async function testWorkflows(db){
   assert.deepEqual(await deliver('confirm',shipment.id,request,key),delivery);
   await reject(()=>q('select public.get_live_location($1)',[session]),'forbidden');
   assert.equal((await one('select public.can_receive_tracking_topic($1) ok',['tracking:'+session])).ok,false);
+  assert.equal(await readRoute(),null);
  });
+ await q("update public.shipment_route_plans set expires_at=now()-interval '1 second' where shipment_id=$1",[shipment.id]);
+ await q('select public.run_retention(24)');assert.equal((await q('select * from public.shipment_route_plans where shipment_id=$1',[shipment.id])).rows.length,0);
  console.log('PASS WORKFLOW: assignment, accept, pickup, dispatch, private topic scope, proof, receiver confirmation and ended sharing');
  await as(staff,async()=>{
   const external=await create('third_party');

@@ -11,6 +11,7 @@ class RoutingTests(unittest.TestCase):
     def setUp(self):
         owner = self
         self.assigned = True
+        self.write_failure = False
         self.terminal = False
         self.calls = []
         rider = AuthContext(uid(3), (Membership(uid(2), 'rider'),), 'token')
@@ -22,13 +23,20 @@ class RoutingTests(unittest.TestCase):
                 return self
             def rpc(self, name, params):
                 owner.calls.append((name, params))
+                if name == 'route_plan_write':
+                    if owner.write_failure:
+                        from app.core.errors import AppError
+                        raise AppError(503, 'SERVICE_UNAVAILABLE', 'Unavailable')
+                    return {**params['p_payload'], 'shipment_id': str(uid(5)), 'assignment_id': str(uid(6)), 'saved_at': '2026-10-22T00:00:00Z', 'expires_at': '2026-10-23T00:00:00Z'}
+                if name == 'route_plan_read':
+                    return None
                 if params['p_shipment'] is None:
                     return [{'shipment_id': str(uid(5)), 'accepted_at': '2026-10-22T00:00:00Z'}] if owner.assigned else []
                 return {'shipment': {'direction': 'outbound', 'delivery_mode': 'in_house', 'status': 'delivered' if owner.terminal else 'in_transit'}}
         self.app = create_app(Settings(_env_file=None, openrouteservice_api_key='server-secret'), Verifier(), Database())
         self.client = TestClient(self.app)
         self.url = '/api/deliveries/' + str(uid(5)) + '/route'
-        self.headers = {'Authorization': 'Bearer token'}
+        self.headers = {'Authorization': 'Bearer token', 'Idempotency-Key': str(uid(9))}
         self.body = {'origin_latitude': 16.8, 'origin_longitude': 96.1, 'destination_latitude': 16.9, 'destination_longitude': 96.2, 'consent': True}
 
     @patch('app.features.deliveries.routing.httpx.post')
@@ -87,3 +95,13 @@ class RoutingTests(unittest.TestCase):
             post.return_value = Mock(status_code=200)
             post.return_value.json.return_value = {'features': [{'geometry': geometry, 'properties': {'summary': {'distance': 2400, 'duration': 180}}}]}
             self.assertEqual(self.client.post(self.url, json=self.body, headers=self.headers).status_code, 503)
+
+    @patch('app.features.deliveries.routing.httpx.post')
+    def test_calculated_route_remains_available_when_sharing_cannot_be_confirmed(self, post):
+        self.write_failure = True
+        post.return_value = Mock(status_code=200)
+        post.return_value.json.return_value = {'features': [{'geometry': {'type': 'LineString', 'coordinates': [[96.1,16.8],[96.2,16.9]]}, 'properties': {'summary': {'distance': 2400, 'duration': 180}}}]}
+        result = self.client.post(self.url, json=self.body, headers=self.headers)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.json()['sharing_status'], 'unconfirmed')
+        self.assertNotIn('saved_at', result.json())

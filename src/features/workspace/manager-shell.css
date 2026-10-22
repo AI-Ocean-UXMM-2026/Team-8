@@ -1,0 +1,36 @@
+/* Manager keeps the existing review runtime, inside Warehouse shell geometry. */
+#parcelcare-workspace.managerWorkspace>div:first-child{display:block;max-width:var(--pc-workspace-width);margin:auto;min-height:100dvh}
+#parcelcare-workspace.managerWorkspace aside{position:fixed;left:max(0px,calc((100% - var(--pc-workspace-width))/2));top:var(--pc-header-height);width:var(--pc-sidebar-width);height:calc(100dvh - var(--pc-header-height));padding:24px 16px 16px;display:flex;flex-direction:column;overflow-y:auto;border-right:1px solid var(--border);background:var(--background);z-index:40}
+#parcelcare-workspace.managerWorkspace aside>a:first-child{margin:0 4px 24px;max-width:190px}
+#parcelcare-workspace.managerWorkspace aside .eyebrow{font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted-foreground);padding:0 8px}
+#parcelcare-workspace.managerWorkspace aside select{order:3;min-height:44px;font-size:12px;margin-top:24px}
+#parcelcare-workspace.managerWorkspace #nav{order:2;display:grid;gap:6px}
+#parcelcare-workspace.managerWorkspace #nav button{min-height:44px;border-left:3px solid transparent;font-size:13px;font-weight:500;padding:10px 12px;text-align:left;border-radius:var(--radius-md)}
+#parcelcare-workspace.managerWorkspace #nav button.active{background:color-mix(in srgb,var(--primary) 20%,white);color:var(--color-primary-900);border-left-color:var(--color-primary-700);font-weight:600}
+#parcelcare-workspace.managerWorkspace aside>div:last-child{order:5;margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+#parcelcare-workspace.managerWorkspace aside>div:last-child>div:first-child{display:none}
+#parcelcare-workspace.managerWorkspace aside>div:last-child>div:last-child{margin-top:0;font-size:12px}
+#parcelcare-workspace.managerWorkspace main{margin-left:var(--pc-sidebar-width);min-width:0;background:var(--background)}
+#parcelcare-workspace.managerWorkspace main>header{display:none}
+#parcelcare-workspace.managerWorkspace main>div{padding:32px;max-width:none}
+#parcelcare-workspace.managerWorkspace #title{font-size:30px;line-height:1.3;font-weight:600;letter-spacing:-.025em}
+#parcelcare-workspace.managerWorkspace #subtitle{font-size:14px;line-height:1.8;margin-top:12px}
+#parcelcare-workspace.managerWorkspace #intro{display:none}
+#parcelcare-workspace.managerWorkspace .card,#parcelcare-workspace.managerWorkspace .reportWorkflowGuide{border-radius:var(--radius-lg);box-shadow:none;border:1px solid var(--border);background:var(--background)}
+#parcelcare-workspace.managerWorkspace .reportMetrics{gap:16px;background:none;border:0}
+#parcelcare-workspace.managerWorkspace .reportMetrics>div{border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px}
+#parcelcare-workspace.managerWorkspace :focus-visible{outline:3px solid var(--color-primary-700);outline-offset:2px}
+#parcelcare-workspace.managerWorkspace #nav button:hover{background:var(--muted)}
+@media(max-width:767px){
+ #parcelcare-workspace.managerWorkspace aside{position:sticky;top:var(--pc-header-height);width:100%;height:auto;padding:16px;border-bottom:1px solid var(--border)}
+ #parcelcare-workspace.managerWorkspace aside>a:first-child{max-width:104px;margin:0 0 16px}
+ #parcelcare-workspace.managerWorkspace aside>.eyebrow,#parcelcare-workspace.managerWorkspace aside>select,#parcelcare-workspace.managerWorkspace aside>div:last-child{display:none}
+ #parcelcare-workspace.managerWorkspace aside.workspaceNavOpen>select,#parcelcare-workspace.managerWorkspace aside.workspaceNavOpen>div:last-child{display:block}
+ #parcelcare-workspace.managerWorkspace #nav{display:none}#parcelcare-workspace.managerWorkspace aside.workspaceNavOpen #nav{display:grid}
+ #parcelcare-workspace.managerWorkspace main{margin-left:0}#parcelcare-workspace.managerWorkspace main>div{padding:20px}
+}
+
+@media(min-width:768px){#parcelcare-workspace.managerWorkspace #workspaceMenu{display:none}#parcelcare-workspace.managerWorkspace aside{gap:0;align-items:stretch;grid-template-columns:none}#parcelcare-workspace.managerWorkspace #nav{display:grid}}
+
+#parcelcare-workspace.managerWorkspace .managerRoleLinks{order:4;display:grid;gap:12px;margin:20px 8px;font-size:12px;font-weight:600;color:var(--color-primary-800)}
+@media(max-width:767px){#parcelcare-workspace.managerWorkspace aside .managerRoleLinks{display:none}#parcelcare-workspace.managerWorkspace aside.workspaceNavOpen .managerRoleLinks{display:grid}}

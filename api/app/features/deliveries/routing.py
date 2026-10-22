@@ -23,7 +23,7 @@ def calculate_route(key, body):
         if feature['geometry']['type'] != 'LineString':
             raise ValueError()
         points = feature['geometry']['coordinates']
-        if not isinstance(points, list) or not 2 <= len(points) <= 100000:
+        if not isinstance(points, list) or not 2 <= len(points) <= 10000:
             raise ValueError()
         for point in points:
             if not isinstance(point, list) or len(point) != 2 or not all(isinstance(n, (int, float)) and not isinstance(n, bool) and math.isfinite(n) for n in point) or not -180 <= point[0] <= 180 or not -90 <= point[1] <= 90:
