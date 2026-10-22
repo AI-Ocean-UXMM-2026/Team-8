@@ -12,12 +12,12 @@ Cases snapshot their targets and policy revision. Editing a policy affects futur
 
 Supabase Cron checks every minute. Each missed pending milestone creates at most one escalation record and a system case event. The case is assigned to an active owner (deterministically selected if several exist), with human handling. Its workflow status is preserved. No email/external message is sent; use the **Escalated to manager** queue and case history.
 
-Without an active owner, a breach remains visibly flagged as needing manager assignment. Existing unassigned alerts are not automatically reassigned when an owner is later added. Account roles must be configured separately with authorization. The UI warns if no owner exists or the scheduler heartbeat is absent/older than two minutes.
+Escalation means passing a case to the shared management review queue, regardless of whether a manager account exists. Without an active owner, the case is shown as awaiting management review; individual assignment is optional. Existing unassigned alerts are assigned on the next scheduler run when an owner becomes active. If the assigned manager becomes inactive, open escalated cases transfer to another active owner; if none exists, the obsolete manager assignment is cleared. Alerts and workflow status are preserved, and assignment changes are audited once. Account roles must be configured separately with authorization. The UI explains shared-queue handling when no owner exists and warns if the scheduler heartbeat is absent/older than two minutes.
 
 ## Deployment
 
 1. Apply `supabase/migrations/20261022130000_be1_sla_policies.sql` after earlier migrations. It is additive and backfills deadlines from existing creation times and events, so old cases can already be overdue.
-2. Deploy frontend and API. Use the signed-in route; demo workspaces do not configure live policy data.
+2. Apply `supabase/migrations/20261022150000_be1_sla_manager_handoff.sql` to enable manager catch-up and reassignment. Deploy frontend and API. Use the signed-in route; demo workspaces do not configure live policy data.
 3. If Supabase Cron was enabled before migration, the named job is registered automatically. Otherwise run `scripts/enable-sla-cron.sql` once in Supabase SQL Editor. It enables pg_cron and schedules `parcelcare-sla-escalations` every minute.
 4. Verify actual successful job runs and the heartbeat, not just an active job definition.
 
@@ -51,13 +51,14 @@ Use labeled test records. Do not shorten normal policies while teammates create 
 3. **On track:** a fresh case should show on-track milestones and Yangon-formatted due dates.
 4. **Response:** after actually responding, enter at least five characters in the response note and record it. The timestamp persists after refresh, the record button disappears and the flag becomes met/breached. Notes are visible in case history to the SME.
 5. **At risk:** at 80% of a 120-minute target, a case aged 96–120 minutes is at risk. It appears under At risk without early escalation.
-6. **Overdue:** use a labeled overdue case. Do not manually invoke the runner. Wait through the next minute's Cron run; verify escalation timestamps, system history, human handling and manager assignment or the explicit missing-manager warning.
+6. **Overdue:** use a labeled overdue case. Do not manually invoke the runner. Wait through the next minute's Cron run; verify escalation timestamps, system history, human handling and manager assignment or shared management review queue placement.
 7. **Deduplication:** allow multiple successful scheduler runs. Each case/milestone must still have one escalation record/event.
 8. **Resolution:** resolve through the existing verified workflow. The resolution clock stops as met/breached; future runs do not escalate the case. SLA does not permit unverified closure.
 9. **Waiting state:** overdue awaiting-information/decision cases escalate while retaining that status.
 10. **Concurrency:** load a policy in two owner tabs, save in A, then save B's stale draft. B must conflict. Reload saved policies explicitly discards its draft. Polling must not silently replace unsaved input.
 11. **Isolation:** SME/rider/foreign-warehouse/anonymous users cannot access these SLA APIs. Direct table writes and user calls to the runner are denied.
-12. **Scheduler outage:** stop the scheduler only in an isolated test environment, wait over two minutes and refresh. The warning must appear while deadline flags still calculate. Restore it afterward.
+12. **Manager handoff:** in an isolated test warehouse, trigger an escalation without an active manager, then activate an owner. The next scheduler run assigns the existing alert without duplicating it. Deactivate that owner and verify transfer to another active owner, or an unassigned warning if none remain. Resolved cases must remain unchanged.
+13. **Scheduler outage:** stop the scheduler only in an isolated test environment, wait over two minutes and refresh. The warning must appear while deadline flags still calculate. Restore it afterward.
 
 ## Live fixtures
 

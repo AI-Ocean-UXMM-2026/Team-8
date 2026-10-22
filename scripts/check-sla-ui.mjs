@@ -21,7 +21,7 @@ try{
  await page.route(base+'/api/**',async route=>{const request=route.request(),url=new URL(request.url()),path=url.pathname;const reply=(json,status=200)=>route.fulfill({status,json});
  if(path==='/api/me')return reply({actor_id:id,memberships:[{warehouse_id:w,sme_id:null,role:canEdit?'owner':'staff'}]});
  if(path==='/api/warehouse/overview')return reply({warehouse_id:w,unique_skus:2,inbound_shipments:2,outbound_shipments:2,open_cases:0,as_of:new Date().toISOString()});
- if(path==='/api/sla/policies')return reply({policies:['low','normal','high','critical'].map(p=>({...policy,priority:p})),can_edit:canEdit,manager_count:1,scheduler_last_run:new Date().toISOString(),server_now:new Date().toISOString()});
+ if(path==='/api/sla/policies')return reply({policies:['low','normal','high','critical'].map(p=>({...policy,priority:p})),can_edit:canEdit,manager_count:canEdit?1:0,scheduler_last_run:new Date().toISOString(),server_now:new Date().toISOString()});
  if(path.startsWith('/api/sla/policies/')){lastBody=request.postDataJSON();if(stale)return reply({error:{code:'STALE_VERSION',message:'Refresh the policy before trying again.'}},409);policy={...policy,...lastBody,revision:policy.revision+1};return reply(policy);}
  if(path==='/api/sla/cases'){filterSeen=url.searchParams.get('flag')==='escalated';return reply({items:[],next_cursor:null,server_now:new Date().toISOString()});}
  return reply({error:{message:'Unexpected fixture request'}},404);
@@ -32,6 +32,7 @@ try{
  await page.getByLabel('Deadline filter',{exact:true}).selectOption('escalated');await page.getByText('No cases match this SLA filter.',{exact:true}).waitFor();assert(filterSeen);
  stale=true;await page.getByLabel('First-response target (minutes)',{exact:true}).fill('2');await page.getByRole('button',{name:'Save SLA policy',exact:true}).click();await page.getByRole('alert').getByText('Refresh the policy before trying again.',{exact:true}).waitFor();stale=false;await page.getByRole('button',{name:'Reload saved policies'}).click();await page.getByText('Saved policy loaded. Unsaved edits were discarded.',{exact:true}).waitFor();assert.equal(await page.getByLabel('First-response target (minutes)',{exact:true}).inputValue(),'1');
  canEdit=false;await page.reload();await page.getByText('Only warehouse managers (owners) can edit policies.',{exact:false}).waitFor();assert.equal(await page.getByRole('button',{name:'Save SLA policy',exact:true}).isEnabled(),false);
+ await page.getByText('Escalations enter the shared management review queue. No individual manager account is required.',{exact:true}).waitFor();
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No page overflow');await mkdir('test-results',{recursive:true});await page.screenshot({path:`test-results/sla-${width}.png`,fullPage:true});assert.deepEqual(errors,[]);await context.close();
  }
  console.log('PASS SLA desktop/mobile: validation, saving policy, stale edits and reload, queue filters, staff read-only configuration and no overflow. API simulated.');
