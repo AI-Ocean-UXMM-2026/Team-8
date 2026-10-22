@@ -1,4 +1,5 @@
 import {checkedSettings,checkedArrival,type TrackingSettings} from './tracking-control';
+import {checkedOrder,type OrderInput,type SmeOrder} from './orders';
 import {checkedRoute,checkedSharedRoute,checkedCalculatedRoute,type RouteRequest} from './route';
 import {checkedPosition} from './tracking';
 import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
@@ -30,6 +31,10 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
+    getOrderCustomer(id:string,signal?:AbortSignal){return transport<Omit<OrderInput,'lines'|'warehouse_id'|'sme_id'>|null>({method:'GET',path:`/api/orders/shipment/${entity(id)}/customer`,signal});},
+    async listOrders(warehouseId:string,smeId?:string,signal?:AbortSignal){const values=await transport<unknown>({method:'GET',path:`/api/orders${query({warehouseId,smeId})}`,signal});if(!Array.isArray(values))throw new ApiError(502,'INVALID_RESPONSE','Orders could not be verified.');return values.map(value=>{const o=checkedOrder(value);if(o.warehouse_id!==warehouseId||(smeId&&o.sme_id!==smeId))throw new ApiError(502,'INVALID_RESPONSE','Order scope could not be verified.');return o;});},
+    async submitOrder(body:OrderInput,idempotencyKey:string){const o=checkedOrder(await transport<SmeOrder>({method:'POST',path:'/api/orders',body,idempotencyKey}));if(o.warehouse_id!==body.warehouse_id||o.sme_id!==body.sme_id||o.status!=='pending')throw new ApiError(502,'INVALID_RESPONSE','Submitted order could not be verified.');return o;},
+    async actOnOrder(id:string,warehouseId:string,body:{action:'accept'|'reject'|'cancel';delivery_mode?:'in_house'|'third_party';note?:string},idempotencyKey:string){const o=checkedOrder(await transport<SmeOrder>({method:'POST',path:`/api/orders/${entity(id)}/actions${query({warehouseId})}`,body,idempotencyKey}));if(o.id!==id||o.warehouse_id!==warehouseId||o.status!==({accept:'accepted',reject:'rejected',cancel:'cancelled'}[body.action])||(body.action==='accept'&&!o.shipment_id))throw new ApiError(502,'INVALID_RESPONSE','Order action could not be verified.');return o;},
     async getTrackingSettings(id:string){return checkedSettings(await transport<unknown>({method:'GET',path:`/api/warehouses/${entity(id)}/tracking-settings`}));},
     async setTrackingSettings(id:string,body:TrackingSettings){return checkedSettings(await transport<unknown>({method:'PUT',path:`/api/warehouses/${entity(id)}/tracking-settings`,body}));},
     async getArrival(id:string){return checkedArrival(await transport<unknown>({method:'GET',path:`/api/deliveries/${entity(id)}/arrival`}),id);},

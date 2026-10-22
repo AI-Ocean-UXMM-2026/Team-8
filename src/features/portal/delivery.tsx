@@ -1,4 +1,5 @@
 'use client';
+import {OrderCustomer} from './order-customer';
 import { localizedText } from '../../shared/i18n/text';
 import { useState, type FormEvent } from 'react';
 import { ApiError, type Schemas } from '../../shared/api';
@@ -49,6 +50,7 @@ export function DeliveryWorkspace({ id }: { id: string }) {
   const field=(name:string,label:string,type='text',required=true)=><label key={name} className="block text-sm">{label}<Input className="mt-2" name={name} aria-label={label} type={type} required={required} {...(type==='number'?{min:1,step:1}:{})}/></label>;
   const current=options.includes(kind)?kind:options[0];
   return <><PageTitle title={shipment.reference} my="ပို့ဆောင်မှု စီမံရန်"/><Badge>{human(shipment.status)}</Badge>
+    <OrderCustomer shipmentId={id}/>
     {external?<Card className="my-5"><h2 className="font-semibold">External courier</h2><p className="mt-3">Carrier: {data.courier_name??'Awaiting confirmation'} · Waybill: {data.waybill??'Not supplied'}</p>{data.tracking_url&&safeLink(data.tracking_url)&&<a className="mt-3 inline-block text-brand underline" href={data.tracking_url} target="_blank" rel="noopener noreferrer">Courier tracking</a>}<p className="mt-3 text-sm text-muted">No internal GPS or promised ETA. Responsibility remains undetermined until evidence review.</p>{data.handovers.map(h=><p key={h.id} className="mt-3 text-sm">Accepted {dateTime(h.accepted_at)} · {h.package_count} packages · {h.package_condition}</p>)}</Card>:audience==='rider'?data.session_id&&!terminal&&<LiveTracking sessionId={data.session_id}/>:<LiveCourierTracking key={id} shipment={shipment}/>}
     {data.capacity.map(c=><Card key={c.id} className="my-4"><h2 className="font-semibold">Capacity confirmed</h2><p className="mt-2">{dateTime(c.scheduled_at)} · Yangon</p><p className="mt-2">{c.instructions}</p></Card>)}
     {audience==='rider'&&!external&&!terminal&&<CourierRoute key={id} shipmentId={id} accepted={!!assignment?.accepted_at}/>}

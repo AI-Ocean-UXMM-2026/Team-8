@@ -1,4 +1,5 @@
 'use client';
+import {OrderCustomer} from '../portal/order-customer';
 import Link from 'next/link';
 import {useSession} from '../auth/session';
 import {useResource,Loading,ErrorPanel} from '../warehouse/shared';
@@ -19,5 +20,5 @@ function SmeContent({id}:{id:string}){
  });
  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
  if(!resource.data)return <Loading/>;
- return <main className="mx-auto max-w-5xl p-6 pt-20"><h1 className="text-xl font-semibold" data-user-content>{resource.data.reference}</h1><p className="mt-2 text-sm text-muted">Shipment tracking</p><LiveCourierTracking shipment={resource.data}/></main>;
+ return <main className="mx-auto max-w-5xl p-6 pt-20"><h1 className="text-xl font-semibold" data-user-content>{resource.data.reference}</h1><p className="mt-2 text-sm text-muted">Shipment tracking</p><OrderCustomer shipmentId={id}/><LiveCourierTracking shipment={resource.data}/></main>;
 }
