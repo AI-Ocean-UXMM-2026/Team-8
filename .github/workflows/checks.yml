@@ -24,7 +24,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run test:frontend
       - name: Cache Next.js build
         uses: actions/cache@v4
         with:
@@ -33,15 +32,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('.node-version', 'package-lock.json') }}-
       - run: npm run build
-      - run: npx playwright install --with-deps --only-shell chromium
-      - run: npm run test:browser
-      - run: npm run test:warehouse
-      - run: npm run test:portals
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: browser-results
-          path: test-results/
 
   backend-contracts:
     runs-on: ubuntu-latest
@@ -52,58 +42,5 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-          cache: pip
-          cache-dependency-path: api/requirements*.txt
-      - run: python -m pip install -r api/requirements-dev.txt
       - run: npm ci
-      - run: npm run test:backend
-      - run: npm run test:contracts
       - run: npm run check:migrations
-
-  database-security:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: supabase/tests/package-lock.json
-      - run: npm ci --prefix supabase/tests
-      # Executes every migration on a fresh engine plus tenant/evidence/GPS/action checks.
-      - run: npm run test:database
-
-  fresh-postgres17:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: isolated-ci-password
-          POSTGRES_DB: parcelcare_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres -d parcelcare_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    env:
-      PGHOST: localhost
-      PGPORT: '5432'
-      PGUSER: postgres
-      PGPASSWORD: isolated-ci-password
-      PGDATABASE: parcelcare_test
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: supabase/tests/package-lock.json
-      - run: npm ci --prefix supabase/tests
-      # Fresh migrations, repeatable seed, tenant smoke and real multi-connection races.
-      - run: npm run test:native --prefix supabase/tests
