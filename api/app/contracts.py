@@ -247,9 +247,16 @@ class ShipmentEventRequest(DTO):
     evidence_ids: list[UUID]
 
 
+class CaseQueueSummary(DTO):
+    matching: Annotated[int, Field(ge=0)]
+    high_critical: Annotated[int, Field(ge=0)]
+    awaiting_sme: Annotated[int, Field(ge=0)]
+    sla_breaches: Annotated[int, Field(ge=0)]
+
 class CasePage(DTO):
     items: list[CaseSummary]
     next_cursor: str | None
+    summary: CaseQueueSummary | None = None
 
 
 class WarehouseFixture(DTO):

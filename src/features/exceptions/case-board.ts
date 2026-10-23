@@ -18,12 +18,12 @@ export function sortBoardCases(items:Schemas['CaseSummary'][]){
 }
 // A board represents the whole filtered queue, not only the table's current page.
 export async function loadCaseBoard(fetchPage:(cursor?:string)=>Promise<Schemas['CasePage']>,signal?:AbortSignal):Promise<Schemas['CasePage']>{
- const items:Schemas['CaseSummary'][]=[];const cursors=new Set<string>(),ids=new Set<string>();let cursor:string|undefined;
+ const items:Schemas['CaseSummary'][]=[];const cursors=new Set<string>(),ids=new Set<string>();let cursor:string|undefined;let summary:Schemas['CasePage']['summary'];
  do{
-  signal?.throwIfAborted();const page=await fetchPage(cursor);signal?.throwIfAborted();
+  signal?.throwIfAborted();const page=await fetchPage(cursor);summary=page.summary;signal?.throwIfAborted();
   for(const item of page.items){if(ids.has(item.id))throw new ApiError(409,'QUEUE_CHANGED','The case queue changed while loading. Refresh the board.');ids.add(item.id);items.push(item);}
   cursor=page.next_cursor||undefined;
   if(cursor){if(cursors.has(cursor))throw new ApiError(502,'INVALID_RESPONSE','The case queue returned a repeated page. Refresh the board.');cursors.add(cursor);}
  }while(cursor);
- return {items,next_cursor:null};
+ return {items,next_cursor:null,summary};
 }

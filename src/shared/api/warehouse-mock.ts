@@ -82,11 +82,16 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
       const flag=url.searchParams.get('exceptions');
       result=page(scoped(data.shipments).filter(s=>(!url.searchParams.get('direction')||s.direction===url.searchParams.get('direction'))&&(!url.searchParams.get('status')||s.status===url.searchParams.get('status'))).map(s=>({...toShipment(s),open_cases:data.cases.filter(c=>c.shipment_id===s.id&&!['resolved','closed'].includes(c.status)).map(c=>({id:c.id,type:c.type}))})).filter(s=>flag==='open'?s.open_cases.length>0:flag==='none'?s.open_cases.length===0:true));
     }
-    else if (request.method === 'GET' && url.pathname === '/api/exceptions') result = page(data.cases.filter(c => (url.searchParams.get('status') !== 'open' || !['resolved', 'closed'].includes(c.status)) &&
-      (!url.searchParams.get('issue_type') || c.type === url.searchParams.get('issue_type')) && (!url.searchParams.get('priority') || c.priority === url.searchParams.get('priority')) &&
-      (!url.searchParams.get('handling_mode') || c.handling_mode === url.searchParams.get('handling_mode')) && (!url.searchParams.get('state') || c.status === url.searchParams.get('state')) &&
-      (!url.searchParams.get('owner_id') || (url.searchParams.get('owner_id') === 'unassigned' ? !c.owner_id : c.owner_id === url.searchParams.get('owner_id')))));
-    else if (/^\/api\/exceptions\/[0-9a-f-]+(?:\/actions)?$/i.test(url.pathname)) {
+    else if (request.method === 'GET' && url.pathname === '/api/exceptions') {
+      const rows=data.cases.filter(c=>(url.searchParams.get('status')!=='open'||!['resolved','closed'].includes(c.status))&&
+       (!url.searchParams.get('issue_type')||c.type===url.searchParams.get('issue_type'))&&(!url.searchParams.get('priority')||c.priority===url.searchParams.get('priority'))&&
+       (!url.searchParams.get('handling_mode')||c.handling_mode===url.searchParams.get('handling_mode'))&&(!url.searchParams.get('state')||c.status===url.searchParams.get('state'))&&
+       (!url.searchParams.get('stage')||c.stage===url.searchParams.get('stage'))&&(!url.searchParams.get('sla_risk')||url.searchParams.get('sla_risk')==='all'||c.sla_risk===url.searchParams.get('sla_risk'))&&
+       (!url.searchParams.get('escalated')||Boolean(c.escalated)===(url.searchParams.get('escalated')==='true'))&&
+       (!url.searchParams.get('owner_id')||(url.searchParams.get('owner_id')==='unassigned'?!c.owner_id:c.owner_id===url.searchParams.get('owner_id'))));
+      result={...page(rows),summary:{matching:rows.length,high_critical:rows.filter(c=>['high','critical'].includes(c.priority)).length,awaiting_sme:rows.filter(c=>c.status==='awaiting_sme_decision').length,sla_breaches:rows.filter(c=>!['resolved','closed'].includes(c.status)&&c.sla_risk==='overdue').length}};
+    }
+      else if (/^\/api\/exceptions\/[0-9a-f-]+(?:\/actions)?$/i.test(url.pathname)) {
       const caseId = url.pathname.split('/')[3];
       const summary = data.cases.find(c => c.id === caseId);
       if (!summary) fail(404, 'NOT_FOUND', 'Case not found.');

@@ -72,7 +72,7 @@ def cases(request: Request, identity: Identity, warehouse_id: UUID | None = None
           escalated: bool | None = None, stage: Literal['inbound', 'warehouse', 'outbound'] | None = None):
     filters = dict(sme_id=sme_id, cursor=cursor, limit=limit, status=status, issue_type=issue_type,
         priority=priority, handling_mode=handling_mode, state=state, owner_id=owner_id,
-        sort=sort, sla_risk=sla_risk, escalated=escalated, stage=stage)
+        sort=sort, sla_risk=sla_risk, escalated=escalated, stage=stage, include_summary=True)
     return call(request, identity, 'case_queue_read', {'p_warehouse': scope(identity, warehouse_id),
         'p_filters': {k: str(v) if isinstance(v, UUID) else v for k, v in filters.items() if v is not None}})
 

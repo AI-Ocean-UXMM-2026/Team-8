@@ -23,6 +23,7 @@ export function Cases() {
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const items=resource.data.items;
+  const summary=resource.data.summary;
   const visible=items.filter(c=>(stage==='all'||c.stage===stage)&&[c.id,c.shipment_id,resource.data!.references[c.shipment_id],c.type,c.summary].join(' ').toLowerCase().includes(search.trim().toLowerCase()));
   const advancedCount=['type','mode','state','owner','stage','slaRisk','escalated',...(!board?['sort']:[])].filter(key=>{const value=params.get(key);return value&&value!=='all'&&(key!=='sort'||value!=='risk');}).length;
   const fields = [
@@ -34,7 +35,7 @@ export function Cases() {
     ['state','Case state',['new','investigating','processing','awaiting_information','awaiting_sme_decision','awaiting_courier_confirmation','awaiting_verification','resolved','closed']],
   ] as const;
   return <div className="exceptionWorkspace"><PageTitle title="Exception Management" my="ခြွင်းချက်များ စီမံခန့်ခွဲမှု" description="Review the issue, inspect its evidence and take the next permitted action." />
-    <div className="exceptionMetrics" aria-label={board?'Filtered board summary':'Current page summary'}>{[['Matching cases',visible.length],['High / critical',visible.filter(c=>['high','critical'].includes(c.priority)).length],['Awaiting SME decision',visible.filter(c=>c.status==='awaiting_sme_decision').length]].map(([label,value])=><Card key={label} className={label==='High / critical'?'criticalMetric':undefined}><p className="text-sm text-muted-foreground">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></Card>)}</div>
+    <div className="exceptionMetrics" aria-label="Filtered queue summary">{[['Matching cases',summary?.matching??items.length],['High / critical',summary?.high_critical??items.filter(c=>['high','critical'].includes(c.priority)).length],['Awaiting SME decision',summary?.awaiting_sme??items.filter(c=>c.status==='awaiting_sme_decision').length]].map(([label,value])=><Card key={label} className={label==='High / critical'?'criticalMetric':undefined}><p className="text-sm text-muted-foreground">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></Card>)}<Card className="slaBreachMetric"><button type="button" onClick={()=>{set('scope','open');set('slaRisk','overdue');}} aria-label="Show open cases with SLA breaches"><span className="text-sm">SLA breaches</span><strong className="mt-2 block text-2xl">{summary?.sla_breaches??'—'}</strong><span className="text-xs">Open cases past a response or resolution deadline</span></button></Card></div><p className="caseMetricScope">KPI totals cover the filtered queue, before pagination. Text search filters the displayed cases.</p>
     <div className="caseViewToggle" role="group" aria-label="Case view"><Button variant={board?'outline':'default'} aria-pressed={!board} onClick={()=>set('view','table')}>Table</Button><Button variant={board?'default':'outline'} aria-pressed={board} onClick={()=>set('view','board')}>Board</Button></div>
     <Card className="mt-5"><div className="exceptionToolbar caseBasicFilters">
       <label>Search cases<Input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Case, shipment or issue" /></label>

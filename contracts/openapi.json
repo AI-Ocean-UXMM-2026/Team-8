@@ -5328,6 +5328,16 @@
               }
             ],
             "title": "Next Cursor"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseQueueSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -5337,6 +5347,39 @@
           "next_cursor"
         ],
         "title": "CasePage"
+      },
+      "CaseQueueSummary": {
+        "properties": {
+          "matching": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Matching"
+          },
+          "high_critical": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "High Critical"
+          },
+          "awaiting_sme": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Awaiting Sme"
+          },
+          "sla_breaches": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Sla Breaches"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "matching",
+          "high_critical",
+          "awaiting_sme",
+          "sla_breaches"
+        ],
+        "title": "CaseQueueSummary"
       },
       "CaseSummary": {
         "properties": {

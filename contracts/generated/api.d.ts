@@ -1050,6 +1050,18 @@ export interface components {
             items: components["schemas"]["CaseSummary"][];
             /** Next Cursor */
             next_cursor: string | null;
+            summary?: components["schemas"]["CaseQueueSummary"] | null;
+        };
+        /** CaseQueueSummary */
+        CaseQueueSummary: {
+            /** Matching */
+            matching: number;
+            /** High Critical */
+            high_critical: number;
+            /** Awaiting Sme */
+            awaiting_sme: number;
+            /** Sla Breaches */
+            sla_breaches: number;
         };
         /** CaseSummary */
         CaseSummary: {

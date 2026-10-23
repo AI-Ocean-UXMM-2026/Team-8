@@ -202,3 +202,14 @@ test('incremental receiving preview matches validation and never turns invalid c
  assert.throws(()=>receiptLinePreview(item,{received:'5',damaged:'6'}));
  assert.throws(()=>receiptRequest({...detail,status:'received'}, {},false,[],''));
 });
+
+
+test('case summary covers the filtered demo queue before pagination and survives board loading',async()=>{
+ const client=api(storage()),full=await client.listCases({status:'open',limit:100}),first=await client.listCases({status:'open',limit:1});
+ assert.equal(first.items.length,1);assert.equal(first.summary!.matching,full.items.length);
+ assert.equal(first.summary!.high_critical,full.items.filter(c=>['high','critical'].includes(c.priority)).length);
+ const {loadCaseBoard}=await import('../../src/features/exceptions/case-board');
+ const board=await loadCaseBoard(cursor=>client.listCases({status:'open',limit:1,cursor}));assert.deepEqual(board.summary,first.summary);
+ const overdue=await client.listCases({status:'open',slaRisk:'overdue'});assert(overdue.items.every(c=>c.sla_risk==='overdue'));
+ assert.equal(overdue.summary!.sla_breaches,overdue.items.length);
+});

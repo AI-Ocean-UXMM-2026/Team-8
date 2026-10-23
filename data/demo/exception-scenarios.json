@@ -1,0 +1,171 @@
+{
+  "synthetic": true,
+  "dataset": "parcelcare-exceptions-v1",
+  "scenarios": [
+    {
+      "n": 1,
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-011",
+      "type": "damaged_goods",
+      "stage": "inbound",
+      "status": "new",
+      "priority": "high",
+      "sla": "breach",
+      "summary": "Six serum bottles leaked inside a supplier carton; separate affected units for inspection."
+    },
+    {
+      "n": 2,
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-021",
+      "type": "transit_damage",
+      "stage": "outbound",
+      "status": "investigating",
+      "priority": "high",
+      "sla": "breach",
+      "summary": "Sunscreen cartons arrived crushed at the SME shop; confirm affected quantities before proposing a remedy."
+    },
+    {
+      "n": 3,
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-001",
+      "type": "recipient_unavailable",
+      "stage": "outbound",
+      "status": "awaiting_sme_decision",
+      "priority": "normal",
+      "sla": "on_track",
+      "summary": "The SME shop was closed at the delivery attempt; request a suitable redelivery time."
+    },
+    {
+      "n": 4,
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-006",
+      "type": "quantity_mismatch",
+      "stage": "inbound",
+      "status": "new",
+      "priority": "normal",
+      "sla": "at_risk",
+      "summary": "Supplier paperwork lists 40 towels; receiving count shows 36. Recount the unopened carton."
+    },
+    {
+      "n": 5,
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-011",
+      "type": "missing_stock",
+      "stage": "warehouse",
+      "status": "investigating",
+      "priority": "high",
+      "sla": "on_track",
+      "summary": "Two storage containers could not be located in their assigned bin during a cycle count."
+    },
+    {
+      "n": 6,
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-012",
+      "type": "damaged_goods",
+      "stage": "warehouse",
+      "status": "resolved",
+      "priority": "low",
+      "sla": "on_track",
+      "summary": "A cracked storage-container lid was identified and the affected unit isolated in this illustrative scenario."
+    },
+    {
+      "n": 7,
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-001",
+      "type": "wrong_pick",
+      "stage": "warehouse",
+      "status": "new",
+      "priority": "high",
+      "sla": "breach",
+      "summary": "The release request needs medium T-shirts, but the picked bundle contains large sizes."
+    },
+    {
+      "n": 8,
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-011",
+      "type": "short_pick",
+      "stage": "warehouse",
+      "status": "processing",
+      "priority": "normal",
+      "sla": "on_track",
+      "summary": "The hoodie pick is short by three pieces; verify the adjacent rack before dispatch."
+    },
+    {
+      "n": 9,
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-021",
+      "type": "quantity_mismatch",
+      "stage": "inbound",
+      "status": "resolved",
+      "priority": "low",
+      "sla": "on_track",
+      "summary": "A second count reconciled the trouser carton quantity with the supplier packing list in this scenario."
+    },
+    {
+      "n": 10,
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-001",
+      "type": "damaged_goods",
+      "stage": "inbound",
+      "status": "new",
+      "priority": "critical",
+      "sla": "breach",
+      "summary": "Tea-leaf pouches have torn seals and a contamination risk; isolate the affected carton pending assessment."
+    },
+    {
+      "n": 11,
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-006",
+      "type": "courier_delay",
+      "stage": "outbound",
+      "status": "investigating",
+      "priority": "high",
+      "sla": "at_risk",
+      "summary": "The fried-bean delivery is delayed by a road closure; obtain a revised arrival estimate."
+    },
+    {
+      "n": 12,
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-011",
+      "type": "quantity_mismatch",
+      "stage": "inbound",
+      "status": "awaiting_sme_decision",
+      "priority": "normal",
+      "sla": "on_track",
+      "summary": "The palm-jaggery receipt is short by two packs; ask the SME whether to accept the partial receipt."
+    },
+    {
+      "n": 13,
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-011",
+      "type": "transit_loss",
+      "stage": "outbound",
+      "status": "new",
+      "priority": "critical",
+      "sla": "on_track",
+      "summary": "The charging-cable carton is missing at courier handover; trace the shipment before any replacement proposal."
+    },
+    {
+      "n": 14,
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-021",
+      "type": "delivery_failed",
+      "stage": "outbound",
+      "status": "awaiting_courier_confirmation",
+      "priority": "normal",
+      "sla": "on_track",
+      "summary": "The courier reported a vehicle breakdown while carrying earphones; await a confirmed recovery plan."
+    },
+    {
+      "n": 15,
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-001",
+      "type": "wrong_pick",
+      "stage": "warehouse",
+      "status": "resolved",
+      "priority": "low",
+      "sla": "on_track",
+      "summary": "The incorrect phone-case model was found during packing and corrected in this illustrative scenario."
+    }
+  ]
+}
