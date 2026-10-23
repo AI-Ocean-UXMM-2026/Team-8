@@ -29,5 +29,5 @@ export function PortalShell({ children }: { children: ReactNode }) {
       </div><div className="warehouseSidebarFooter"><SidebarProfile /></div>
     </aside><div className="warehousePage"><main id="portal-main" className="p-5 md:p-8" key={`${session.warehouseId}:${session.smeId}`}>{children}</main></div>
   </div></div>;
-  return <div className="min-h-screen bg-canvas text-ink"><WorkspaceControls/><header className="flex items-center justify-between gap-4 border-b bg-white px-5 py-3"><nav aria-label="Workspace"><Link className="text-sm font-medium text-brand underline" href="/rider">Rider tasks</Link></nav></header><main id="portal-main" className="mx-auto max-w-6xl p-5 md:p-8" key={session.warehouseId}>{children}</main></div>;
+  return <div className="min-h-screen bg-canvas text-ink"><WorkspaceControls/><main id="portal-main" className="mx-auto max-w-6xl p-5 md:p-8" key={session.warehouseId}>{children}</main></div>;
 }
