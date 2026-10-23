@@ -8,74 +8,81 @@ import {usePolling} from './polling';
 import {DeliveryMap,type MapPoint} from '../tracking/delivery-map';
 import {googleMapsUrl,type OrderInput} from '../../shared/api/orders';
 import {useCommand} from '../warehouse/command';
-import {safeError} from '../../shared/i18n/errors';
 import '../tracking/tracking.css';
 
+type Place={latitude:number;longitude:number;label:string};
 export function SmeOrders(){
  const {api,warehouseId,smeId,identity,demo}=useSession();
  const resource=usePolling(`${warehouseId}:${smeId}`,async signal=>{const [inventory,profile]=await Promise.all([api!.getWarehouseCatalog(warehouseId,signal),api!.getSMEDeliveryProfile(warehouseId,smeId,signal)]);return {inventory,profile};});
- const [qty,setQty]=useState<Record<string,number>>({}),[name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[notes,setNotes]=useState(''),[maps,setMaps]=useState('');
- const [point,setPoint]=useState<MapPoint|null>(null),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[review,setReview]=useState(false),[refresh,setRefresh]=useState(0);
- const [query,setQuery]=useState(''),[places,setPlaces]=useState<{latitude:number;longitude:number;label:string}[]>([]);
- const prefilled=useRef(false);
- const [remember,setRemember]=useState(true),[profileBusy,setProfileBusy]=useState(false);
- const command=useCommand<OrderInput,unknown>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{setQty({});setConfirmed(false);setReview(false);setMessage('Order submitted · Warehouse အတည်ပြုရန် စောင့်နေသည်');setRefresh(n=>n+1);resource.reload();});
- const uncertain=!!command.pending;
+ const [qty,setQty]=useState<Record<string,number>>({}),[name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[notes,setNotes]=useState('');
+ const [point,setPoint]=useState<MapPoint|null>(null),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState(''),[refresh,setRefresh]=useState(0),[attempted,setAttempted]=useState(false);
+ const [query,setQuery]=useState(''),[submittedQuery,setSubmittedQuery]=useState(''),[searchAttempt,setSearchAttempt]=useState(0),[places,setPlaces]=useState<Place[]>([]),[searching,setSearching]=useState(false),[searchError,setSearchError]=useState('');
+ const prefilled=useRef(false),searchVersion=useRef(0),selectedQuery=useRef('');
+ const [remember,setRemember]=useState(true);
+ const command=useCommand<OrderInput,unknown>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{setQty({});setConfirmed(false);setAttempted(false);setMessage('Order placed. Awaiting warehouse approval.');setRefresh(n=>n+1);resource.reload();});
+ const uncertain=!!command.pending,locked=command.busy||uncertain;
  useEffect(()=>{
   if(!resource.data||!command.ready||prefilled.current)return;
   prefilled.current=true;
-  if(command.pending){const p=command.pending.body;setName(p.customer_name);setPhone(p.customer_phone);setAddress(p.address);setNotes(p.notes);setMaps(p.maps_url);setPoint([p.latitude,p.longitude]);return;}
-  const p=resource.data.profile;if(p){setName(p.recipient_name);setPhone(p.recipient_phone);setAddress(p.address);setNotes(p.notes);setMaps(p.maps_url);setPoint([p.latitude,p.longitude]);setRemember(false);}
+  if(command.pending){const p=command.pending.body;setName(p.customer_name);setPhone(p.customer_phone);setAddress(p.address);setNotes(p.notes);setPoint([p.latitude,p.longitude]);return;}
+  const p=resource.data.profile;if(p){setName(p.recipient_name);setPhone(p.recipient_phone);setAddress(p.address);setNotes(p.notes);setPoint([p.latitude,p.longitude]);setRemember(false);}
  },[resource.data,command.ready,command.pending]);
-
-
+ useEffect(()=>{
+  const version=++searchVersion.current,controller=new AbortController();
+  setPlaces([]);setSearchError('');setSearching(false);
+  if(locked||submittedQuery.length<3||submittedQuery===selectedQuery.current)return ()=>controller.abort();
+  setSearching(true);
+  const timer=setTimeout(async()=>{
+   try{const r=await fetch(`/api/places?q=${encodeURIComponent(submittedQuery)}`,{signal:controller.signal});if(!r.ok)throw new Error();const values:Place[]=await r.json();
+    if(controller.signal.aborted||version!==searchVersion.current)return;
+    const results=values.filter(p=>Number.isFinite(p.latitude)&&Math.abs(p.latitude)<=90&&Number.isFinite(p.longitude)&&Math.abs(p.longitude)<=180&&typeof p.label==='string');
+    setPlaces(results);if(results.length){setPoint([results[0].latitude,results[0].longitude]);setConfirmed(false);}else setSearchError('No places found. Try a nearby township or landmark, or click the map.');
+   }catch{if(!controller.signal.aborted&&version===searchVersion.current)setSearchError('Location search is unavailable. Click the map to select your delivery location.');}
+   finally{if(!controller.signal.aborted&&version===searchVersion.current)setSearching(false);}
+  },150);
+  return()=>{clearTimeout(timer);controller.abort();};
+ },[submittedQuery,searchAttempt,locked]);
  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
  if(!resource.data)return <Loading/>;
  const inventory=resource.data.inventory;
  const lines=inventory.filter(p=>(qty[p.id]??0)>0).map(p=>({product_id:p.id,expected_qty:qty[p.id]}));
- const valid=lines.length>0&&lines.every(l=>Number.isInteger(l.expected_qty)&&l.expected_qty<=inventory.find(p=>p.id===l.product_id)!.available_qty)&&!!name.trim()&&phone.trim().length>=3&&!!address.trim()&&!!point&&confirmed&&(!maps||!!googleMapsUrl(maps));
- function choose(p:MapPoint){setPoint(p);setConfirmed(false);setReview(false);}
- async function resolve(){setBusy(true);setMessage('');try{const r=await fetch('/api/maps/resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:maps})});const d=await r.json();if(d.point)choose(d.point);setMessage(d.error??d.message);}catch{setMessage('Link unavailable. Choose your SME delivery pin on the map.');}finally{setBusy(false);}}
- async function search(){setBusy(true);setMessage('');try{const r=await fetch(`/api/places?q=${encodeURIComponent(query)}`);if(!r.ok)throw new Error();const d=await r.json();setPlaces(d);if(!d.length)setMessage('No results. Choose your SME delivery pin on the map.');}catch{setMessage('Search unavailable. Choose your SME delivery pin on the map.');}finally{setBusy(false);}}
- async function saveProfile(){
-  if(!point||!confirmed||!name.trim()||phone.trim().length<3||!address.trim())return;
-  setProfileBusy(true);setMessage('');try{await api!.saveSMEDeliveryProfile(warehouseId,smeId,{recipient_name:name.trim(),recipient_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:maps.trim(),latitude:point[0],longitude:point[1]});setRemember(false);setMessage('SME delivery address saved.');resource.reload();}catch(e){setMessage(safeError(e));}finally{setProfileBusy(false);}
- }
+ const quantityError=inventory.some(p=>!Number.isInteger(qty[p.id]??0)||(qty[p.id]??0)<0||(qty[p.id]??0)>p.available_qty);
+ const errors={products:!inventory.some(p=>p.available_qty>0)?'No shared warehouse stock is available to order. Ask the warehouse to add or replenish common stock.':quantityError?'Enter whole quantities between 0 and the available stock.':!lines.length?'Select at least one product with quantity 1 or more.':'',name:!name.trim()?'Enter the delivery contact name.':'',phone:phone.trim().length<3?'Enter a contact phone number with at least 3 characters.':'',address:!address.trim()?'Enter the street address, floor or landmark.':'',location:!point?'Search for a place or click the map to select a delivery location.':!confirmed?'Check the map pin and confirm the delivery location.':''};
+ const valid=!Object.values(errors).some(Boolean);
+ function choose(p:MapPoint){searchVersion.current++;setSearching(false);setSearchError('');setPlaces([]);setPoint(p);setConfirmed(false);}
+ function error(key:keyof typeof errors){return attempted&&errors[key]?<p id={`order-${key}-error`} role="alert" className="mt-1 text-sm text-red-700">{errors[key]}</p>:null;}
  async function submit(){
   if(command.pending){await command.execute();return;}
+  setAttempted(true);
   if(!valid||!point)return;
-  await command.execute({warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:maps.trim(),latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:remember});
+  if(!window.confirm(`Order ${lines.reduce((n,l)=>n+l.expected_qty,0)} unit(s) for delivery to ${address.trim()}? Stock will be reserved pending warehouse approval.`))return;
+  await command.execute({warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:'',latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:remember});
  }
-
  return <><PageTitle title="Delivery orders" my="ပို့ဆောင်ရန် အော်ဒါများ" description="Order warehouse stock for delivery to your SME"/>
- <Card>{demo&&<p className="mb-4 text-sm">Demo orders stay in this browser session. No real delivery is requested.</p>}<form noValidate={uncertain} onSubmit={e=>{e.preventDefault();if(uncertain)void submit();else if(!review){if(valid)setReview(true);}else void submit();}}>
- <fieldset disabled={busy||profileBusy||command.busy||uncertain} className="space-y-4"><legend className="text-lg font-semibold">1. Products</legend>
- {inventory.length?inventory.map(p=><label className="flex flex-wrap items-center justify-between gap-3 border-b py-3" key={p.id}><span><span data-user-content>{p.name} · {p.sku}</span> · Available {p.available_qty}</span><Input aria-label={`Quantity for ${p.name}`} className="w-28" type="number" min={0} max={p.available_qty} step={1} value={qty[p.id]??0} onChange={e=>{setQty(v=>({...v,[p.id]:Number(e.target.value)}));setReview(false);}}/></label>):<p>No stock available</p>}
- <p>Warehouse → SME · Select shared warehouse stock.</p>
+ <Card>{demo&&<p className="mb-4 text-sm">Demo orders stay in this browser session. No real delivery is requested.</p>}<form noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
+ <fieldset disabled={locked} className="space-y-4"><legend className="text-lg font-semibold">1. Products</legend>
+ {inventory.length?inventory.map(p=><label className="flex flex-wrap items-center justify-between gap-3 border-b py-3" key={p.id}><span><span data-user-content>{p.name} · {p.sku}</span> · Available {p.available_qty}</span><Input aria-label={`Quantity for ${p.name}`} aria-invalid={attempted&&(!Number.isInteger(qty[p.id]??0)||(qty[p.id]??0)<0||(qty[p.id]??0)>p.available_qty)} aria-describedby={attempted&&errors.products?'order-products-error':undefined} className="w-28" type="number" min={0} max={p.available_qty} step={1} value={qty[p.id]??0} onChange={e=>setQty(v=>({...v,[p.id]:Number(e.target.value)}))}/></label>):<p className="text-red-700">No shared warehouse products are available. Ask your warehouse operator to add common stock.</p>}
+ {error('products')}<p className="text-sm text-muted">Choose products and quantities to deliver from the warehouse to your SME.</p>
  <h2 className="text-lg font-semibold">2. SME delivery contact</h2>
- <label className="block">Name<Input required maxLength={120} value={name} onChange={e=>{setName(e.target.value);setReview(false);}}/></label>
- <label className="block">Phone<Input required type="tel" minLength={3} maxLength={40} value={phone} onChange={e=>{setPhone(e.target.value);setReview(false);}}/></label>
- <label className="block">Address, floor and landmark<Input required maxLength={500} value={address} onChange={e=>{setAddress(e.target.value);setConfirmed(false);setReview(false);}}/></label>
+ <label className="block">Name<Input required maxLength={120} value={name} aria-invalid={attempted&&!!errors.name} aria-describedby={attempted&&errors.name?'order-name-error':undefined} onChange={e=>setName(e.target.value)}/>{error('name')}</label>
+ <label className="block">Phone<Input required type="tel" minLength={3} maxLength={40} value={phone} aria-invalid={attempted&&!!errors.phone} aria-describedby={attempted&&errors.phone?'order-phone-error':undefined} onChange={e=>setPhone(e.target.value)}/>{error('phone')}</label>
+ <label className="block">Address, floor and landmark<Input required maxLength={500} value={address} aria-invalid={attempted&&!!errors.address} aria-describedby={attempted&&errors.address?'order-address-error':undefined} onChange={e=>{setAddress(e.target.value);setConfirmed(false);}}/>{error('address')}</label>
  <h2 className="text-lg font-semibold">3. SME delivery location</h2>
- <label className="block">Google Maps link for your SME<Input type="url" maxLength={2048} placeholder="https://maps.app.goo.gl/…" value={maps} onChange={e=>{setMaps(e.target.value);setPoint(null);setConfirmed(false);setReview(false);}}/></label>
- <Button type="button" variant="outline" disabled={!googleMapsUrl(maps)} onClick={()=>void resolve()}>Read Maps link</Button>
- <label className="block">Search place / township<Input value={query} maxLength={200} onChange={e=>setQuery(e.target.value)}/></label>
- <Button type="button" variant="outline" disabled={query.trim().length<2} onClick={()=>void search()}>Search places</Button>
- {places.map((p,i)=><button key={i} type="button" className="block w-full rounded border p-3 text-left" onClick={()=>{choose([p.latitude,p.longitude]);setPlaces([]);}}>{p.label}</button>)}
- <p>Click the map to choose or adjust your SME delivery pin</p>
+ <label className="block">Search place or township<Input value={query} maxLength={200} placeholder="Type a place, township or landmark" onChange={e=>{searchVersion.current++;setSearching(false);setPlaces([]);setQuery(e.target.value);setPoint(null);setConfirmed(false);}} onBlur={()=>setSubmittedQuery(query.trim())} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();setSubmittedQuery(query.trim());setSearchAttempt(n=>n+1);}}}/></label>
+ <p className="text-sm text-muted">Type at least 3 characters, then press Enter or leave the field. The map shows the first match; choose another result or adjust the pin.</p>
+ {searching&&<p role="status">Finding locations…</p>}{searchError&&<p role="alert" className="text-red-700">{searchError}</p>}
+ {places.map((p,i)=><button key={i} type="button" className="block w-full rounded border p-3 text-left" onClick={()=>{selectedQuery.current=p.label;choose([p.latitude,p.longitude]);setQuery(p.label);}}>{p.label}</button>)}
  </fieldset>
- <DeliveryMap destination={point} onDestination={busy||profileBusy||command.busy||uncertain?undefined:choose}/>
- <fieldset disabled={busy||profileBusy||command.busy||uncertain} className="my-4 space-y-4">
- {point&&<><p>{point[0].toFixed(6)}, {point[1].toFixed(6)}</p><label className="flex gap-3"><input aria-label="Confirm SME delivery pin" type="checkbox" checked={confirmed} onChange={e=>{setConfirmed(e.target.checked);setReview(false);}}/>I have checked my SME delivery address and map pin.</label></>}
- <label className="block">Delivery instructions<Input maxLength={2000} value={notes} onChange={e=>{setNotes(e.target.value);setReview(false);}}/></label>
- <label className="flex gap-3"><input aria-label="Save address for future orders" type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Save this address for future SME orders</label>
- <Button type="button" variant="outline" disabled={!point||!confirmed||!name.trim()||phone.trim().length<3||!address.trim()||!!maps&&!googleMapsUrl(maps)} onClick={()=>void saveProfile()}>Save SME delivery address</Button>
+ <DeliveryMap destination={point} onDestination={locked?undefined:choose}/>
+ <fieldset disabled={locked} className="my-4 space-y-4">
+ {point&&<><p className="text-sm">Selected pin: {point[0].toFixed(6)}, {point[1].toFixed(6)}</p><label className="flex gap-3"><input aria-label="Confirm SME delivery pin" aria-invalid={attempted&&!!errors.location} aria-describedby={attempted&&errors.location?'order-location-error':undefined} type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>This map pin matches my delivery address.</label></>}
+ {error('location')}
+ <label className="block">Delivery instructions (optional)<Input maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
+ <label className="flex gap-3"><input aria-label="Save address for future orders" type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Save this address when I place the order</label>
  </fieldset>
  {command.pending&&<section className="my-4 rounded border p-4"><h2 className="font-semibold">Submission awaiting confirmation</h2><p data-user-content>{command.pending.body.customer_name} · {command.pending.body.customer_phone}</p><p data-user-content>{command.pending.body.address}</p><p>Retry this saved order before starting another.</p></section>}
- {review&&<section aria-label="Order review" className="my-5 rounded border p-4"><h2 className="font-semibold">Review order</h2><p data-user-content>{name} · {phone}</p><p data-user-content>{address}</p>{lines.map(l=><p data-user-content key={l.product_id}>{inventory.find(p=>p.id===l.product_id)?.name} × {l.expected_qty}</p>)}<p data-user-content>{notes}</p><p>Warehouse stock is reserved when submitted and delivered to your SME.</p></section>}
- <Button type="submit" disabled={busy||profileBusy||command.busy||!command.ready||(!uncertain&&!valid)}>{busy||profileBusy||command.busy?'Please wait…':uncertain?'Retry same order':review?'Submit order':'Review order'}</Button>
- {review&&!uncertain&&<Button className="ml-3" variant="outline" type="button" onClick={()=>setReview(false)}>Back to edit</Button>}
- </form>{command.error&&<p role="alert">{command.error}</p>}{message&&<p role="status" className="my-4">{message}</p>}</Card>
+ <Button type="submit" disabled={command.busy||!command.ready}>{command.busy?'Placing order…':uncertain?'Retry same order':'Order stocks'}</Button>
+ </form>{command.error&&<p role="alert" className="mt-3 text-red-700">{command.error}</p>}{message&&<p role="status" className="my-4">{message}</p>}</Card>
  <OrderList key={refresh} sme/>
  </>;
 }
