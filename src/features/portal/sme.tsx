@@ -129,18 +129,18 @@ export function SMEDashboard() {
         <div className="smeCardHeader">
           <div className="smeSectionHeading">
             <span className="smeSectionIcon" aria-hidden="true"><PackageIcon size={18} weight="duotone" /></span>
-            <h2 className="smeSectionTitle">Available Warehouse Inventory & Catalog</h2>
+            <h2 className="smeSectionTitle">Your Stock at the Warehouse</h2>
           </div>
-          <p className="smeSectionDescription">Current verified stock stored at the warehouse hub available for release to your SME location.</p>
+          <p className="smeSectionDescription">Your SME-owned inventory stored with ParcelCare. Available quantities can be requested for release.</p>
         </div>
         {data.catalog.length ? (
-          <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Available your SME-owned stock">
+          <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Your stock at the warehouse">
             <table className="smeTable">
               <thead>
                 <tr>
                   <th scope="col">Product</th>
                   <th scope="col">SKU</th>
-                  <th scope="col">Available</th>
+                  <th scope="col">Available to Release</th>
                 </tr>
               </thead>
               <tbody>
