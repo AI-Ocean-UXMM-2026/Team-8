@@ -167,3 +167,9 @@ npm run test:illustrated-preview
 ```
 
 The focused SME browser test uses fixture authentication and a fixture API, not hosted accounts. The older broad `test:portals` script has unrelated rider-fixture drift against the newer rider screen; it is not claimed as passing in this recheck. Production model calls and hosted migration application remain an operator acceptance step.
+
+## Live shipment service repairs — 23 October 2026
+
+Applied the timestamp serialization migration `20261023230000` directly through the ParcelCare Supabase SQL Editor. The live `private.ops_detail` definition was checked first and matched the original repository function. Shipment event fallback timestamps previously used PostgreSQL text (`+00`), which caused FastAPI `AwareDatetime` response validation failures and HTTP 500. Both affected outbound shipment details now render: `9aae3535-3afa-4896-8793-469418495d08` and `053a8d79-c12c-4b97-8c32-b5d321d093a2`.
+
+The separate arrival HTTP 503 was caused by absent `shipment_arrivals` and `shipment_arrival(uuid, boolean)` objects. After explicit user approval, applied the scoped restoration migration `20261023231000` through the SQL Editor. Render confirmed the previously failing arrival GET for `053a8d79-c12c-4b97-8c32-b5d321d093a2` returned HTTP 200 at 19:06:15 Yangon time. No production arrival was confirmed, delivery status changed, or stock moved. Local outbound regression, release-to-transport workflow tests, and migration checks pass. Physical GPS sharing and live rider arrival remain untested; these repairs do not establish end-to-end live AI readiness. These two migrations were applied manually; the feature PR remains separate from deployed frontend/backend code.
