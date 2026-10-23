@@ -43,6 +43,7 @@ export function mapsCoordinates(value:string):[number,number]|null {
  if(!pair)return null;const lat=Number(pair[1]),lng=Number(pair[2]);
  return Number.isFinite(lat)&&Math.abs(lat)<=90&&Number.isFinite(lng)&&Math.abs(lng)<=180?[lat,lng]:null;
 }
+export const CATALOG_PAGE_SIZE=10;
 export type CatalogProduct=WarehouseCatalogItem & {category:string};
 export type CatalogPage={items:CatalogProduct[];selected_items:CatalogProduct[];next_cursor:string|null;total:number;categories:string[]};
 export const catalogCategories:Record<string,string>={food_beverages:'Food & beverages',clothing_accessories:'Clothing & accessories',home_kitchen:'Home & kitchen',electronics:'Electronics',beauty_personal_care:'Beauty & personal care',health_medical:'Health & medical',office_stationery:'Office & stationery',other:'Other',uncategorized:'Uncategorized'};

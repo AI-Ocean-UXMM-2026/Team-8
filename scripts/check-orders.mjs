@@ -29,9 +29,9 @@ try{
   if(path==='/api/maps/resolve')return route.continue();
   if(path==='/api/orders/catalog-page'){
    const all=[{id:p,warehouse_id:w,name:'Test product',sku:'TEST',category:'food_beverages',available_qty:order?7:10},...Array.from({length:24},(_,i)=>({id:`50000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`,warehouse_id:w,name:`Item ${String(i+1).padStart(2,'0')}`,sku:`SKU-${i+1}`,category:'electronics',available_qty:10}))];
-   const selected=u.searchParams.getAll('selected_ids'),category=u.searchParams.get('category'),search=(u.searchParams.get('search')??'').toLowerCase(),offset=Number(u.searchParams.get('cursor')??0);
+   const selected=u.searchParams.getAll('selected_ids'),category=u.searchParams.get('category'),search=(u.searchParams.get('search')??'').toLowerCase(),offset=Number(u.searchParams.get('cursor')??0),limit=Number(u.searchParams.get('limit')??12);
    const filtered=all.filter(p=>(!category||p.category===category)&&(!search||(p.name+' '+p.sku).toLowerCase().includes(search)));
-   return route.fulfill({json:{items:filtered.slice(offset,offset+12),selected_items:all.filter(p=>selected.includes(p.id)),categories:['electronics','food_beverages'],total:filtered.length,next_cursor:offset+12<filtered.length?String(offset+12):null}});
+   return route.fulfill({json:{items:filtered.slice(offset,offset+limit),selected_items:all.filter(p=>selected.includes(p.id)),categories:['electronics','food_beverages'],total:filtered.length,next_cursor:offset+limit<filtered.length?String(offset+limit):null}});
   }
   if(path==='/api/orders/catalog')return route.fulfill({json:[{id:p,warehouse_id:w,name:'Test product',sku:'TEST',available_qty:order?7:10}]});
   if(path==='/api/orders/delivery-profile'){if(req.method()==='PUT')profile=req.postDataJSON();return route.fulfill({json:profile});}

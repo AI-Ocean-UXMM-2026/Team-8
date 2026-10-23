@@ -33,7 +33,7 @@ export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:
      const all=catalog(state).filter(p=>!tenant||p.sme_id===tenant).map(p=>({...p,category:p.category??'uncategorized'})).sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
      const search=(url.searchParams.get('search')??'').toLowerCase(),category=url.searchParams.get('category'),stock=url.searchParams.get('in_stock_only')!=='false';
      const rows=all.filter(p=>(!stock||p.available_qty>0)&&(!category||p.category===category)&&(p.name+' '+p.sku).toLowerCase().includes(search));
-     const offset=Number(url.searchParams.get('cursor')??0),limit=12,selected=url.searchParams.getAll('selected_ids');
+     const offset=Number(url.searchParams.get('cursor')??0),limit=Math.max(1,Math.min(48,Number(url.searchParams.get('limit')??12))),selected=url.searchParams.getAll('selected_ids');
      return {value:{items:rows.slice(offset,offset+limit),selected_items:all.filter(p=>selected.includes(p.id)),categories:[...new Set(all.map(p=>p.category))],total:rows.length,next_cursor:offset+limit<rows.length?String(offset+limit):null}};
     }
 
