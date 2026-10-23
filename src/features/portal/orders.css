@@ -1,6 +1,6 @@
 /* Stepper Progress (Style 03) */
-.orderStepperNav{width:100%;margin:12px 0 28px}
-.orderStepper{display:flex;align-items:flex-start;justify-content:space-between;width:100%;max-width:680px;margin:0 auto;padding:0;list-style:none}
+.orderStepperNav{width:100%;margin:12px 0 28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.orderStepper{display:flex;align-items:flex-start;justify-content:space-between;width:100%;margin:0 auto;padding:0;list-style:none}
 .orderStepperItem{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center}
 .orderStepperLine{position:absolute;top:20px;right:50%;width:calc(100% - 44px);height:2.5px;background:var(--border);transform:translateY(-50%);z-index:1;transition:background .25s ease}
 .orderStepperLine[data-filled=true]{background:var(--primary)}
