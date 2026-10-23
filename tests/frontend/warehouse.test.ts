@@ -7,12 +7,28 @@ import fixture from '../../contracts/fixtures/warehouse/initial.json';
 import { canReleaseCommand } from '../../src/features/warehouse/command-policy';
 import { savedReceipt, savedEvent } from '../../src/features/warehouse/saved-results';
 import { caseView, filterCases } from '../../src/features/exceptions/case-view';
+import {caseColumn,loadCaseBoard,sortBoardCases} from '../../src/features/exceptions/case-board';
 
 const inbound = fixture.body.shipments[0].id;
 const warehouseId = fixture.body.directory.warehouse_id;
 const key = () => crypto.randomUUID();
 function storage() { const saved = new Map<string, string>(); return { getItem: (k: string) => saved.get(k) ?? null, setItem: (k: string, value: string) => { saved.set(k, value); } }; }
 const api = (store = storage()) => createApiClient(createMockTransport({ dataset: 'warehouse', storage: store }));
+
+test('case board groups every workflow state and ranks priority before risk without mutating data',()=>{
+  assert.deepEqual(['new','investigating','processing','awaiting_information','awaiting_sme_decision','awaiting_courier_confirmation','awaiting_verification','resolved','closed'].map(caseColumn),['new','investigating','investigating','waiting','waiting','waiting','waiting','resolved','resolved']);
+  const sample=caseView(fixture.body.cases[0]);
+  const rows=[{...sample,id:key(),priority:'low' as const,risk_score:99},{...sample,id:key(),priority:'critical' as const,risk_score:1},{...sample,id:key(),priority:'critical' as const,risk_score:80}];
+  assert.deepEqual(sortBoardCases(rows).map(c=>c.risk_score),[80,1,99]);assert.equal(rows[0].priority,'low');
+});
+test('case board loads beyond the first page and rejects repeated or changing pages',async()=>{
+  const sample=caseView(fixture.body.cases[0]),second={...sample,id:key()};const cursors:Array<string|undefined>=[];
+  const page=await loadCaseBoard(async cursor=>{cursors.push(cursor);return cursor?{items:[second],next_cursor:null}:{items:[sample],next_cursor:'next'};});
+  assert.deepEqual(cursors,[undefined,'next']);assert.equal(page.items.length,2);assert.equal(page.next_cursor,null);
+  await assert.rejects(()=>loadCaseBoard(async()=>({items:[],next_cursor:'repeat'})),/repeated page/);
+  await assert.rejects(()=>loadCaseBoard(async()=>({items:[sample],next_cursor:'next'})),/queue changed/);
+  const controller=new AbortController();controller.abort();await assert.rejects(()=>loadCaseBoard(async()=>({items:[],next_cursor:null}),controller.signal),{name:'AbortError'});
+});
 
 test('merged case filters run before pagination and remain consistent after investigation actions', async () => {
   const store = storage();
