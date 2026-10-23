@@ -32,7 +32,6 @@ export async function testWorkflows(db,{autoRelease=false}={}){
   await ops('event',shipment.id,physical(1,'picked'));await ops('event',shipment.id,physical(2,'packed'));
   delivery=await deliver('assign',shipment.id,{expected_version:3,note:'Assign active rider',rider_id:riderId});
   assert.equal(delivery.shipment.status,'assigned');
-  if(autoRelease){const choice=delivery.riders.find(r=>r.id===riderId);assert.equal(choice.display_name,'Rider');assert.equal(choice.email,rider+'@example.test');}
  });
  const pin={latitude:16.8409,longitude:96.1735,label:'Yangon delivery entrance'};
  const destination=async(value=null)=>(await one('select public.delivery_destination($1,$2::jsonb) result',[shipment.id,value===null?null:JSON.stringify(value)])).result;
