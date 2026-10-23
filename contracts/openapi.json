@@ -116,6 +116,27 @@
               ],
               "title": "Status"
             }
+          },
+          {
+            "name": "exceptions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "all",
+                    "open",
+                    "none"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exceptions"
+            }
           }
         ],
         "responses": {
@@ -124,7 +145,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShipmentPage"
+                  "$ref": "#/components/schemas/ShipmentQueuePage"
                 }
               }
             }
@@ -6311,13 +6332,14 @@
         "title": "ShipmentItem"
       },
       "ShipmentPage": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
               "$ref": "#/components/schemas/Shipment"
             },
-            "type": "array",
-            "title": "Items"
+            "title": "Items",
+            "type": "array"
           },
           "next_cursor": {
             "anyOf": [
@@ -6331,13 +6353,12 @@
             "title": "Next Cursor"
           }
         },
-        "additionalProperties": false,
-        "type": "object",
         "required": [
           "items",
           "next_cursor"
         ],
-        "title": "ShipmentPage"
+        "title": "ShipmentPage",
+        "type": "object"
       },
       "ShipmentStatus": {
         "type": "string",
@@ -8903,6 +8924,139 @@
           "model"
         ],
         "title": "SavedSuggestion"
+      },
+      "ShipmentOpenCase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "ShipmentOpenCase"
+      },
+      "ShipmentQueueItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "sme_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sme Id"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "title": "Direction"
+          },
+          "delivery_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ShipmentStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "open_cases": {
+            "items": {
+              "$ref": "#/components/schemas/ShipmentOpenCase"
+            },
+            "type": "array",
+            "title": "Open Cases"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "warehouse_id",
+          "sme_id",
+          "reference",
+          "direction",
+          "delivery_mode",
+          "status",
+          "version",
+          "created_at",
+          "evidence_ids"
+        ],
+        "title": "ShipmentQueueItem"
+      },
+      "ShipmentQueuePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ShipmentQueueItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ShipmentQueuePage"
       },
       "StartTracking": {
         "properties": {

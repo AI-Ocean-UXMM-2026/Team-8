@@ -2434,6 +2434,61 @@ export interface components {
              */
             requires_review: boolean;
         };
+        /** ShipmentOpenCase */
+        ShipmentOpenCase: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+        };
+        /** ShipmentQueueItem */
+        ShipmentQueueItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Sme Id
+             * Format: uuid
+             */
+            sme_id: string;
+            /** Reference */
+            reference: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "inbound" | "outbound";
+            delivery_mode: components["schemas"]["DeliveryMode"] | null;
+            status: components["schemas"]["ShipmentStatus"];
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Open Cases */
+            open_cases?: components["schemas"]["ShipmentOpenCase"][];
+        };
+        /** ShipmentQueuePage */
+        ShipmentQueuePage: {
+            /** Items */
+            items: components["schemas"]["ShipmentQueueItem"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** StartTracking */
         StartTracking: {
             /**
@@ -2536,6 +2591,7 @@ export interface operations {
                 limit?: number;
                 direction?: ("inbound" | "outbound") | null;
                 status?: components["schemas"]["ShipmentStatus"] | null;
+                exceptions?: ("all" | "open" | "none") | null;
             };
             header?: never;
             path?: never;
@@ -2549,7 +2605,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShipmentPage"];
+                    "application/json": components["schemas"]["ShipmentQueuePage"];
                 };
             };
             /** @description Unauthenticated */

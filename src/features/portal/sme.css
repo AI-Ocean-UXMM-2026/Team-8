@@ -40,3 +40,26 @@
 #sme-stock .smeTable th:nth-last-child(-n+2),#sme-stock .smeTable td:nth-last-child(-n+2){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .smeTable th{font-weight:600;color:var(--foreground)}
 @media(max-width:600px){.smeDashboardGrid{gap:16px}.smeTable th,.smeTable td{padding:12px 8px}}
+
+/* Dashboard quick-action CTAs */
+.smeQuickActionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.smeQuickAction{display:flex;align-items:center;gap:14px;min-height:92px;padding:18px 20px;border-radius:14px;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease,background-color .15s ease,border-color .15s ease}
+.smeQuickAction:hover{text-decoration:none}
+.smeQuickAction:focus-visible{outline:2px solid var(--color-primary-700);outline-offset:3px}
+.smeQuickActionIcon{display:grid;place-items:center;flex-shrink:0;width:46px;height:46px;border-radius:12px;transition:transform .15s ease}
+.smeQuickActionCopy{display:flex;flex-direction:column;gap:3px;line-height:1.35;min-width:0}
+.smeQuickActionCopy strong{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.smeQuickActionCopy small{font-size:13px;font-weight:400;line-height:1.45;opacity:.9}
+.smeQuickActionArrow{flex-shrink:0;margin-left:auto;transition:transform .15s ease}
+.smeQuickAction:hover .smeQuickActionArrow{transform:translateX(4px)}
+.smeQuickAction:hover .smeQuickActionIcon{transform:scale(1.08)}
+.smeQuickActionOrder{background:var(--color-primary-700);border:1px solid color-mix(in srgb,var(--color-primary-800) 60%,transparent);color:#fff;box-shadow:0 2px 6px rgba(8,113,122,.25)}
+.smeQuickActionOrder:hover{background:var(--color-primary-800);transform:translateY(-2px);box-shadow:0 8px 18px rgba(8,113,122,.3)}
+.smeQuickActionOrder .smeQuickActionIcon{background:rgba(255,255,255,.16);color:#fff}
+.smeQuickActionOrder .smeQuickActionCopy small{color:rgba(255,255,255,.85)}
+.smeQuickActionReport{background:#FFFBEB;border:1.5px solid #FDE68A;color:#78350F}
+.smeQuickActionReport:hover{background:#FEF3C7;border-color:#FCD34D;transform:translateY(-2px);box-shadow:0 8px 18px rgba(146,64,14,.12)}
+.smeQuickActionReport .smeQuickActionIcon{background:#FDE68A;color:#92400E}
+.smeQuickActionReport .smeQuickActionArrow{color:#B45309}
+.smeQuickActionReport .smeQuickActionCopy small{color:#92400E}
+@media(max-width:760px){.smeQuickActionGrid{grid-template-columns:1fr}.smeQuickAction{min-height:80px;padding:16px}}

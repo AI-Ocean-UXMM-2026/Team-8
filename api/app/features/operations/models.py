@@ -2,7 +2,21 @@
 from typing import Annotated, Literal
 from uuid import UUID
 from pydantic import Field, model_validator
-from ...contracts import DTO, InventoryItem
+from ...contracts import DTO, InventoryItem, Shipment
+
+
+class ShipmentOpenCase(DTO):
+    id: UUID
+    type: str
+
+
+class ShipmentQueueItem(Shipment):
+    open_cases: list[ShipmentOpenCase] = Field(default_factory=list)
+
+
+class ShipmentQueuePage(DTO):
+    items: list[ShipmentQueueItem]
+    next_cursor: str | None
 
 
 class CreateLine(DTO):

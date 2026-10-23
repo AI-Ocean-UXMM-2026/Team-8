@@ -7,7 +7,7 @@ from ...contracts import (Shipment, ShipmentPage, ShipmentDetail, ShipmentStatus
     WarehouseDirectory, WarehouseOverview, CasePage, ErrorResponse)
 from ...core.auth import AuthContext, current_identity
 from ...core.errors import AppError
-from .models import CreateShipment, StockCorrection, StockResult
+from .models import CreateShipment, StockCorrection, StockResult, ShipmentQueuePage
 from .service import read, command, call, scope
 
 
@@ -39,11 +39,16 @@ def inventory(request: Request, identity: Identity, warehouse_id: UUID | None = 
     return read(request, identity, warehouse_id, 'inventory', sme_id=sme_id, cursor=cursor, limit=limit, stock_status=stock_status)
 
 
-@router.get('/shipments', response_model=ShipmentPage, operation_id='listShipments')
+@router.get('/shipments', response_model=ShipmentQueuePage, operation_id='listShipments')
 def shipments(request: Request, identity: Identity, warehouse_id: UUID | None = None,
               sme_id: UUID | None = None, cursor: UUID | None = None,
               limit: Annotated[int, Query(ge=1, le=100)] = 25,
-              direction: Literal['inbound', 'outbound'] | None = None, status: ShipmentStatus | None = None):
+              direction: Literal['inbound', 'outbound'] | None = None, status: ShipmentStatus | None = None,
+              exceptions: Literal['all', 'open', 'none'] | None = None):
+    if exceptions is not None:
+        filters = dict(sme_id=sme_id,cursor=cursor,limit=limit,direction=direction,status=status,exceptions=exceptions)
+        return call(request,identity,'shipments_queue_read',{'p_warehouse':scope(identity,warehouse_id),
+            'p_filters':{k:str(v) if isinstance(v,UUID) else v for k,v in filters.items() if v is not None}})
     return read(request, identity, warehouse_id, 'shipments', sme_id=sme_id, cursor=cursor, limit=limit, direction=direction, status=status)
 
 

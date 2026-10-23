@@ -13,12 +13,12 @@ const entity = (id: string) => {
 };
 type Mutation = { idempotencyKey: string; warehouseId?: string; signal?: AbortSignal };
 type ListOptions = { warehouseId?: string; smeId?: string; cursor?: string; limit?: number; signal?: AbortSignal };
-function query(options: ListOptions & { direction?: string; status?: string; stockStatus?: string; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string; sort?: string; slaRisk?: string; escalated?: string; stage?: string }) {
+function query(options: ListOptions & { exceptions?: string; direction?: string; status?: string; stockStatus?: string; issueType?: string; priority?: string; mode?: string; state?: string; owner?: string; sort?: string; slaRisk?: string; escalated?: string; stage?: string }) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries({ warehouse_id: options.warehouseId, sme_id: options.smeId })) {
     if (value) params.set(key, entity(value));
   }
-  for (const [key, value] of Object.entries({ cursor: options.cursor, direction: options.direction, status: options.status, stock_status: options.stockStatus, issue_type: options.issueType, priority: options.priority, handling_mode: options.mode, state: options.state, owner_id: options.owner, sort: options.sort, sla_risk: options.slaRisk, escalated: options.escalated, stage: options.stage })) {
+  for (const [key, value] of Object.entries({ exceptions: options.exceptions, cursor: options.cursor, direction: options.direction, status: options.status, stock_status: options.stockStatus, issue_type: options.issueType, priority: options.priority, handling_mode: options.mode, state: options.state, owner_id: options.owner, sort: options.sort, sla_risk: options.slaRisk, escalated: options.escalated, stage: options.stage })) {
     if (value) params.set(key, value);
   }
   if (options.limit !== undefined) {
@@ -72,8 +72,8 @@ export function createApiClient(transport: Transport) {
       const result=await transport<unknown>({method:'POST',path:`/api/deliveries/${entity(id)}/${kind}`,body:payload,...options});
       return {kind:'delivery' as const,detail:checkedDelivery(result,id,'expected_version' in body?body.expected_version:0)};
     },
-    listShipments(options: ListOptions & { direction?: 'inbound' | 'outbound'; status?: string } = {}) {
-      return transport<Schemas['ShipmentPage']>({ method: 'GET', path: `/api/shipments${query(options)}`, signal: options.signal });
+    listShipments(options: ListOptions & { direction?: 'inbound' | 'outbound'; status?: string; exceptions?: 'all' | 'open' | 'none' } = {}) {
+      return transport<Schemas['ShipmentQueuePage']>({ method: 'GET', path: `/api/shipments${query(options)}`, signal: options.signal });
     },
     getSLAPolicies(warehouseId:string,signal?:AbortSignal){return transport<Schemas['SLAPolicies']>({method:'GET',path:`/api/sla/policies${query({warehouseId})}`,signal});},
     saveSLAPolicy(caseType:string,priority:string,body:Schemas['SLACommand'],options:Mutation&{warehouseId:string}){if(!/^[a-z_]+$/.test(caseType)||!['low','normal','high','critical'].includes(priority))throw new ApiError(400,'INVALID_POLICY','Invalid SLA policy.');return transport<Schemas['SLAPolicy']>({method:'POST',path:`/api/sla/policies/${caseType}/${priority}${query(options)}`,body,...options});},

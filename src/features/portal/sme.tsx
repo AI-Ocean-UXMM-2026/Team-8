@@ -8,6 +8,7 @@ import '../warehouse/overview.css';
 import { useSession } from '../auth/session';
 import { ShipmentStatus } from '../warehouse/shipment-status';
 import { Badge, Button, Card } from '../../shared/ui';
+import { ArrowRightIcon, PackageIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { ApiError, type Schemas } from '../../shared/api';
 import type { Approval } from '../../shared/api/domain';
 import { CasePanels, caseView } from '../exceptions';
@@ -41,7 +42,18 @@ export function SMEDashboard() {
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
     {demo&&<Card className="mb-5"><h2 className="text-lg font-semibold">Warehouse → SME · Yangon</h2><p className="my-3">Demo warehouse stock is delivered to your SME shop in Yangon. Saved in this browser session.</p><Button type="button" disabled={generating} onClick={()=>void generateOrder()}>{generating?'Generating…':'Generate demo order'}</Button>{generated&&<p role="status" className="mt-3">{generated}</p>}{generateError&&<p role="alert" className="mt-3">{generateError}</p>}</Card>}
-    <Card className="mb-5"><h2 className="text-lg font-semibold">Order warehouse stock for your SME</h2><Link className="mt-3 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/orders':'/sme/orders'}>Create delivery order →</Link><Link className="mt-3 flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/reports':'/sme/reports'}>Report Cases →</Link></Card>
+    <Card className="mb-5 smeQuickActions" aria-label="SME quick actions"><div className="smeQuickActionGrid">
+      <Link className="smeQuickAction smeQuickActionOrder" href={demo?'/demo/sme/orders':'/sme/orders'}>
+        <span className="smeQuickActionIcon" aria-hidden="true"><PackageIcon size={26} weight="duotone"/></span>
+        <span className="smeQuickActionCopy"><strong>Create delivery order</strong><small>Choose products from warehouse stock and place your order.</small></span>
+        <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold"/>
+      </Link>
+      <Link className="smeQuickAction smeQuickActionReport" href={demo?'/demo/sme/reports':'/sme/reports'}>
+        <span className="smeQuickActionIcon" aria-hidden="true"><WarningCircleIcon size={26} weight="duotone"/></span>
+        <span className="smeQuickActionCopy"><strong>Report Cases</strong><small>Report damaged goods or delivery problems for investigation.</small></span>
+        <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold"/>
+      </Link>
+    </div></Card>
     <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
       {label:'Products',value:data.catalog.length,href:'#sme-stock',action:'View warehouse stock'},
       {label:'Shipments',value:data.shipments.length,href:'#sme-shipments',action:'View your shipments'},
