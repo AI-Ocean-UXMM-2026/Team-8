@@ -64,6 +64,25 @@ try{
  const handoverKey=randomUUID();const handover=()=>one("select public.delivery_command('handover',$1,$2,$3::jsonb,$4) r",[order.shipment_id,handoverKey,JSON.stringify(handoverBody),corr]);
  await as(staff,async()=>{await handover();await handover();});
  assert.deepEqual(await one('select available_qty,reserved_qty from public.products where id=$1',[product]),{available_qty:1,reserved_qty:0});
+
+ const timedProduct=randomUUID();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,$3,'TIMED','Timed release',10)",[timedProduct,w,s]);
+ const timed={...body,order_kind:'sme_self_delivery',delivery_due_at:new Date(Date.now()+86400000).toISOString(),lines:[{product_id:timedProduct,expected_qty:7}]};
+ await as(actor,async()=>{
+  for(const due of [null,new Date(Date.now()-1000).toISOString(),new Date(Date.now()+31*86400000).toISOString()])await assert.rejects(()=>command(null,{...timed,delivery_due_at:due}),/invalid_delivery_deadline/);
+  const k=randomUUID(),auto=await command(null,timed,k);assert.equal(auto.status,'accepted');assert.ok(auto.shipment_id);assert.equal(auto.payload.delivery_due_at,timed.delivery_due_at);
+  assert.equal((await command(null,timed,k)).shipment_id,auto.shipment_id);
+  assert.equal((await one('select count(*)::int n from public.shipments where id=$1',[auto.shipment_id])).n,1);
+  await assert.rejects(()=>command(null,timed),/stock_unavailable/);
+  assert.equal((await one('select reserved_qty from public.products where id=$1',[timedProduct])).reserved_qty,7);
+  await assert.rejects(()=>command(auto.id,{action:'accept',delivery_mode:'in_house'}),/forbidden/);
+ });
+ await as(actor,async()=>{
+  const late={...timed,delivery_due_at:new Date(Date.now()+1000).toISOString(),lines:[{product_id:timedProduct,expected_qty:1}]},k=randomUUID();
+  const saved=await command(null,late,k);await new Promise(resolve=>setTimeout(resolve,1200));
+  assert.equal((await command(null,late,k)).shipment_id,saved.shipment_id);
+  await assert.rejects(()=>command(null,late),/invalid_delivery_deadline/);
+ });
+ console.log('PASS deadline requests: atomic acceptance, reservation, shipment, deadline validation, replay and overbooking prevention');
  console.log('PASS orders: dispatch rollback/replay, assigned rider customer access, warehouse cancellation, third-party handover stock once');
  console.log('PASS orders: fresh migrations, tenant isolation, replay, overbooking, cancellation, rejection, acceptance and stock guard');
 }finally{await db.close();}

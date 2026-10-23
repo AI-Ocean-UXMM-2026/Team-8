@@ -1599,5 +1599,16 @@
   "Open case →": "အမှုဖွင့်ရန် →",
   "Uploading…": "တင်နေသည်…",
   "Retry original upload": "မူလ upload ကို ထပ်မံစမ်းသပ်ရန်",
-  "Upload": "တင်ရန်"
+  "Upload": "တင်ရန်",
+  "Quantity to add": "ထည့်သွင်းလိုသည့် အရေအတွက်",
+  "Available to release": "ထုတ်ပေးနိုင်သည့် အရေအတွက်",
+  "Add to request": "တောင်းဆိုမှုထဲ ထည့်ရန်",
+  "All available units selected": "ရရှိနိုင်သည့် အရေအတွက်အားလုံး ရွေးထားပြီး",
+  "Stock Release Request History": "စတော့ ထုတ်ပေးရေး တောင်းဆိုမှု မှတ်တမ်း",
+  "Request stock release": "စတော့ ထုတ်ပေးရန် တောင်းဆိုမှု",
+  "New request": "အသစ် တောင်းဆိုရန်",
+  "Request history": "တောင်းဆိုမှု မှတ်တမ်း",
+  "Stock Release Requests": "စတော့ ထုတ်ပေးရေး တောင်းဆိုမှုများ",
+  "Track progress in Request history.": "လုပ်ငန်းဆောင်မှုကို တောင်းဆိုမှု မှတ်တမ်းတွင် လိုက်ကြည့်ပါ။",
+  "View request status and tracking in request history →": "တောင်းဆိုမှု မှတ်တမ်းတွင် အခြေအနေနှင့် လိုက်ကြည့်နိုင်သည် →"
 }

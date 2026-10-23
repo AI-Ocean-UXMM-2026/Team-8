@@ -4,9 +4,9 @@ import {demoRoleKey} from '../../features/auth/demo-access';
 import {LanguageMenu,ProfileMenu} from './account-menu';
 import {usePathname} from 'next/navigation';
 import {useEffect,useState} from 'react';
-import {SidebarSimpleIcon,PackageIcon,HouseIcon,MapPinIcon,WarningCircleIcon,GearIcon,TruckIcon,ClockIcon,ArrowsLeftRightIcon} from '@phosphor-icons/react';
+import {SidebarSimpleIcon,PackageIcon,HouseIcon,MapPinIcon,WarningCircleIcon,GearIcon,TruckIcon,ClockIcon,ArrowsLeftRightIcon,CheckCircleIcon} from '@phosphor-icons/react';
 
-export function NavLabel({name,count}:{name:string;count?:number}){const Icon=({Overview:HouseIcon,Inventory:PackageIcon,Shipments:TruckIcon,'GPS tracking':MapPinIcon,'Report Cases':WarningCircleIcon,'Delivery Orders':TruckIcon,'Stock Release Requests':TruckIcon,'SME-Owned Inventory':PackageIcon,'Open cases':WarningCircleIcon,'Admin settings':GearIcon,'Case deadlines':ClockIcon,'My deliveries':TruckIcon,'Change demo role':ArrowsLeftRightIcon} as Record<string,typeof HouseIcon>)[name]||PackageIcon;return <><span className="navIcon" aria-hidden="true"><Icon size={20}/>{count!==undefined&&count>0&&<span className="warehouseCaseCount">{count>99?'99+':count}</span>}</span><span className="navText">{name}</span></>;}
+export function NavLabel({name,count}:{name:string;count?:number}){const Icon=({Overview:HouseIcon,Inventory:PackageIcon,Shipments:TruckIcon,'GPS tracking':MapPinIcon,'Report Cases':WarningCircleIcon,'Delivery Orders':TruckIcon,'Stock Release Requests':TruckIcon,'SME-Owned Inventory':PackageIcon,'Open cases':WarningCircleIcon,'Admin settings':GearIcon,'Case deadlines':ClockIcon,'My deliveries':TruckIcon,'Change demo role':ArrowsLeftRightIcon,'New request':CheckCircleIcon,'Request history':ClockIcon} as Record<string,typeof HouseIcon>)[name]||PackageIcon;return <><span className="navIcon" aria-hidden="true"><Icon size={20}/>{count!==undefined&&count>0&&<span className="warehouseCaseCount">{count>99?'99+':count}</span>}</span><span className="navText">{name}</span></>;}
 export function GlobalHeader(){
  const pathname=usePathname(),demo=pathname==='/demo'||pathname.startsWith('/demo/');
  const [collapsed,setCollapsed]=useState(false);

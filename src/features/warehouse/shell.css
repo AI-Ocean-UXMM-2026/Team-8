@@ -55,3 +55,14 @@
 
 /* Portal session-pending state: hide the global topbar until the workspace shell is ready. */
 body.portalSessionPending .globalHeader{display:none}
+
+/* SME sidebar stock-release dropdown group */
+.warehouseNavGroup{display:flex;flex-direction:column}
+.warehouseNavDropdown{width:100%}
+.warehouseNavDropdown .warehouseNavCaret{transition:transform .15s ease;color:var(--muted-foreground)}
+.warehouseNavDropdown[aria-expanded=true] .warehouseNavCaret{transform:rotate(180deg)}
+.warehouseNavDropdownActive{background:color-mix(in srgb,var(--primary) 12%,white)}
+.warehouseNavChildren{display:flex;flex-direction:column;gap:4px;margin:2px 0 2px 22px}
+.warehouseNavChildrenClosed{display:none}
+.warehouseNavChildren a{min-height:40px;padding:8px 12px;font-size:13.5px}
+@media(min-width:768px){.sidebarCollapsed .warehouseNavChildren{margin-left:0}.sidebarCollapsed .warehouseNavChildren a{font-size:0;padding:12px 8px}}

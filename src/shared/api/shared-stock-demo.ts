@@ -1,15 +1,16 @@
+import demoCatalog from '../../../data/demo/sme-products.json';
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import {ApiError,type ApiRequest,type Schemas} from './transport';
 import {checkedOrder,checkedProfile,type DeliveryProfile,type SmeOrder,type OrderInput,type WarehouseCatalogItem} from './orders';
 type Store=Pick<Storage,'getItem'|'setItem'>;
 type DemoOrder=SmeOrder&{reserved?:boolean};
 type State={orders:DemoOrder[];profiles:Record<string,DeliveryProfile>;shipments:Schemas['ShipmentDetail'][];physical:Record<string,number>;replay:Record<string,{fingerprint:string;value:unknown}>};
-const key='parcelcare.sme-owned-release.demo.v2';
-export const demoCommonProducts=(warehouse:string):(WarehouseCatalogItem&{sme_id:string})[]=>[
- {id:'90000000-0000-4000-8000-000000000001',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[1].id,category:'food_beverages',sku:'COMMON-TEA',name:'SME green tea',available_qty:100},
- {id:'90000000-0000-4000-8000-000000000002',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[1].id,category:'beauty_personal_care',sku:'COMMON-SOAP',name:'SME botanical soap',available_qty:80},
- {id:'90000000-0000-4000-8000-000000000003',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[0].id,category:'home_kitchen',sku:'SME-MUG',name:'SME ceramic mug',available_qty:50},
-];
+const key='parcelcare.sme-owned-release.demo.v3';
+export const demoCommonProducts=(warehouse:string):(WarehouseCatalogItem&{sme_id:string})[]=>demoCatalog.products.map((p,i)=>{
+ const owner=fixture.body.directory.smes.find(s=>s.name===p.sme||(p.sme==='Shwe Market'&&s.name==='River Market'));
+ if(!owner)throw new Error('Demo SME mapping is missing.');
+ return {id:`91000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`,warehouse_id:warehouse,sme_id:owner.id,category:p.category,sku:p.sku,name:p.name,available_qty:p.quantity};
+});
 // Fictitious shared state for SME and warehouse demos in this browser session.
 export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:Store){
  let memory:State={orders:[],profiles:{},shipments:[],physical:{},replay:{}};
@@ -29,10 +30,10 @@ export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:
     if(path==='/api/orders/catalog'){if(sme)return deny();return {value:catalog(state)};}
     if(path==='/api/orders/catalog-page'){
      const tenant=url.searchParams.get('sme_id');if(sme&&tenant!==sme)return deny();
-     const all=catalog(state).filter(p=>!tenant||p.sme_id===tenant).map(p=>({...p,category:p.category??'uncategorized'})).sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+      const all=catalog(state).filter(p=>!tenant||p.sme_id===tenant).map(p=>({...p,category:p.category??'uncategorized'})).sort((a,b)=>a.sku.localeCompare(b.sku,undefined,{numeric:true})||a.id.localeCompare(b.id));
      const search=(url.searchParams.get('search')??'').toLowerCase(),category=url.searchParams.get('category'),stock=url.searchParams.get('in_stock_only')!=='false';
      const rows=all.filter(p=>(!stock||p.available_qty>0)&&(!category||p.category===category)&&(p.name+' '+p.sku).toLowerCase().includes(search));
-     const offset=Number(url.searchParams.get('cursor')??0),limit=12,selected=url.searchParams.getAll('selected_ids');
+      const offset=Number(url.searchParams.get('cursor')??0),limit=10,selected=url.searchParams.getAll('selected_ids');
      return {value:{items:rows.slice(offset,offset+limit),selected_items:all.filter(p=>selected.includes(p.id)),categories:[...new Set(all.map(p=>p.category))],total:rows.length,next_cursor:offset+limit<rows.length?String(offset+limit):null}};
     }
 
@@ -57,6 +58,11 @@ export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:
     if(payload.order_kind!=='sme_self_delivery')throw new ApiError(422,'VALIDATION_ERROR','Choose shared warehouse stock.');
     const available=catalog(state);const seen=new Set();for(const l of payload.lines){if(seen.has(l.product_id)||!Number.isSafeInteger(l.expected_qty)||l.expected_qty<=0||l.expected_qty>(available.find(p=>p.id===l.product_id)?.available_qty??0))throw new ApiError(409,'STOCK_UNAVAILABLE','Choose available stock owned by your SME.');seen.add(l.product_id);}
     value=checkedOrder({id:crypto.randomUUID(),warehouse_id:warehouse,sme_id:sme,created_at:new Date().toISOString(),status:'pending',payload:{...payload,lines:payload.lines.map(l=>({...l,name:available.find(p=>p.id===l.product_id)?.name,sku:available.find(p=>p.id===l.product_id)?.sku}))},note:'',shipment_id:null,reserved:true});
+    if(payload.delivery_due_at){
+     const due=Date.parse(payload.delivery_due_at);if(!Number.isFinite(due)||due<=Date.now()||due>Date.now()+30*86400000)throw new ApiError(422,'VALIDATION_ERROR','Choose a future delivery deadline within 30 days.');
+     const order=value as DemoOrder,shipment:Schemas['ShipmentDetail']={id:crypto.randomUUID(),warehouse_id:warehouse,sme_id:sme!,reference:'ORD-'+order.id,direction:'outbound',delivery_mode:'in_house',status:'ready',version:1,created_at:new Date().toISOString(),evidence_ids:[],evidence:[],events:[],allowed_events:['picked'],items:order.payload.lines.map(l=>({product_id:l.product_id,sku:l.sku??'',name:l.name??'Product',expected_qty:l.expected_qty,received_qty:0,damaged_qty:0}))};
+     state.shipments.push(shipment);order.status='accepted';order.shipment_id=shipment.id;
+    }
     if(payload.save_delivery_profile)state.profiles[sme!]=checkedProfile({...payload,recipient_name:payload.customer_name,recipient_phone:payload.customer_phone});
     state.orders.unshift(value as DemoOrder);
    }else{

@@ -47,6 +47,7 @@ export function createWarehouseMockTransport(storage?: Store): Transport {
     validateRequest(request);
     const managed=shared.handle(request);if(managed)return structuredClone(managed.value) as T;
     const common=shared.snapshot();
+    state.data.directory.smes=structuredClone(fixture.body.directory.smes);
     for(const shipment of common.shipments)if(!state.data.shipments.some(s=>s.id===shipment.id))state.data.shipments.push(shipment);
     for(const product of common.products){const existing=state.data.inventory.find(p=>p.id===product.id);if(existing)Object.assign(existing,product);else state.data.inventory.push(product);}
     request.signal?.throwIfAborted();
