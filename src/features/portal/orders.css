@@ -26,7 +26,14 @@
 @media(max-width:420px){
   .orderStepperSubtitle{display:none}
 }
-.orderCatalogLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:24px;align-items:start}.orderCatalogFilters{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.orderCatalogFilters label{flex:1 1 180px;min-width:0}.orderCatalogFilters input,.orderCatalogFilters select{width:100%}.orderCatalogFilters input[type=checkbox]{width:auto}.orderProductGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}.orderProductCard{border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0;overflow-wrap:anywhere}.orderBasket{position:sticky;top:calc(var(--pc-header-height) + 16px);border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0;overflow-wrap:anywhere;scroll-margin-top:calc(var(--pc-header-height) + 16px)}.orderBasketItem{padding:12px 0;border-bottom:1px solid var(--border)}.orderQuantity{display:flex;align-items:center;gap:8px;margin:12px 0}.orderQuantity input{width:80px;min-width:0}.orderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.orderMobileCart{display:none}section[aria-label="Confirm order"] .orderBasket{position:static;margin-top:16px}article[id^=order-]{scroll-margin-top:calc(var(--pc-header-height) + 16px)}@media(max-width:1000px){.orderCatalogLayout{grid-template-columns:1fr}.orderBasket{position:static}.orderMobileCart{display:block;background:var(--primary);color:var(--primary-foreground);padding:14px;margin-top:16px;border-radius:8px;text-align:center;font-weight:600}}@media(max-width:480px){.orderProductGrid{grid-template-columns:1fr}}
+.orderCatalogLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:24px;align-items:start}.orderCatalogFilters{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.orderCatalogFilters label{flex:1 1 180px;min-width:0}.orderCatalogFilters input,.orderCatalogFilters select{width:100%}.orderCatalogFilters input[type=checkbox]{width:auto}
+.orderProductGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:stretch}
+.orderProductCard{display:flex;flex-direction:column;height:100%;border:1px solid var(--border);border-radius:12px;padding:16px;min-width:0;overflow-wrap:anywhere;background:var(--background);transition:border-color .15s ease,box-shadow .15s ease;box-sizing:border-box}
+.orderProductCard:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 4px 14px rgba(0,0,0,0.05)}
+.orderProductBody{display:flex;flex-direction:column;flex:1 0 auto;margin-bottom:14px}
+.orderProductCard button,.orderProductCard .pc-button{margin-top:auto!important;width:100%!important;display:flex;align-items:center;justify-content:center}
+.orderBasket{position:sticky;top:calc(var(--pc-header-height) + 16px);border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0;overflow-wrap:anywhere;scroll-margin-top:calc(var(--pc-header-height) + 16px)}.orderBasketItem{padding:12px 0;border-bottom:1px solid var(--border)}.orderQuantity{display:flex;align-items:center;gap:8px;margin:12px 0}.orderQuantity input{width:80px;min-width:0}.orderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.orderMobileCart{display:none}section[aria-label="Confirm order"] .orderBasket{position:static;margin-top:16px}article[id^=order-]{scroll-margin-top:calc(var(--pc-header-height) + 16px)}@media(max-width:1000px){.orderCatalogLayout{grid-template-columns:1fr}.orderBasket{position:static}.orderMobileCart{display:block;background:var(--primary);color:var(--primary-foreground);padding:14px;margin-top:16px;border-radius:8px;text-align:center;font-weight:600}}@media(max-width:480px){.orderProductGrid{grid-template-columns:1fr}}
+
 
 .orderTimeline{list-style:none;margin:24px 0;padding:0}.orderTimeline li{position:relative;display:flex;align-items:center;gap:12px;min-height:48px;padding-bottom:16px;color:var(--muted-foreground)}.orderTimeline li:not(:last-child)::after{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--border)}.orderTimelineMarker{position:relative;z-index:1;display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border:2px solid var(--border);border-radius:50%;background:var(--background);font-size:16px;font-weight:700}.orderTimeline li[data-complete=true]{color:var(--foreground);font-weight:600}.orderTimeline [data-complete=true] .orderTimelineMarker{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}.orderTimeline li[data-complete=true]:not(:last-child)::after{background:var(--primary)}.orderTimeline li:last-child{padding-bottom:0;min-height:28px}.orderTimeline .orderTimelineStopped{font-weight:600}
 
@@ -140,8 +147,10 @@
 @media(max-width:640px){.orderRow{align-items:flex-start;padding:12px}.orderRowStatus{margin-left:auto}}
 
 /* Request details drawer */
-.orderDrawerBackdrop{position:fixed;inset:0;background:#0f172a33;z-index:120}
-.orderDrawer{position:fixed;top:0;right:0;bottom:0;z-index:121;width:min(560px,100vw);background:var(--background);color:var(--foreground);box-shadow:-16px 0 48px #0f172a1f;outline:none;overflow-y:auto;padding:24px;border-radius:0}
+.orderDrawerBackdrop{position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);z-index:120;animation:drawerFadeIn 0.2s ease-out}
+.orderDrawer{position:fixed;top:0;right:0;bottom:0;z-index:121;width:min(600px,100vw);background:var(--background);color:var(--foreground);box-shadow:-16px 0 48px rgba(15,23,42,0.2);outline:none;overflow-y:auto;padding:24px;border-radius:0;animation:drawerSlideIn 0.25s cubic-bezier(0.16,1,0.3,1)}
+@keyframes drawerSlideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes drawerFadeIn{from{opacity:0}to{opacity:1}}
 .orderDrawerHeading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .orderDrawerHeading .invoiceIconBadge{width:44px;height:44px}
 .orderDrawerStatus{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 4px;padding:14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--muted) 25%,white)}
@@ -150,3 +159,5 @@
 .orderDrawer .invoiceItemsSection,.orderDrawer .invoiceTimelineSection,.orderDrawer .invoiceCardFooter{margin-top:16px;border:1px solid var(--border);border-radius:12px}
 .orderDrawer .invoiceDetailsGrid{border:1px solid var(--border);border-radius:12px;padding:16px}
 @media(max-width:480px){.orderDrawer .invoiceDetailsGrid{grid-template-columns:1fr}}
+
+
