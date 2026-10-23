@@ -16,7 +16,7 @@ try{
  await page.goto(origin+'/demo/warehouse/exceptions?view=board&scope=all',{waitUntil:'domcontentloaded'});
  const board=page.getByLabel('Case workflow board',{exact:true});await board.waitFor();assert.equal(await board.locator('.caseBoardCard').count(),120);
  for(const label of ['New','Investigating','Waiting','Resolved'])assert.equal(await page.getByRole('region',{name:label+' cases',exact:true}).locator('.caseBoardCard').count(),30);
- await page.getByLabel('Priority',{exact:true}).selectOption('critical');await page.waitForFunction(()=>document.querySelectorAll('.caseBoardCard').length===30);
+ await page.getByRole('button',{name:/^Filters/}).click();await page.getByLabel('Priority',{exact:true}).selectOption('critical');await page.waitForFunction(()=>document.querySelectorAll('.caseBoardCard').length===30);
  await page.getByRole('button',{name:'Table',exact:true}).click();await page.getByRole('table').waitFor();assert.equal(await page.getByLabel('Priority',{exact:true}).inputValue(),'critical');
  await page.getByRole('button',{name:'Board',exact:true}).click();await board.waitFor();assert.equal(await board.locator('.caseBoardCard').count(),30);
  await page.getByLabel('Search cases',{exact:true}).fill('no-matches');await page.waitForFunction(()=>document.querySelectorAll('.caseBoardCard').length===0);
