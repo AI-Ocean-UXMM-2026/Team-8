@@ -85,6 +85,16 @@ function Checkout(){
  </>;
 }
 
+function OrderTimeline({order}:{order:SmeOrder}){
+ const stopped=order.status==='rejected'||order.status==='cancelled';
+ const approved=order.status==='accepted';
+ const delivered=approved&&order.shipment_status==='delivered';
+ const transit=approved&&(['in_transit','out_for_delivery','delivered'].includes(order.shipment_status??''));
+ const stages=[{label:'Order placed',done:true},{label:'Warehouse approved',done:approved},{label:'In transit',done:transit},{label:'Delivered',done:delivered}];
+ const next=stopped?-1:stages.findIndex(stage=>!stage.done);
+ return <ol className="orderTimeline" aria-label="Order progress">{stages.map((stage,i)=><li key={stage.label} data-complete={stage.done} aria-current={i===next?'step':undefined}><span className="orderTimelineMarker" aria-hidden="true">{stage.done?'✓':''}</span><span>{stage.label}<span className="sr-only">{stage.done?' — completed':stopped?' — not completed':i===next?' — awaiting completion':' — upcoming'}</span></span></li>)}{stopped&&<li className="orderTimelineStopped"><span className="orderTimelineMarker" aria-hidden="true">×</span><span>{order.status==='rejected'?'Order rejected':'Order cancelled'}</span></li>}</ol>;
+}
+
 export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>void}){
  const {api,warehouseId,smeId,demo,identity}=useSession();
  const resource=usePolling(`${warehouseId}:${sme?smeId:'staff'}`,signal=>api!.listOrders(warehouseId,sme?smeId:undefined,signal));
@@ -100,7 +110,7 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
  <a className="inline-block min-h-11 text-brand underline" href={`https://www.google.com/maps/search/?api=1&query=${o.payload.latitude},${o.payload.longitude}`} target="_blank" rel="noreferrer">Open SME delivery pin ↗</a>
  {o.payload.maps_url&&googleMapsUrl(o.payload.maps_url)&&<a className="ml-4 inline-block min-h-11 text-brand underline" href={o.payload.maps_url} target="_blank" rel="noreferrer">SME Maps link ↗</a>}
  {o.note&&<p>Reason: <span data-user-content>{o.note}</span></p>}
- {sme&&<p role="status">{o.status==='pending'?'Awaiting warehouse approval. Tracking will appear after approval.':o.status==='rejected'?'Order rejected; no delivery is scheduled.':o.status==='cancelled'?'Order cancelled; no delivery is scheduled.':o.shipment_status?`Delivery status: ${human(o.shipment_status)}`:'Approved; preparing your delivery.'}</p>}
+ {sme&&<><OrderTimeline order={o}/><p role="status">{o.status==='pending'?'Awaiting warehouse approval. Tracking will appear after approval.':o.status==='rejected'?'Order rejected; no delivery is scheduled.':o.status==='cancelled'?'Order cancelled; no delivery is scheduled.':o.shipment_status?`Delivery status: ${human(o.shipment_status)}`:'Approved; preparing your delivery.'}</p></>}
  {o.shipment_id&&<Link className="block text-brand underline" href={demo?(sme?'/demo/sme/tracking':`/demo/warehouse/shipments/${o.shipment_id}`):`${sme?'/sme':'/warehouse'}/shipments/${o.shipment_id}`}>View shipment / tracking →</Link>}
  {o.status==='pending'&&<fieldset disabled={command.busy||!!command.pending||!command.ready} className="flex flex-wrap items-end gap-3">{sme?<Button variant="outline" onClick={()=>void act(o.id,'cancel')}>Cancel order</Button>:<><label>Delivery mode<select className="block rounded border p-3" value={modes[o.id]??'in_house'} onChange={e=>setModes(v=>({...v,[o.id]:e.target.value as 'in_house'|'third_party'}))}><option value="in_house">In-house rider</option><option value="third_party">Third-party courier</option></select></label><Button onClick={()=>void act(o.id,'accept')}>Accept & create shipment</Button><label>Rejection reason<Input value={reason[o.id]??''} maxLength={2000} onChange={e=>setReason(v=>({...v,[o.id]:e.target.value}))}/></label><Button variant="outline" disabled={!reason[o.id]?.trim()} onClick={()=>void act(o.id,'reject')}>Reject</Button></>}</fieldset>}
  </article>)}
