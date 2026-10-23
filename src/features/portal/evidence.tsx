@@ -3,7 +3,7 @@ import { safeError } from '../../shared/i18n/errors';
 import { useRef, useState, type FormEvent } from 'react';
 import { useSession } from '../auth/session';
 import { Button, Card, Input } from '../../shared/ui';
-export function EvidenceUpload({ shipmentId, refresh }: { shipmentId: string; refresh: () => void }) {
+export function EvidenceUpload({ shipmentId, refresh, variant }: { shipmentId: string; refresh: () => void; variant?: 'card' | 'inline' }) {
   const { api, demo } = useSession(); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   const lock = useRef(false); const reservation = useRef<{ id: string; file: File } | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -19,6 +19,7 @@ export function EvidenceUpload({ shipmentId, refresh }: { shipmentId: string; re
     finally { lock.current = false; setBusy(false); }
   }
   if (demo) return null;
+  if (variant === 'inline') return <section className="mt-5 border-t border-slate-200 pt-4"><h3 className="text-sm font-semibold">Attach evidence</h3><p className="mt-1 text-sm text-muted-foreground">JPEG, PNG or PDF · maximum 10 MB</p><form onSubmit={submit} className="mt-3 space-y-3"><Input id={`evidence-file-${shipmentId}`} name="file" type="file" accept="image/jpeg,image/png,application/pdf" required disabled={busy || !!reservation.current} aria-describedby={`evidence-hint-${shipmentId}`} /><span id={`evidence-hint-${shipmentId}`} className="sr-only">JPEG, PNG or PDF, maximum 10 MB</span><Button type="submit" disabled={busy}>{busy ? 'Uploading…' : reservation.current ? 'Retry original upload' : 'Upload'}</Button>{message && <p role="status" className="break-words text-sm">{message}</p>}</form></section>;
   return <Card className="my-5"><h2 className="font-semibold">Upload evidence</h2><form onSubmit={submit} className="mt-4 space-y-3"><label htmlFor={`evidence-file-${shipmentId}`}>JPEG, PNG or PDF · maximum 10 MB</label><Input id={`evidence-file-${shipmentId}`} name="file" type="file" accept="image/jpeg,image/png,application/pdf" required disabled={busy || !!reservation.current} /><Button type="submit" disabled={busy}>{busy ? 'Uploading…' : reservation.current ? 'Retry original upload' : 'Upload'}</Button>{message && <p role="status" className="break-words text-sm">{message}</p>}</form></Card>;
 }
 export function EvidenceDownload({ id }: { id: string }) {

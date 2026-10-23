@@ -1592,5 +1592,11 @@
   "Set up your SME location": "လုပ်ငန်းတည်နေရာ သတ်မှတ်ရန်",
   "Save SME location": "လုပ်ငန်းတည်နေရာ သိမ်းရန်",
   "Cancel location edit": "တည်နေရာပြင်ဆင်မှု ပယ်ဖျက်ရန်",
-  "Save once. Future release requests use this SME location and contact automatically.": "တစ်ကြိမ်သာ သိမ်းဆည်းပါ။ နောက်တောင်းဆိုမှုများတွင် ဤလုပ်ငန်းတည်နေရာနှင့် ဆက်သွယ်ရန်အချက်အလက်ကို အလိုအလျောက် အသုံးပြုမည်။"
+  "Save once. Future release requests use this SME location and contact automatically.": "တစ်ကြိမ်သာ သိမ်းဆည်းပါ။ နောက်တောင်းဆိုမှုများတွင် ဤလုပ်ငန်းတည်နေရာနှင့် ဆက်သွယ်ရန်အချက်အလက်ကို အလိုအလျောက် အသုံးပြုမည်။",
+  "Attach evidence": "သက်သေထားခြင်း ရွေးချယ်ပါ",
+  "JPEG, PNG or PDF · maximum 10 MB": "JPEG၊ PNG သို့မဟုတ် PDF · အများဆုံး 10 MB",
+  "Open case →": "အမှုဖွင့်ရန် →",
+  "Uploading…": "တင်နေသည်…",
+  "Retry original upload": "မူလ upload ကို ထပ်မံစမ်းသပ်ရန်",
+  "Upload": "တင်ရန်"
 }
