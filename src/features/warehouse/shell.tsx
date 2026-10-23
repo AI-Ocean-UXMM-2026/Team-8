@@ -25,7 +25,7 @@ export function WarehouseShell({ children }: { children: ReactNode }) {
     const refresh=()=>void update();window.addEventListener('focus',refresh);window.addEventListener('parcelcare:warehouse-changed',refresh);
     return()=>{active=false;controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('parcelcare:warehouse-changed',refresh)};
   },[session.api,session.status,session.warehouseId,pathname]);
-  if (session.status !== 'ready') return <main className="grid min-h-screen place-items-center bg-canvas p-6 text-ink"><Card className="w-full max-w-lg">
+  if (session.status !== 'ready') return <main data-session-state={session.status} className="grid min-h-screen place-items-center bg-canvas p-6 text-ink"><Card className="w-full max-w-lg">
     <h1 className="text-2xl font-semibold">ParcelCare warehouse</h1>
     {session.status === 'loading' ? <p role="status" className="mt-4">Checking your session… <span lang="my">စစ်ဆေးနေသည်</span></p> : <>
       <h2 className="mt-4 text-lg font-semibold">{session.status === 'signed_out' ? 'Please sign in' : session.status === 'forbidden' ? 'Warehouse access required' : 'Workspace unavailable'}</h2>

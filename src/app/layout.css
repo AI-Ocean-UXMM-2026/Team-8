@@ -46,3 +46,9 @@ body{padding-top:0}
 body:has(.loginLanguageToggle){padding-top:0}
 .loginLanguageToggle{position:fixed;top:10px;right:20px;z-index:60}
 @media(max-width:767px){.loginLanguageToggle{top:12px;right:12px}}
+body:has([data-session-state="signed_out"]){padding-top:0}
+body:has([data-session-state="signed_out"]) .globalHeader{height:0;padding:0;border:0;background:transparent}
+body:has([data-session-state="signed_out"]) .globalHeader .sidebarToggle,
+body:has([data-session-state="signed_out"]) .globalHeader #workspace-controls{display:none}
+body:has([data-session-state="signed_out"]) .globalHeader .topUtilities{position:fixed;top:10px;right:20px}
+@media(max-width:767px){body:has([data-session-state="signed_out"]) .globalHeader .topUtilities{top:12px;right:12px}}
