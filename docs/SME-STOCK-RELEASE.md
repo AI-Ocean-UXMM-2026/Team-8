@@ -26,7 +26,9 @@ Saved uncertain submissions retain their original request key and payload.
    Switch to SME B and verify A's products are absent.
 2. Search, filter by category and change pages. Selected quantities remain in the
    release request. Zero-stock products cannot be added.
-3. Request 3 units, enter the SME shop/contact, confirm the map pin, and submit.
+3. Request 3 units and choose Review release request. The saved SME location/contact
+   appears read-only. If missing, complete one-time location setup and save the
+   confirmed map pin. Use Edit SME location for future changes, then submit.
    Available-to-request stock decreases by 3; history shows Pending.
 4. Cancel the pending request: the 3 reserved units become available again.
 5. Submit again; warehouse staff reject with a reason. Reservation is released and
