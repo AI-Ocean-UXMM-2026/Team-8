@@ -33,7 +33,7 @@ export function Cases() {
     ['owner','Owner',['unassigned',identity!.actor_id]],
     ['state','Case state',['new','investigating','processing','awaiting_information','awaiting_sme_decision','awaiting_courier_confirmation','awaiting_verification','resolved','closed']],
   ] as const;
-  return <div className="exceptionWorkspace"><PageTitle title="Open cases" my="မဖြေရှင်းရသေးသော ကိစ္စများ" description="Review the issue, inspect its evidence and take the next permitted action." />
+  return <div className="exceptionWorkspace"><PageTitle title="Exception Management" my="ခြွင်းချက်များ စီမံခန့်ခွဲမှု" description="Review the issue, inspect its evidence and take the next permitted action." />
     <div className="exceptionMetrics" aria-label={board?'Filtered board summary':'Current page summary'}>{[['Matching cases',visible.length],['High / critical',visible.filter(c=>['high','critical'].includes(c.priority)).length],['Awaiting SME decision',visible.filter(c=>c.status==='awaiting_sme_decision').length]].map(([label,value])=><Card key={label} className={label==='High / critical'?'criticalMetric':undefined}><p className="text-sm text-muted-foreground">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></Card>)}</div>
     <div className="caseViewToggle" role="group" aria-label="Case view"><Button variant={board?'outline':'default'} aria-pressed={!board} onClick={()=>set('view','table')}>Table</Button><Button variant={board?'default':'outline'} aria-pressed={board} onClick={()=>set('view','board')}>Board</Button></div>
     <Card className="mt-5"><div className="exceptionToolbar caseBasicFilters">
