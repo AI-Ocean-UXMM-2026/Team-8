@@ -22,16 +22,16 @@
 .warehouseSelector{margin-top:24px;padding-inline:8px}.warehouseSelector label{line-height:1.8}.warehouseSelector select{min-height:44px;width:100%;max-width:100%;font-size:12px}
 .warehouseSidebarFooter{padding:12px 14px;border-top:1px solid var(--border);background:var(--background);min-width:0;margin-top:auto;flex-shrink:0}
 .sidebarProfileControl{width:100%}
-.sidebarProfileTrigger{display:flex!important;align-items:center;gap:10px;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--background);color:var(--foreground);text-align:left;cursor:pointer;transition:background .15s ease,border-color .15s ease}
-.sidebarProfileTrigger:hover{background:var(--muted);border-color:color-mix(in srgb,var(--primary) 30%,var(--border))}
+.sidebarProfileTrigger{display:flex!important;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:var(--radius-md);background:transparent;color:var(--foreground);text-align:left;cursor:pointer;transition:background .15s ease}
+.sidebarProfileTrigger:hover{background:var(--muted)}
 .sidebarProfileInfo{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.35}
 .sidebarProfileName{font-size:13px;font-weight:600;color:var(--foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sidebarProfileSub{font-size:11px;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .sidebarProfileCaret{color:var(--muted-foreground);flex-shrink:0;transition:transform .15s ease}
 .sidebarProfileTrigger[aria-expanded=true] .sidebarProfileCaret{transform:rotate(180deg)}
 .sidebarCollapsed .warehouseSidebarFooter{padding:12px 8px}
-.sidebarCollapsed .sidebarProfileTrigger{justify-content:center!important;padding:6px!important;border-color:transparent}
-.sidebarCollapsed .sidebarProfileTrigger:hover{border-color:var(--border)}
+.sidebarCollapsed .sidebarProfileTrigger{justify-content:center!important;padding:6px!important}
+.sidebarCollapsed .sidebarProfileTrigger:hover{background:var(--muted)}
 .sidebarCollapsed .sidebarProfileInfo,.sidebarCollapsed .sidebarProfileCaret{display:none!important}
 .warehousePage{flex:1;min-width:0;margin-left:var(--pc-sidebar-width,240px);transition:margin-left .15s ease}
 .sidebarCollapsed .warehousePage{margin-left:76px}

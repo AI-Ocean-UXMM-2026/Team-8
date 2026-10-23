@@ -13,6 +13,9 @@ export function useMyanmar(){
  useEffect(()=>{const update=()=>setMy(document.documentElement.lang==='my');update();const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});return()=>observer.disconnect();},[]);
  return my;
 }
+const avatarPalette=[['#CFF9FA','#052D33'],['#FFE9CC','#7C2D12'],['#FCE4F1','#831843'],['#DBEEFF','#0C4A6E'],['#E6E4FF','#4C1D95'],['#DDF5E3','#14532D']];
+export function avatarColors(seed:string){let hash=0;for(let i=0;i<seed.length;i++)hash=(hash*31+seed.charCodeAt(i))>>>0;const pair=avatarPalette[hash%avatarPalette.length];return {background:pair[0],color:pair[1]} as const;}
+export function avatarInitials(name:string){return name.trim().split(/\s+/).slice(0,2).map(word=>word[0]??'').join('').toUpperCase()||'PC';}
 function useHeaderMenu(id:string){
  const [open,setOpen]=useState(false);const pathname=usePathname();const restoreFocus=useRef(true);
  useEffect(()=>{setOpen(false)},[pathname]);
@@ -30,8 +33,8 @@ export function LanguageMenu(){
 
 import {useSession} from '../../features/auth/session';
 
-type ProfileProps={role:string;actorId:string;context:string;accountHref:string;signOut:()=>Promise<void>;placement?:'header'|'sidebar'};
-export function ProfileMenu({role,actorId,context,accountHref,signOut,placement='header'}:ProfileProps){
+type ProfileProps={role:string;name?:string;actorId:string;context:string;accountHref:string;signOut:()=>Promise<void>;placement?:'header'|'sidebar'};
+export function ProfileMenu({role,name,actorId,context,accountHref,signOut,placement='header'}:ProfileProps){
  const my=useMyanmar(),mobile=useMobile();const [open,setOpen,restoreFocus]=useHeaderMenu('profile');const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);
  const [confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const trigger=useRef<HTMLButtonElement>(null),cancel=useRef<HTMLButtonElement>(null);
@@ -39,17 +42,18 @@ export function ProfileMenu({role,actorId,context,accountHref,signOut,placement=
  useEffect(()=>{const update=()=>setCollapsed(document.documentElement.classList.contains('sidebarCollapsed'));update();const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});return()=>observer.disconnect()},[]);
  const t=(en:string,mm:string)=>my?mm:en;
  const roleLabel=localizedText(role,my?'my':'en');
+ const displayName=name||roleLabel;
  const shortAccount=/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(actorId)?`…${actorId.slice(-8)}`:actorId;
  const shortContext=context.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,id=>`…${id.slice(-8)}`);
  const startSignOut=()=>{setOpen(false);setError('');setConfirm(true)};
  const toggleSidebar=()=>{window.dispatchEvent(new Event('parcelcare:toggle-sidebar'));setOpen(false)};
  const logout=async()=>{if(busy)return;setBusy(true);setError('');try{await signOut();setConfirm(false)}catch{setError(t('Unable to sign out. Please try again.','အကောင့်မှ ထွက်၍မရပါ။ ထပ်မံကြိုးစားပါ။'))}finally{setBusy(false)}};
- const identity=<div className="accountIdentity" translate="no"><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><div><strong>{roleLabel}</strong><p>{t('Account','အကောင့်')} · <span data-user-content>{shortAccount}</span></p><p className="accountContext"><MapPinIcon size={13} aria-hidden/><span data-user-content>{shortContext}</span></p></div></div>;
+ const identity=<div className="accountIdentity" translate="no"><span className="profileAvatar" style={avatarColors(actorId)} aria-hidden>{avatarInitials(displayName)}</span><div><strong data-user-content>{displayName}</strong><p>{roleLabel} · {t('Account','အကောင့်')} · <span data-user-content>{shortAccount}</span></p><p className="accountContext"><MapPinIcon size={13} aria-hidden/><span data-user-content>{shortContext}</span></p></div></div>;
  const isSidebar=placement==='sidebar';
  const button=isSidebar?(
-   <><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><span className="sidebarProfileInfo"><strong className="sidebarProfileName">{roleLabel}</strong><small className="sidebarProfileSub" data-user-content>{shortAccount}</small></span><CaretDownIcon size={13} className="sidebarProfileCaret" aria-hidden/></>
+   <><span className="profileAvatar" style={avatarColors(actorId)} aria-hidden>{avatarInitials(displayName)}</span><span className="sidebarProfileInfo"><strong className="sidebarProfileName" data-user-content>{displayName}</strong><small className="sidebarProfileSub">{roleLabel}</small></span><CaretDownIcon size={13} className="sidebarProfileCaret" aria-hidden/></>
  ):(
-   <><span className="profileAvatar" aria-hidden>{role.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</span><span className="profileRole">{roleLabel}</span><CaretDownIcon size={13} aria-hidden/></>
+   <><span className="profileAvatar" style={avatarColors(actorId)} aria-hidden>{avatarInitials(displayName)}</span><span className="profileRole">{roleLabel}</span><CaretDownIcon size={13} aria-hidden/></>
  );
  const triggerClass=isSidebar?'sidebarProfileTrigger':'headerTrigger profileTrigger';
  const accountLabel=t('My account','ကျွန်ုပ်၏အကောင့်'),sidebarLabel=mobile?t('Open navigation','လမ်းညွှန်မီနူး ဖွင့်ရန်'):collapsed?t('Expand sidebar','ဘေးမီနူး ဖြန့်ရန်'):t('Collapse sidebar','ဘေးမီနူး ခေါက်ရန်'),signOutLabel=t('Sign out','ထွက်ရန်');
@@ -62,16 +66,28 @@ export function ProfileMenu({role,actorId,context,accountHref,signOut,placement=
 
 export function SidebarProfile(){
  const session=useSession();
+ const [warehouseName,setWarehouseName]=useState(''),[smeName,setSmeName]=useState('');
+ useEffect(()=>{
+  if(session.status!=='ready'||!session.api)return;
+  const controller=new AbortController(),signal=controller.signal;
+  void session.api.getWarehouseDirectory(session.warehouseId,signal).then(d=>{
+   setWarehouseName(d.name);
+   setSmeName(d.smes.find(s=>s.id===session.smeId)?.name??'');
+  }).catch(()=>{});
+  return()=>controller.abort();
+ },[session.status,session.api,session.warehouseId,session.smeId]);
  if(session.status!=='ready'||!session.identity)return null;
  const audience=session.audience==='rider'?'courier':session.audience;
  const isOwner=session.identity.memberships.some(m=>m.warehouse_id===session.warehouseId&&m.role==='owner');
- const role=audience==='warehouse'?(isOwner?'Warehouse owner':'Warehouse staff'):audience==='sme'?'SME owner':'In-house courier';
+ const role=audience==='sme'?'SME':audience==='warehouse'?(isOwner?'Warehouse owner':'Warehouse staff'):'In-house courier';
+ const name=audience==='sme'?(smeName||`SME · …${session.smeId.slice(-8)}`):audience==='warehouse'?(warehouseName||`Warehouse · …${session.warehouseId.slice(-8)}`):`…${session.identity.actor_id.slice(-8)}`;
  const context=audience==='sme'?`SME · …${session.smeId.slice(-8)}`:session.warehouseId?`Warehouse · …${session.warehouseId.slice(-8)}`:'ParcelCare';
  const accountHref=`${session.demo?'/demo':''}/${audience}/account`;
  return (
    <div className="sidebarProfileCard" translate="no">
      <ProfileMenu
        role={role}
+       name={name}
        actorId={session.identity.actor_id}
        context={context}
        accountHref={accountHref}

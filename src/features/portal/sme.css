@@ -63,3 +63,14 @@
 .smeQuickActionReport .smeQuickActionArrow{color:#492906}
 .smeQuickActionReport .smeQuickActionCopy small{color:#492906}
 @media(max-width:760px){.smeQuickActionGrid{grid-template-columns:1fr}.smeQuickAction{min-height:80px;padding:16px}}
+
+/* SME Section Titles & Header Blocks */
+.smeSectionTitleBlock{margin:28px 0 14px}
+.smeSectionTitleBlock:first-of-type{margin-top:8px}
+.smeSectionHeading{display:flex;align-items:center;gap:10px}
+.smeSectionTitle{margin:0;font-size:16.5px;font-weight:700;color:var(--foreground);letter-spacing:-.01em}
+.smeSectionIcon{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--color-primary-50,rgba(8,113,122,.08));color:var(--color-primary-700,#08717a);flex-shrink:0}
+.smeSectionDescription{margin:4px 0 0;font-size:13px;line-height:1.5;color:var(--muted-foreground)}
+.smeCardHeader{margin-bottom:16px;display:flex;flex-direction:column;gap:3px}
+.smeCardHeaderWithAction{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.smeCardHeaderWithAction>div{flex:1;min-width:min(100%,320px)}

@@ -8,7 +8,7 @@ import '../warehouse/overview.css';
 import { useSession } from '../auth/session';
 import { ShipmentStatus } from '../warehouse/shipment-status';
 import { Badge, Button, Card } from '../../shared/ui';
-import { ArrowRightIcon, PackageIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { ArrowRightIcon, ArrowsLeftRightIcon, ChartBarIcon, LightningIcon, PackageIcon, ShieldWarningIcon, SparkleIcon, TruckIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { ApiError, type Schemas } from '../../shared/api';
 import type { Approval } from '../../shared/api/domain';
 import { CasePanels, caseView } from '../exceptions';
@@ -41,29 +41,192 @@ export function SMEDashboard() {
   if (!resource.data) return <Loading />;
   const data = resource.data;
   return <><PageTitle title="SME dashboard" my="မိမိလုပ်ငန်း အခြေအနေ" description="Your stock, shipments and decisions. Updates refresh automatically while this page is visible." />
-    {demo&&<Card className="mb-5"><h2 className="text-lg font-semibold">Warehouse → SME · Yangon</h2><p className="my-3">Demo warehouse stock is delivered to your SME shop in Yangon. Saved in this browser session.</p><Button type="button" disabled={generating} onClick={()=>void generateOrder()}>{generating?'Generating…':'Generate demo order'}</Button>{generated&&<p role="status" className="mt-3">{generated}</p>}{generateError&&<p role="alert" className="mt-3">{generateError}</p>}</Card>}
-    <Card className="mb-5 smeQuickActions" aria-label="SME quick actions"><div className="smeQuickActionGrid">
-      <Link className="smeQuickAction smeQuickActionOrder" href={demo?'/demo/sme/orders':'/sme/orders'}>
-        <span className="smeQuickActionIcon" aria-hidden="true"><PackageIcon size={26} weight="duotone"/></span>
-        <span className="smeQuickActionCopy"><strong>Create delivery order</strong><small>Choose products from warehouse stock and place your order.</small></span>
-        <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold"/>
-      </Link>
-      <Link className="smeQuickAction smeQuickActionReport" href={demo?'/demo/sme/reports':'/sme/reports'}>
-        <span className="smeQuickActionIcon" aria-hidden="true"><WarningCircleIcon size={26} weight="duotone"/></span>
-        <span className="smeQuickActionCopy"><strong>Report Cases</strong><small>Report damaged goods or delivery problems for investigation.</small></span>
-        <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold"/>
-      </Link>
-    </div></Card>
-    <div className="warehouseSummaryGrid smeSummaryGrid" aria-label="SME summary">{[
-      {label:'Products',value:data.catalog.length,href:'#sme-stock',action:'View warehouse stock'},
-      {label:'Shipments',value:data.shipments.length,href:'#sme-shipments',action:'View your shipments'},
-      {label:'Decisions needed',value:data.approvals.filter(a=>a.status==='pending').length,href:'#sme-cases',action:'Review related cases'},
-    ].map(({label,value,href,action})=><a key={label} href={href} className={`warehouseSummaryCard ${label==='Decisions needed'&&Number(value)>0?'warehouseSummaryAttention':''}`}><span className="warehouseSummaryLabel">{label}</span><strong className="warehouseSummaryNumber">{value}</strong><span className="warehouseSummaryAction">{action} →</span></a>)}</div>
-    <Card className="mb-5"><h2 className="text-lg font-semibold">Track your deliveries</h2><p className="mt-3 text-sm">View GPS locations for your shipments only, with last-updated and stale-location indicators.</p><Link className="mt-4 inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/tracking':'/sme/tracking'}>Open shipment tracking →</Link></Card>
+    {demo && (
+      <Card className="mb-6">
+        <div className="smeCardHeader">
+          <div className="smeSectionHeading">
+            <span className="smeSectionIcon" aria-hidden="true"><SparkleIcon size={18} weight="duotone" /></span>
+            <h2 className="smeSectionTitle">Demo Order Simulation · Yangon Hub · စမ်းသပ်အော်ဒါ ထုတ်ယူခြင်း</h2>
+          </div>
+          <p className="smeSectionDescription">Generate a fictitious customer delivery order using available warehouse stock to test the live dispatch workflow. Saved in this browser session.</p>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button type="button" disabled={generating} onClick={() => void generateOrder()}>
+            {generating ? 'Generating…' : 'Generate demo order'}
+          </Button>
+        </div>
+        {generated && <p role="status" className="mt-3 text-sm text-brand font-medium">{generated}</p>}
+        {generateError && <p role="alert" className="mt-3 text-sm text-rose-600">{generateError}</p>}
+      </Card>
+    )}
+    <div className="smeSectionTitleBlock">
+      <div className="smeSectionHeading">
+        <span className="smeSectionIcon" aria-hidden="true"><LightningIcon size={18} weight="duotone" /></span>
+        <h2 className="smeSectionTitle">Quick Actions · အမြန်လုပ်ဆောင်ချက်များ</h2>
+      </div>
+      <p className="smeSectionDescription">Fast shortcuts to place new customer delivery requests from warehouse inventory or file exception reports.</p>
+    </div>
+    <Card className="mb-6 smeQuickActions" aria-label="SME quick actions">
+      <div className="smeQuickActionGrid">
+        <Link className="smeQuickAction smeQuickActionOrder" href={demo ? '/demo/sme/orders' : '/sme/orders'}>
+          <span className="smeQuickActionIcon" aria-hidden="true"><PackageIcon size={26} weight="duotone" /></span>
+          <span className="smeQuickActionCopy">
+            <strong>Create delivery order</strong>
+            <small>Choose products from warehouse stock and place your order.</small>
+          </span>
+          <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold" />
+        </Link>
+        <Link className="smeQuickAction smeQuickActionReport" href={demo ? '/demo/sme/reports' : '/sme/reports'}>
+          <span className="smeQuickActionIcon" aria-hidden="true"><WarningCircleIcon size={26} weight="duotone" /></span>
+          <span className="smeQuickActionCopy">
+            <strong>Report Cases</strong>
+            <small>Report damaged goods or delivery problems for investigation.</small>
+          </span>
+          <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold" />
+        </Link>
+      </div>
+    </Card>
+    <div className="smeSectionTitleBlock">
+      <div className="smeSectionHeading">
+        <span className="smeSectionIcon" aria-hidden="true"><ChartBarIcon size={18} weight="duotone" /></span>
+        <h2 className="smeSectionTitle">Operations Summary · လုပ်ငန်းဆောင်ရွက်မှု အကျဉ်းချုပ်</h2>
+      </div>
+      <p className="smeSectionDescription">Key operational indicators tracking catalog products, active shipments, and cases needing your confirmation.</p>
+    </div>
+    <div className="warehouseSummaryGrid smeSummaryGrid mb-6" aria-label="SME summary">
+      {[
+        { label: 'Products', value: data.catalog.length, href: '#sme-stock', action: 'View warehouse stock' },
+        { label: 'Shipments', value: data.shipments.length, href: '#sme-shipments', action: 'View your shipments' },
+        { label: 'Decisions needed', value: data.approvals.filter(a => a.status === 'pending').length, href: '#sme-cases', action: 'Review related cases' },
+      ].map(({ label, value, href, action }) => (
+        <a
+          key={label}
+          href={href}
+          className={`warehouseSummaryCard ${label === 'Decisions needed' && Number(value) > 0 ? 'warehouseSummaryAttention' : ''}`}
+        >
+          <span className="warehouseSummaryLabel">{label}</span>
+          <strong className="warehouseSummaryNumber">{value}</strong>
+          <span className="warehouseSummaryAction">{action} →</span>
+        </a>
+      ))}
+    </div>
+    <Card className="mb-6">
+      <div className="smeCardHeaderWithAction">
+        <div>
+          <div className="smeSectionHeading">
+            <span className="smeSectionIcon" aria-hidden="true"><TruckIcon size={18} weight="duotone" /></span>
+            <h2 className="smeSectionTitle">Live Courier & Delivery Tracking · တိုက်ရိုက် ပို့ဆောင်မှု ခြေရာခံခြင်း</h2>
+          </div>
+          <p className="smeSectionDescription">Monitor real-time courier movements, vehicle route progress, and verified proof-of-delivery for your active shipments.</p>
+        </div>
+        <Link className="inline-flex min-h-11 items-center text-brand underline font-medium text-sm whitespace-nowrap" href={demo ? '/demo/sme/tracking' : '/sme/tracking'}>
+          Open live shipment tracking →
+        </Link>
+      </div>
+    </Card>
     <div className="smeDashboardGrid">
-    <Card id="sme-stock"><h2 className="text-lg font-semibold">Available warehouse stock</h2>{data.catalog.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Available warehouse stock"><table className="smeTable"><thead><tr><th scope="col">Product</th><th scope="col">SKU</th><th scope="col">Available</th></tr></thead><tbody>{data.catalog.map(item=><tr key={item.id}><td data-user-content>{item.name}</td><td data-user-content>{item.sku}</td><td>{item.available_qty}</td></tr>)}</tbody></table></div> : <Empty text="No products recorded yet." />}</Card>
-    <Card id="sme-shipments"><h2 className="text-lg font-semibold">Shipments</h2>{data.shipments.length ? <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments"><table className="smeTable"><thead><tr><th scope="col">Reference</th><th scope="col">Direction</th><th scope="col">Status</th></tr></thead><tbody>{data.shipments.map(item=><tr key={item.id}><td>{demo&&item.direction==='inbound'?<span>{item.reference}</span>:<Link className="text-brand underline" href={demo?'/demo/sme/tracking':`/sme/shipments/${item.id}`}>{item.reference}</Link>}</td><td>{human(item.direction)}</td><td><ShipmentStatus status={item.status}/></td></tr>)}</tbody></table></div> : <Empty text="No shipments yet." />}</Card>
-    <Card className="smeCases" id="sme-cases"><h2 className="text-lg font-semibold">Report Cases · ပြဿနာများ</h2><Link className="inline-flex min-h-11 items-center text-brand underline" href={demo?'/demo/sme/reports':'/sme/reports'}>New report / View all cases →</Link>{data.cases.length ? <ul className="smeCaseGrid">{data.cases.map(item=><li key={item.id} className="mt-4 border-t pt-3"><Link className="text-brand underline" href={`${demo?'/demo/sme':'/sme'}/exceptions/${item.id}`}>{human(item.type)}</Link><p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p></li>)}</ul> : <Empty text="No cases yet." />}</Card>
+      <Card id="sme-stock">
+        <div className="smeCardHeader">
+          <div className="smeSectionHeading">
+            <span className="smeSectionIcon" aria-hidden="true"><PackageIcon size={18} weight="duotone" /></span>
+            <h2 className="smeSectionTitle">Available Warehouse Inventory & Catalog · ရရှိနိုင်သော ကုန်ပစ္စည်းစာရင်း</h2>
+          </div>
+          <p className="smeSectionDescription">Current verified stock stored at the warehouse hub ready for immediate ordering and outbound fulfillment.</p>
+        </div>
+        {data.catalog.length ? (
+          <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Available warehouse stock">
+            <table className="smeTable">
+              <thead>
+                <tr>
+                  <th scope="col">Product</th>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Available</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.catalog.map(item => (
+                  <tr key={item.id}>
+                    <td data-user-content>{item.name}</td>
+                    <td data-user-content>{item.sku}</td>
+                    <td>{item.available_qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty text="No products recorded yet." />
+        )}
+      </Card>
+      <Card id="sme-shipments">
+        <div className="smeCardHeader">
+          <div className="smeSectionHeading">
+            <span className="smeSectionIcon" aria-hidden="true"><ArrowsLeftRightIcon size={18} weight="duotone" /></span>
+            <h2 className="smeSectionTitle">Inbound & Outbound Shipment Records · ပို့ဆောင်မှု မှတ်တမ်းများ</h2>
+          </div>
+          <p className="smeSectionDescription">Recorded inbound supplier receipts and outbound customer dispatches with real-time delivery statuses.</p>
+        </div>
+        {data.shipments.length ? (
+          <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments">
+            <table className="smeTable">
+              <thead>
+                <tr>
+                  <th scope="col">Reference</th>
+                  <th scope="col">Direction</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.shipments.map(item => (
+                  <tr key={item.id}>
+                    <td>
+                      {demo && item.direction === 'inbound' ? (
+                        <span>{item.reference}</span>
+                      ) : (
+                        <Link className="text-brand underline" href={demo ? '/demo/sme/tracking' : `/sme/shipments/${item.id}`}>
+                          {item.reference}
+                        </Link>
+                      )}
+                    </td>
+                    <td>{human(item.direction)}</td>
+                    <td><ShipmentStatus status={item.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty text="No shipments yet." />
+        )}
+      </Card>
+      <Card className="smeCases" id="sme-cases">
+        <div className="smeCardHeaderWithAction">
+          <div>
+            <div className="smeSectionHeading">
+              <span className="smeSectionIcon" aria-hidden="true"><ShieldWarningIcon size={18} weight="duotone" /></span>
+              <h2 className="smeSectionTitle">Warehouse Exceptions & Incident Reports · ပြဿနာနှင့် အမှုဖြေရှင်းခြင်း</h2>
+            </div>
+            <p className="smeSectionDescription">Investigated warehouse discrepancies, damaged package claims, and manager proposals awaiting your confirmation.</p>
+          </div>
+          <Link className="inline-flex min-h-11 items-center text-brand underline font-medium text-sm whitespace-nowrap" href={demo ? '/demo/sme/reports' : '/sme/reports'}>
+            New report / View all cases →
+          </Link>
+        </div>
+        {data.cases.length ? (
+          <ul className="smeCaseGrid">
+            {data.cases.map(item => (
+              <li key={item.id} className="mt-4 border-t pt-3">
+                <Link className="text-brand underline" href={`${demo ? '/demo/sme' : '/sme'}/exceptions/${item.id}`}>
+                  {human(item.type)}
+                </Link>
+                <p className="mt-2 text-sm">{item.summary} · {human(item.status)}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Empty text="No cases yet." />
+        )}
+      </Card>
     </div></>;
 }
 
