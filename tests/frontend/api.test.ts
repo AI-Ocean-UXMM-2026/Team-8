@@ -5,6 +5,33 @@ import { createLiveTransport, ApiError } from '../../src/shared/api/transport';
 import { createMockTransport } from '../../src/shared/api/mock';
 import receipt from '../../contracts/fixtures/operations/receipt-100-90.json';
 import { GET as proxyGet } from '../../src/app/api/[...path]/route';
+import { GET as workspaceHealth } from '../../src/app/api/workspace-health/route';
+
+test('workspace prewarm uses fixed health URL without credentials and rejects unhealthy replies', async () => {
+  const previousUrl = process.env.PARCELCARE_API_URL, previousFetch = globalThis.fetch;
+  try {
+    process.env.PARCELCARE_API_URL = 'https://backend.example.test';
+    for (const [upstream, expected] of [[Response.json({status:'ok',service:'parcelcare-api'}),200], [new Response('starting',{status:503}),503], [new Response('<html>wrong service</html>'),503]] as const) {
+      globalThis.fetch = async (url, options) => {
+        assert.equal(String(url),'https://backend.example.test/health');
+        assert.equal(new Headers(options?.headers).has('authorization'),false);
+        assert.equal(options?.redirect,'error');
+        return upstream;
+      };
+      const response=await workspaceHealth(new Request('https://frontend.example.test/api/workspace-health'));
+      assert.equal(response.status,expected);
+      assert.deepEqual(await response.json(),{ready:expected===200});
+    }
+    for (const url of ['https://frontend.example.test','https://user:secret@backend.example.test','https://backend.example.test/path']) {
+      process.env.PARCELCARE_API_URL=url;
+      globalThis.fetch=async()=>{throw new Error('Must not fetch unsafe configuration');};
+      assert.equal((await workspaceHealth(new Request('https://frontend.example.test/api/workspace-health'))).status,503);
+    }
+  } finally {
+    globalThis.fetch=previousFetch;
+    if(previousUrl===undefined)delete process.env.PARCELCARE_API_URL;else process.env.PARCELCARE_API_URL=previousUrl;
+  }
+});
 
 const key = receipt.headers['Idempotency-Key'];
 test('mock receipt retries preserve original result; changed payload or fresh duplicate cannot repost stock', async () => {

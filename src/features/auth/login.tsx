@@ -15,6 +15,20 @@ export function Login() {
   const [ready, setReady] = useState(false);
   const [courier,setCourier]=useState(false);
   useEffect(() => { setReady(true);setCourier(new URLSearchParams(window.location.search).get('next')==='/courier'); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function warmWorkspace() {
+      let delay = 5000;
+      try {
+        const response = await fetch('/api/workspace-health', {cache: 'no-store', signal: controller.signal});
+        if (response.ok) delay = 60_000;
+      } catch { /* Sign-in reports persistent connection failures separately. */ }
+      if (!controller.signal.aborted) timer = setTimeout(warmWorkspace, delay);
+    }
+    void warmWorkspace();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [progress,setProgress]=useState('');
