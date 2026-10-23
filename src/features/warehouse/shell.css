@@ -4,8 +4,8 @@
 .warehouseSidebar{position:fixed;left:0;top:0;bottom:0;width:var(--pc-sidebar-width,240px);height:100vh;z-index:50;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--background);overflow:hidden;transition:width .15s ease}
 .warehouseSidebarBrand{height:var(--pc-header-height,64px);box-sizing:border-box;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
 .warehouseLogo{display:flex;align-items:center;height:100%;max-width:100%}
-.sidebarLogoExpanded{display:block;height:32px;width:auto;max-width:155px;object-fit:contain}
-.sidebarLogoCollapsed{display:none;height:36px;width:36px;object-fit:contain;margin:0 auto}
+.sidebarLogoExpanded{display:block;height:48px;width:auto;max-width:175px;object-fit:contain;object-position:left center;transform:translateY(-3px)}
+.sidebarLogoCollapsed{display:none;height:38px;width:auto;max-width:54px;object-fit:contain;margin:0 auto}
 .sidebarCollapsed .sidebarLogoExpanded{display:none!important}
 .sidebarCollapsed .sidebarLogoCollapsed{display:block!important}
 .sidebarCollapsed .warehouseSidebarBrand{justify-content:center;padding:0 8px}
