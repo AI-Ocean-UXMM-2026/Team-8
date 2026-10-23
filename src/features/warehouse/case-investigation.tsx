@@ -16,7 +16,7 @@ export function CaseInvestigation({ id }: { id: string }) {
   const base = demo ? '/demo/warehouse' : '/warehouse';
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
-  return <><Link href={`${base}/exceptions`} className="text-sm text-brand underline">← Open cases</Link>
+  return <><Link href={`${base}/exceptions`} className="text-sm text-brand underline">← Exceptions</Link>
     <PageTitle title="Case investigation" my="အမှုစုံစမ်းစစ်ဆေးမှု" description={id} />
     <CaseSLAPanel id={id} onChanged={resource.reload}/>
     <CaseActions key={`${warehouseId}:${id}`} detail={resource.data} refresh={resource.reload} />
