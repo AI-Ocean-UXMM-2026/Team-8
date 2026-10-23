@@ -4,6 +4,10 @@ Prepared 23 October 2026 for https://parcelcare-team8.onrender.com.
 
 This guide describes the signed-in application. `/demo` uses fictitious browser data; the old Manager workspace uses deterministic rule checks. Neither proves that the live AI worker is running. Local automated tests use fixtures and make no paid model calls.
 
+## Approved Warehouse appearance
+
+Preserve the Warehouse interface identified by the user’s 23 October, 5:37 PM screenshot: white left sidebar, teal selected navigation, ParcelCare branding, Warehouse overview heading with its warehouse illustration, and the existing four summary cards with the yellow open-cases accent. Card columns remain responsive to available width. Apply exception workflow fixes within this interface; do not replace the operational dashboard with the Canva illustration preview. `/design-preview/illustrated` remains a separate optional preview. Desktop dashboard, navigation and header styling are unchanged by this PR; the shared-shell CSS adjustment only removes an incorrect desktop margin below 768px.
+
 ## 1. Before the presentation
 
 Use two independent signed-in sessions: one test SME and one staff member of its warehouse. The app stores authentication in session storage, so sign in separately in each browser/tab. Keep the same warehouse/SME selected throughout. Use test shipments and genuine test evidence; avoid changing real stock for a presentation.
