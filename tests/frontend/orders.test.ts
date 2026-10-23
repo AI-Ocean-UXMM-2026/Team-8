@@ -31,12 +31,12 @@ test('Google Maps links identify a customer marker, never a viewport',()=>{
  for(const url of ['https://google.com.evil.test/maps','http://maps.app.goo.gl/x','https://user@maps.app.goo.gl/x','https://www.google.com/search?q=x','https://goo.gl/anything'])assert.equal(googleMapsUrl(url),null);
 });
 
-test('SME demo requests common warehouse stock delivered to itself, preserving profile and snapshot',async()=>{
+test('SME demo releases only its own stock to its shop, preserving profile and snapshot',async()=>{
  const {createApiClient}=await import('../../src/shared/api/client');
  const values=new Map<string,string>();const storage={getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);}};
  const merchant=createApiClient(createSmeTrackingMockTransport(storage));const identity=await merchant.getMe();
  const {warehouse_id:warehouse,sme_id:sme}=identity.memberships[0];
- const catalog=await merchant.getWarehouseCatalog(warehouse);
+ const catalog=await merchant.getWarehouseCatalog(warehouse,undefined,sme!);
  assert.equal(catalog.length,2);assert.ok(catalog.every(p=>!('sme_id' in p)&&!('shipment_ids' in p)));
  const profile={recipient_name:'SME shop',recipient_phone:'091234567',address:'SME shop, Yangon',latitude:16.84,longitude:96.17,maps_url:'',notes:''};
  assert.equal(await merchant.getSMEDeliveryProfile(warehouse,sme!),null);
@@ -44,7 +44,7 @@ test('SME demo requests common warehouse stock delivered to itself, preserving p
  const body={...profile,customer_name:profile.recipient_name,customer_phone:profile.recipient_phone,order_kind:'sme_self_delivery' as const,warehouse_id:warehouse,sme_id:sme!,lines:[{product_id:catalog[0].id,expected_qty:4}]};
  const key=crypto.randomUUID(),order=await merchant.submitOrder(body,key);
  assert.equal((await merchant.submitOrder(body,key)).id,order.id);
- assert.equal((await merchant.getWarehouseCatalog(warehouse))[0].available_qty,96);
+ assert.equal((await merchant.getWarehouseCatalog(warehouse,undefined,sme!))[0].available_qty,96);
  await merchant.saveSMEDeliveryProfile(warehouse,sme!,{...profile,address:'New shop'});
  assert.equal((await merchant.listOrders(warehouse,sme!))[0].payload.address,'SME shop, Yangon');
  const staff=createApiClient(createWarehouseMockTransport(storage));

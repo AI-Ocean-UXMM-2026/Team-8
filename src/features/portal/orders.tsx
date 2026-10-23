@@ -42,13 +42,13 @@ function Checkout(){
  const [step,setStep]=useState(1),[qty,setQty]=useState<Record<string,number>>({}),[basket,setBasket]=useState<Record<string,CatalogProduct>>({});
  const [searchDraft,setSearchDraft]=useState(''),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[inStock,setInStock]=useState(true),[cursor,setCursor]=useState(''),[history,setHistory]=useState<string[]>([]);
  const selectedIds=Object.keys(qty).sort(),selectedKey=selectedIds.join(',');
- const catalog=usePolling(`${warehouseId}:${search}:${category}:${inStock}:${cursor}:${selectedKey}`,signal=>api!.getCatalogPage(warehouseId,{search,category,inStockOnly:inStock,cursor:cursor||undefined,selectedIds,signal}));
+ const catalog=usePolling(`${warehouseId}:${search}:${category}:${inStock}:${cursor}:${selectedKey}`,signal=>api!.getCatalogPage(warehouseId,{smeId,search,category,inStockOnly:inStock,cursor:cursor||undefined,selectedIds,signal}));
  const resource=usePolling(`${warehouseId}:${smeId}`,async signal=>({profile:await api!.getSMEDeliveryProfile(warehouseId,smeId,signal)}));
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[notes,setNotes]=useState('');
  const [point,setPoint]=useState<MapPoint|null>(null),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState(''),[refresh,setRefresh]=useState(0),[attempted,setAttempted]=useState(false),[remember,setRemember]=useState(true);
  const [query,setQuery]=useState(''),[submittedQuery,setSubmittedQuery]=useState(''),[searchAttempt,setSearchAttempt]=useState(0),[places,setPlaces]=useState<Place[]>([]),[searching,setSearching]=useState(false),[searchError,setSearchError]=useState('');
  const prefilled=useRef(false),searchVersion=useRef(0),selectedQuery=useRef(''),completedSearch=useRef('');
- const command=useCommand<OrderInput,SmeOrder>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{setQty({});setBasket({});setConfirmed(false);setAttempted(false);setStep(1);setMessage('Order placed. Awaiting warehouse approval.');setRefresh(n=>n+1);resource.reload();catalog.reload();});
+ const command=useCommand<OrderInput,SmeOrder>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{setQty({});setBasket({});setConfirmed(false);setAttempted(false);setStep(1);setMessage('Release request submitted. Awaiting warehouse approval.');setRefresh(n=>n+1);resource.reload();catalog.reload();});
  const uncertain=!!command.pending,locked=command.busy||uncertain;
  useEffect(()=>{const timer=setTimeout(()=>{setSearch(searchDraft.trim());setCursor('');setHistory([]);},350);return()=>clearTimeout(timer);},[searchDraft]);
  useEffect(()=>{
@@ -74,7 +74,7 @@ function Checkout(){
  const cart=selectedIds.map(id=>catalog.data?(catalog.data.selected_items.find(p=>p.id===id)??{...basket[id],id,name:basket[id]?.name??'Unavailable product',available_qty:0}):basket[id]).filter((p):p is CatalogProduct=>!!p);
  const lines=selectedIds.map(id=>({product_id:id,expected_qty:qty[id]}));
  const itemError=(p:CatalogProduct)=>!Number.isSafeInteger(qty[p.id])||qty[p.id]<1?'Enter a whole quantity of 1 or more.':qty[p.id]>p.available_qty?`Only ${p.available_qty} units available. Reduce the quantity or remove this product.`:'';
- const productsError=!lines.length?'Add at least one product to your order.':cart.length!==lines.length||cart.some(p=>itemError(p))?'Update the highlighted product quantities before continuing.':'';
+ const productsError=!lines.length?'Add at least one product to your release request.':cart.length!==lines.length||cart.some(p=>itemError(p))?'Update the highlighted product quantities before continuing.':'';
  const errors={name:!name.trim()?'Enter the delivery contact name.':'',phone:phone.trim().length<3?'Enter a phone number with at least 3 characters.':'',address:!address.trim()?'Enter the street address, floor or landmark.':'',location:!point?'Search for a place or click the map to select a delivery location.':!confirmed?'Check the map pin and confirm the delivery location.':''};
  const deliveryValid=!Object.values(errors).some(Boolean),units=selectedIds.reduce((n,id)=>n+(Number.isSafeInteger(qty[id])?Math.max(0,qty[id]):0),0);
  function setAmount(p:CatalogProduct,n:number){setBasket(v=>({...v,[p.id]:p}));setQty(v=>{const next={...v};if(n===0)delete next[p.id];else next[p.id]=n;return next;});}
@@ -85,10 +85,10 @@ function Checkout(){
  async function submit(){if(command.pending){await command.execute();return;}setAttempted(true);if(catalog.loading||catalog.error)return;if(productsError){setStep(1);return;}if(!deliveryValid||!point){setStep(2);return;}
   await command.execute({warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:'',latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:remember});
  }
- function cartPanel(editable=true){return <section id="order-basket" className="orderBasket" aria-label="Your order"><h2 className="orderBasketTitle">Your order</h2><p className="orderBasketCount">{selectedIds.length} {selectedIds.length===1?'product':'products'} · {units} units total</p>{!cart.length&&<p className="my-3">Your order is empty. Add products from the catalogue.</p>}{cart.map(p=><article className="orderBasketItem" key={p.id}><div className="orderBasketItemMain"><strong className="orderBasketItemName" data-user-content>{p.name}</strong>{editable&&<button type="button" className="orderBasketRemove" disabled={locked} aria-label={`Remove ${p.name}`} onClick={()=>remove(p.id)}>Remove</button>}</div><p className="orderBasketItemSku" data-user-content>{p.sku}</p>{editable?<label className="orderQuantity"><span>Qty</span><Input aria-label={`Quantity for ${p.name}`} className="orderQtyInput" inputMode="numeric" type="number" min={1} max={p.available_qty} step={1} value={qty[p.id]} disabled={locked} aria-invalid={!!itemError(p)} onChange={e=>setAmount(p,Number(e.target.value))}/><small className="orderStockHint" data-user-content>of {p.available_qty} available</small></label>:<p className="orderQuantity"><span>Qty</span><strong data-user-content>{qty[p.id]}</strong></p>}{itemError(p)&&<p role="alert" className="orderBasketError">{itemError(p)}</p>}</article>)}{cart.length>0&&<p className="orderBasketNote">Availability is checked again when you place the order.</p>}</section>;}
- return <><PageTitle title="Order warehouse stock" my="ပို့ဆောင်ရန် အော်ဒါများ" description="Choose products, confirm delivery details and place your order."/>
- {message&&<Card className="mb-5"><p role="status">{message}</p>{command.result&&<><p>ORD-{command.result.id.slice(0,8)}</p><a className="text-brand underline" href={`#order-${command.result.id}`}>View order status and tracking below →</a></>}</Card>}
- <Card>{demo&&<p className="mb-4 text-sm">Demo orders stay in this browser session. No real delivery is requested.</p>}
+ function cartPanel(editable=true){return <section id="order-basket" className="orderBasket" aria-label="Your release request"><h2 className="orderBasketTitle">Your release request</h2><p className="orderBasketCount">{selectedIds.length} {selectedIds.length===1?'product':'products'} · {units} units total</p>{!cart.length&&<p className="my-3">Your release request is empty. Add products from the catalogue.</p>}{cart.map(p=><article className="orderBasketItem" key={p.id}><div className="orderBasketItemMain"><strong className="orderBasketItemName" data-user-content>{p.name}</strong>{editable&&<button type="button" className="orderBasketRemove" disabled={locked} aria-label={`Remove ${p.name}`} onClick={()=>remove(p.id)}>Remove</button>}</div><p className="orderBasketItemSku" data-user-content>{p.sku}</p>{editable?<label className="orderQuantity"><span>Qty</span><Input aria-label={`Quantity for ${p.name}`} className="orderQtyInput" inputMode="numeric" type="number" min={1} max={p.available_qty} step={1} value={qty[p.id]} disabled={locked} aria-invalid={!!itemError(p)} onChange={e=>setAmount(p,Number(e.target.value))}/><small className="orderStockHint" data-user-content>of {p.available_qty} available</small></label>:<p className="orderQuantity"><span>Qty</span><strong data-user-content>{qty[p.id]}</strong></p>}{itemError(p)&&<p role="alert" className="orderBasketError">{itemError(p)}</p>}</article>)}{cart.length>0&&<p className="orderBasketNote">Availability is checked again when you place the order.</p>}</section>;}
+ return <><PageTitle title="Request stock release" my="ပို့ဆောင်ရန် အော်ဒါများ" description="Select your SME-owned stock and request delivery to your SME location."/>
+ {message&&<Card className="mb-5"><p role="status">{message}</p>{command.result&&<><p>ORD-{command.result.id.slice(0,8)}</p><a className="text-brand underline" href={`#order-${command.result.id}`}>View request status and tracking below →</a></>}</Card>}
+ <Card>{demo&&<p className="mb-4 text-sm">Demo release requests stay in this browser session. No real stock is released.</p>}
  <nav aria-label="Order steps" className="orderStepperNav">
   <ol className="orderStepper">
    {orderStepConfig.map((s,i)=>{
@@ -106,18 +106,18 @@ function Checkout(){
    })}
   </ol>
  </nav>
- {uncertain?<section className="my-5 rounded border p-4"><h2 className="font-semibold">Submission awaiting confirmation</h2><p data-user-content>{command.pending!.body.customer_name} · {command.pending!.body.address}</p><ul>{command.pending!.body.lines.map(l=><li key={l.product_id}>{l.name??l.product_id} × {l.expected_qty}</li>)}</ul><p>Retry the saved order to confirm its outcome. Do not create another order.</p><Button disabled={command.busy} onClick={()=>void submit()}>Retry same order</Button></section>:<>
+ {uncertain?<section className="my-5 rounded border p-4"><h2 className="font-semibold">Submission awaiting confirmation</h2><p data-user-content>{command.pending!.body.customer_name} · {command.pending!.body.address}</p><ul>{command.pending!.body.lines.map(l=><li key={l.product_id}>{l.name??l.product_id} × {l.expected_qty}</li>)}</ul><p>Retry the saved order to confirm its outcome. Do not create another order.</p><Button disabled={command.busy} onClick={()=>void submit()}>Retry same request</Button></section>:<>
  {step===1&&<div className="orderCatalogLayout"><section aria-label="Product catalogue"><h2 className="text-lg font-semibold">Choose products</h2><div className="orderCatalogFilters"><label>Search products<Input type="search" placeholder="Product name or SKU" value={searchDraft} maxLength={200} onChange={e=>setSearchDraft(e.target.value)}/></label><label>Category<select aria-label="Category" className="field" value={category} onChange={e=>{setCategory(e.target.value);setCursor('');setHistory([]);}}><option value="">All categories</option>{Object.entries(catalogCategories).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="flex items-center gap-2"><input type="checkbox" checked={inStock} onChange={e=>{setInStock(e.target.checked);setCursor('');setHistory([]);}}/>In-stock only</label></div>
- {catalog.error?<ErrorPanel error={catalog.error} retry={()=>{if(cursor){setCursor('');setHistory([]);}else catalog.reload();}}/>:!catalog.data?<Loading/>:<><p role="status" className="my-3 text-sm">{catalog.data.total} matching products</p>{!catalog.data.items.length&&<p className="my-4">No products match these filters. Clear search/category or ask the warehouse to add common stock.</p>}<div className="orderProductGrid">{catalog.data.items.map(p=><article className="orderProductCard" key={p.id}><h3 className="font-semibold" data-user-content>{p.name}</h3><p className="text-sm" data-user-content>{p.sku}</p><p className="text-sm">{catalogCategories[p.category]}</p><p className="my-2">Available: {p.available_qty}</p>{qty[p.id]!==undefined&&<p className="text-sm">In your order: {qty[p.id]}</p>}<Button type="button" disabled={locked||p.available_qty<1||(qty[p.id]??0)>=p.available_qty||selectedIds.length>=100&&qty[p.id]===undefined} onClick={()=>setAmount(p,(qty[p.id]??0)+1)}>{qty[p.id]===undefined?'Add':'Add another'}</Button></article>)}</div><div className="orderActions">{history.length>0&&<Button variant="outline" onClick={()=>{setCursor(history.at(-1)!);setHistory(v=>v.slice(0,-1));}}>Previous products</Button>}{catalog.data.next_cursor&&<Button variant="outline" onClick={()=>{setHistory(v=>[...v,cursor]);setCursor(catalog.data!.next_cursor!);}}>Next products</Button>}</div></>}
+ {catalog.error?<ErrorPanel error={catalog.error} retry={()=>{if(cursor){setCursor('');setHistory([]);}else catalog.reload();}}/>:!catalog.data?<Loading/>:<><p role="status" className="my-3 text-sm">{catalog.data.total} matching products</p>{!catalog.data.items.length&&<p className="my-4">No products match these filters. Clear search/category or ask the warehouse to receive your supplier stock under your SME.</p>}<div className="orderProductGrid">{catalog.data.items.map(p=><article className="orderProductCard" key={p.id}><h3 className="font-semibold" data-user-content>{p.name}</h3><p className="text-sm" data-user-content>{p.sku}</p><p className="text-sm">{catalogCategories[p.category]}</p><p className="my-2">Available: {p.available_qty}</p>{qty[p.id]!==undefined&&<p className="text-sm">In your release request: {qty[p.id]}</p>}<Button type="button" disabled={locked||p.available_qty<1||(qty[p.id]??0)>=p.available_qty||selectedIds.length>=100&&qty[p.id]===undefined} onClick={()=>setAmount(p,(qty[p.id]??0)+1)}>{qty[p.id]===undefined?'Add':'Add another'}</Button></article>)}</div><div className="orderActions">{history.length>0&&<Button variant="outline" onClick={()=>{setCursor(history.at(-1)!);setHistory(v=>v.slice(0,-1));}}>Previous products</Button>}{catalog.data.next_cursor&&<Button variant="outline" onClick={()=>{setHistory(v=>[...v,cursor]);setCursor(catalog.data!.next_cursor!);}}>Next products</Button>}</div></>}
  <p className="mt-3 text-sm text-muted">Categories come from warehouse verification. Unverified products appear under Uncategorized.</p></section>{cartPanel()}
  </div>}
- {step===2&&<section aria-label="Delivery details"><h2 className="text-lg font-semibold">Delivery details</h2><fieldset disabled={locked} className="my-4 space-y-4"><label className="block">Name<Input required maxLength={120} value={name} aria-invalid={attempted&&!!errors.name} aria-describedby={attempted&&errors.name?'order-name-error':undefined} onChange={e=>setName(e.target.value)}/>{error('name')}</label><label className="block">Phone<Input required type="tel" maxLength={40} value={phone} aria-invalid={attempted&&!!errors.phone} aria-describedby={attempted&&errors.phone?'order-phone-error':undefined} onChange={e=>setPhone(e.target.value)}/>{error('phone')}</label><label className="block">Address, floor and landmark<Input required maxLength={500} value={address} aria-invalid={attempted&&!!errors.address} aria-describedby={attempted&&errors.address?'order-address-error':undefined} onChange={e=>{setAddress(e.target.value);setConfirmed(false);}}/>{error('address')}</label>
+ {step===2&&<section aria-label="Delivery details"><h2 className="text-lg font-semibold">Delivery details</h2><fieldset disabled={locked} className="my-4 space-y-4"><label className="block">SME contact name<Input required maxLength={120} value={name} aria-invalid={attempted&&!!errors.name} aria-describedby={attempted&&errors.name?'order-name-error':undefined} onChange={e=>setName(e.target.value)}/>{error('name')}</label><label className="block">SME contact phone<Input required type="tel" maxLength={40} value={phone} aria-invalid={attempted&&!!errors.phone} aria-describedby={attempted&&errors.phone?'order-phone-error':undefined} onChange={e=>setPhone(e.target.value)}/>{error('phone')}</label><label className="block">SME location address, floor and landmark<Input required maxLength={500} value={address} aria-invalid={attempted&&!!errors.address} aria-describedby={attempted&&errors.address?'order-address-error':undefined} onChange={e=>{setAddress(e.target.value);setConfirmed(false);}}/>{error('address')}</label>
  <label className="block">Search place or township<Input value={query} maxLength={200} placeholder="Type a place, township or landmark" onChange={e=>{searchVersion.current++;setSearching(false);setPlaces([]);setQuery(e.target.value);setPoint(null);setConfirmed(false);}} onBlur={()=>setSubmittedQuery(query.trim())} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();setSubmittedQuery(query.trim());setSearchAttempt(n=>n+1);}}}/></label><p className="text-sm text-muted">Type at least 3 characters, then press Enter or leave the field. Check the result on the map.</p>{searching&&<p role="status">Finding locations…</p>}{searchError&&<p role="alert" className="text-red-700">{searchError}</p>}{places.map((p,i)=><button key={i} type="button" className="block w-full rounded border p-3 text-left" onClick={()=>{selectedQuery.current=p.label;choose([p.latitude,p.longitude]);setQuery(p.label);}}>{p.label}</button>)}</fieldset>
  <DeliveryMap destination={point} onDestination={locked?undefined:choose}/>{point&&<label className="my-4 flex gap-3"><input aria-label="Confirm SME delivery pin" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>This map pin matches my delivery address.</label>}{error('location')}
- <label className="my-4 block">Delivery instructions (optional)<Input maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></label><label className="my-4 flex gap-3"><input aria-label="Save address for future orders" type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Save this address when I place the order</label></section>}
- {step===3&&<section aria-label="Confirm order"><h2 className="text-lg font-semibold">Confirm your order</h2>{cartPanel(false)}<h3 className="mt-5 font-semibold">Deliver to</h3><p data-user-content>{name} · {phone}</p><p data-user-content>{address}</p><p data-user-content>{notes}</p>{point&&<a className="text-brand underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${point[0]},${point[1]}`}>Check delivery pin ↗</a>}<p className="my-4">Stock will be reserved. Your order requires warehouse approval. Track progress in Your orders below.</p></section>}
+ <label className="my-4 block">Delivery instructions (optional)<Input maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></label><label className="my-4 flex gap-3"><input aria-label="Save SME location for future requests" type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Save this SME location when I submit the request</label></section>}
+ {step===3&&<section aria-label="Confirm release request"><h2 className="text-lg font-semibold">Confirm your release request</h2>{cartPanel(false)}<h3 className="mt-5 font-semibold">Deliver to SME location</h3><p data-user-content>{name} · {phone}</p><p data-user-content>{address}</p><p data-user-content>{notes}</p>{point&&<a className="text-brand underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${point[0]},${point[1]}`}>Check delivery pin ↗</a>}<p className="my-4">Stock will be reserved. Your release request requires warehouse approval. Track progress in Your stock release requests below.</p></section>}
  {attempted&&productsError&&<p role="alert" className="my-3 text-red-700">{productsError}</p>}{catalog.error&&step!==1&&<p role="alert" className="my-3 text-red-700">Stock availability could not be checked. Return to Products and retry.</p>}
- <div className="orderActions">{step>1&&<Button type="button" variant="outline" disabled={command.busy} onClick={()=>{setStep(v=>v-1);setAttempted(false);}}>Back</Button>}{step<3?<Button type="button" disabled={command.busy||catalog.loading||!!catalog.error} onClick={advance}>{step===1?'Continue to delivery':'Continue to confirmation'}</Button>:<Button type="button" disabled={command.busy||catalog.loading||!!catalog.error||!command.ready} onClick={()=>void submit()}>{command.busy?'Placing order…':'Place order'}</Button>}</div>
+ <div className="orderActions">{step>1&&<Button type="button" variant="outline" disabled={command.busy} onClick={()=>{setStep(v=>v-1);setAttempted(false);}}>Back</Button>}{step<3?<Button type="button" disabled={command.busy||catalog.loading||!!catalog.error} onClick={advance}>{step===1?'Continue to delivery':'Continue to confirmation'}</Button>:<Button type="button" disabled={command.busy||catalog.loading||!!catalog.error||!command.ready} onClick={()=>void submit()}>{command.busy?'Submitting request…':'Submit release request'}</Button>}</div>
  {step===1&&selectedIds.length>0&&<a className="orderMobileCart" href="#order-basket">View order · {selectedIds.length} products · {units} units</a>}
  </>}{command.error&&<p role="alert" className="mt-3 text-red-700">{command.error}</p>}</Card><OrderList key={refresh} sme/>
  </>;
@@ -128,9 +128,9 @@ function OrderTimeline({order}:{order:SmeOrder}){
  const approved=order.status==='accepted';
  const delivered=approved&&order.shipment_status==='delivered';
  const transit=approved&&(['in_transit','out_for_delivery','delivered'].includes(order.shipment_status??''));
- const stages=[{label:'Order placed',done:true},{label:'Warehouse approved',done:approved},{label:'In transit',done:transit},{label:'Delivered',done:delivered}];
+ const stages=[{label:'Request submitted',done:true},{label:'Warehouse approved',done:approved},{label:'In transit',done:transit},{label:'Delivered',done:delivered}];
  const next=stopped?-1:stages.findIndex(stage=>!stage.done);
- return <ol className="orderTimeline" aria-label="Order progress">{stages.map((stage,i)=><li key={stage.label} data-complete={stage.done} aria-current={i===next?'step':undefined}><span className="orderTimelineMarker" aria-hidden="true">{stage.done?'✓':''}</span><span>{stage.label}<span className="sr-only">{stage.done?' — completed':stopped?' — not completed':i===next?' — awaiting completion':' — upcoming'}</span></span></li>)}{stopped&&<li className="orderTimelineStopped"><span className="orderTimelineMarker" aria-hidden="true">×</span><span>{order.status==='rejected'?'Order rejected':'Order cancelled'}</span></li>}</ol>;
+ return <ol className="orderTimeline" aria-label="Release request progress">{stages.map((stage,i)=><li key={stage.label} data-complete={stage.done} aria-current={i===next?'step':undefined}><span className="orderTimelineMarker" aria-hidden="true">{stage.done?'✓':''}</span><span>{stage.label}<span className="sr-only">{stage.done?' — completed':stopped?' — not completed':i===next?' — awaiting completion':' — upcoming'}</span></span></li>)}{stopped&&<li className="orderTimelineStopped"><span className="orderTimelineMarker" aria-hidden="true">×</span><span>{order.status==='rejected'?'Release request rejected':'Release request cancelled'}</span></li>}</ol>;
 }
 
 const SME_OWNERS: Record<string, { name: string; owner: string }> = {
@@ -161,8 +161,8 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
  async function act(id:string,action:Action['action']){await command.execute({id,action,delivery_mode:modes[id]??'in_house',note:reason[id]??''});}
  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
  if(!resource.data)return <Loading/>;
- return <Card className="my-5"><h2 className="text-lg font-semibold">{sme?'Your orders':'SME delivery requests'}</h2>{command.error&&<p role="alert">{command.error}</p>}{command.pending&&<Button type="button" disabled={command.busy} onClick={()=>void command.execute()}>Retry same action</Button>}
- {!resource.data.length&&<p className="my-4">No orders yet</p>}
+ return <Card className="my-5"><h2 className="text-lg font-semibold">{sme?'Your stock release requests':'Stock release requests'}</h2>{command.error&&<p role="alert">{command.error}</p>}{command.pending&&<Button type="button" disabled={command.busy} onClick={()=>void command.execute()}>Retry same action</Button>}
+ {!resource.data.length&&<p className="my-4">No release requests yet</p>}
   {resource.data.map(o => {
     const totalQty = o.payload.lines.reduce((sum, line) => sum + (line.expected_qty || 0), 0);
     const totalItems = o.payload.lines.length;
@@ -179,13 +179,13 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
             </div>
             <div>
               <div className="invoiceTitleRow">
-                <span className="invoiceCardLabel">Order ID</span>
+                <span className="invoiceCardLabel">Request ID</span>
                 <span className="invoiceDot">·</span>
                 <span className="invoiceId" data-user-content>ORD-{o.id.slice(0, 8).toUpperCase()}</span>
               </div>
               <div className="invoiceMetaRow">
                 <CalendarBlankIcon size={14} className="invoiceMetaIcon" />
-                <span>Order Date:</span>
+                <span>Request date:</span>
                 <time dateTime={o.created_at}>{dateTime(o.created_at)}</time>
               </div>
             </div>
@@ -216,9 +216,9 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
             </div>
           </div>
 
-          {/* Col 2: Customer / Recipient */}
+          {/* Col 2: SME location contact */}
           <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">Customer / Recipient</span>
+            <span className="invoiceFieldLabel">SME location contact</span>
             <div className="invoiceCustomerName" data-user-content>
               <UserCircleIcon size={16} className="text-muted-foreground flex-shrink-0" />
               <span>{o.payload.customer_name}</span>
@@ -231,9 +231,9 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
             )}
           </div>
 
-          {/* Col 3: Delivery Address */}
+          {/* Col 3: SME location / shop */}
           <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">Delivery Address</span>
+            <span className="invoiceFieldLabel">SME location / shop</span>
             <div className="invoiceAddress" data-user-content>{o.payload.address}</div>
           </div>
 
@@ -253,12 +253,12 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
           </div>
         </div>
 
-        {/* Order Items Table */}
+        {/* Requested items Table */}
         <div className="invoiceItemsSection">
           <div className="invoiceItemsHeader">
             <span className="invoiceItemsTitle">
               <PackageIcon size={16} />
-              Order Items
+              Requested items
             </span>
             <span className="invoiceItemsCount">
               {totalItems} item{totalItems === 1 ? '' : 's'} · {totalQty} total unit{totalQty === 1 ? '' : 's'}
@@ -303,9 +303,9 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
               {o.status === 'pending'
                 ? 'Awaiting warehouse approval. Tracking will appear after approval.'
                 : o.status === 'rejected'
-                ? 'Order rejected; no delivery is scheduled.'
+                ? 'Release request rejected; no delivery is scheduled.'
                 : o.status === 'cancelled'
-                ? 'Order cancelled; no delivery is scheduled.'
+                ? 'Release request cancelled; no delivery is scheduled.'
                 : o.shipment_status
                 ? `Delivery status: ${human(o.shipment_status)}`
                 : 'Approved; preparing your delivery.'}
@@ -354,7 +354,7 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
             <fieldset disabled={command.busy || !!command.pending || !command.ready} className="invoicePendingControls">
               {sme ? (
                 <Button variant="outline" className="invoiceCancelBtn" onClick={() => void act(o.id, 'cancel')}>
-                  Cancel order
+                  Cancel request
                 </Button>
               ) : (
                 <div className="invoiceWarehouseActions">

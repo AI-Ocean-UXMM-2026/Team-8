@@ -72,7 +72,7 @@ class CatalogPage(DTO):
     total: int
     categories: list[str]
 @router.get('/catalog-page', response_model=CatalogPage, operation_id='warehouseCatalogPage')
-def catalog_page(request: Request, identity: Identity, warehouse_id: UUID,
+def catalog_page(request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUID | None = None,
                  search: Annotated[str, Query(max_length=200)] = '', category: Literal['','uncategorized','food_beverages','clothing_accessories','home_kitchen','electronics','beauty_personal_care','health_medical','office_stationery','other'] = '',
                  in_stock_only: bool = True, limit: Annotated[int, Query(ge=1,le=48)] = 12,
                  cursor: Annotated[str, Query(max_length=3000)] | None = None,
@@ -80,7 +80,12 @@ def catalog_page(request: Request, identity: Identity, warehouse_id: UUID,
     from ...core.errors import AppError
     if not any(m.warehouse_id == warehouse_id and m.role in ('sme','staff','owner') for m in identity.memberships):
         raise AppError(403,'FORBIDDEN','Access denied.')
-    return call(request,identity,'warehouse_catalog_page',{'p_warehouse':str(warehouse_id),'p_filters':{'search':search.strip(),'category':category,'in_stock_only':in_stock_only,'limit':limit,'cursor':cursor,'selected_ids':[str(id) for id in selected_ids or []]}})
+    filters={'search':search.strip(),'category':category,'in_stock_only':in_stock_only,'limit':limit,'cursor':cursor,'selected_ids':[str(id) for id in selected_ids or []]}
+    if sme_id is not None:
+        identity.require_tenant_read(warehouse_id,sme_id)
+        return call(request,identity,'sme_stock_catalog',{'p_warehouse':str(warehouse_id),'p_sme':str(sme_id),'p_filters':filters})
+    identity.require_staff(warehouse_id)
+    return call(request,identity,'warehouse_catalog_page',{'p_warehouse':str(warehouse_id),'p_filters':filters})
 
 @router.get('/delivery-profile', response_model=DeliveryProfile | None, operation_id='getSMEDeliveryProfile')
 def profile(request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUID):

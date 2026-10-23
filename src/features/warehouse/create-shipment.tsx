@@ -44,7 +44,7 @@ export function CreateOutboundShipment({smes,refresh}:{smes:{id:string;name:stri
   return <Card className="my-5"><details className="createShipment">
     <summary className="createShipmentToggle">
       <span className="createShipmentIcon" aria-hidden="true"><TruckIcon size={20} weight="bold"/></span>
-      <span className="createShipmentCopy"><strong>Create outbound shipment</strong><small>အထွက်ပို့ဆောင်မှု အသစ်ဖန်တီးရန်</small></span>
+      <span className="createShipmentCopy"><strong>Create outbound shipment</strong></span>
       <span className="createShipmentChevron" aria-hidden="true"><CaretDownIcon size={18} weight="bold"/></span>
     </summary>
     <div className="createShipmentBody">

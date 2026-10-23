@@ -3,16 +3,16 @@ import {PGlite} from '@electric-sql/pglite';
 import {readFile,readdir} from 'node:fs/promises';
 import {randomUUID as id} from 'node:crypto';
 const db=new PGlite(),q=(s,p=[])=>db.query(s,p),one=async(s,p=[])=>(await q(s,p)).rows[0];
-const w=id(),other=id(),sme=id(),actor=id(),rider=id(),staff=id(),products=[];
+const w=id(),other=id(),sme=id(),otherSme=id(),actor=id(),rider=id(),staff=id(),products=[];
 async function as(user,fn){await q('set role authenticated');await q("select set_config('request.jwt.claim.sub',$1,false)",[user]);try{return await fn()}finally{await q('reset role')}}
-const page=async(f={},warehouse=w)=>(await one('select public.warehouse_catalog_page($1,$2::jsonb) r',[warehouse,JSON.stringify(f)])).r;
+const page=async(f={},warehouse=w)=>(await one('select public.sme_stock_catalog($1,$2,$3::jsonb) r',[warehouse,sme,JSON.stringify(f)])).r;
 try{
  await db.exec(await readFile(new URL('./bootstrap.sql',import.meta.url),'utf8'));const dir=new URL('../migrations/',import.meta.url);for(const f of (await readdir(dir)).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile(new URL(f,dir),'utf8'));
- await q("insert into public.warehouses(id,name) values($1,'Checkout test'),($2,'Foreign')",[w,other]);await q("insert into public.smes(id,warehouse_id,name) values($1,$2,'Test SME')",[sme,w]);
+ await q("insert into public.warehouses(id,name) values($1,'Checkout test'),($2,'Foreign')",[w,other]);await q("insert into public.smes(id,warehouse_id,name) values($1,$2,'Test SME')",[sme,w]);await q("insert into public.smes(id,warehouse_id,name) values($1,$2,'Other SME')",[otherSme,w]);
  for(const user of [actor,rider,staff]){await q('insert into auth.users(id,email) values($1,$2)',[user,user+'@test.invalid']);await q("insert into public.profiles(id,display_name) values($1,'Test')",[user]);}
  await q("insert into public.memberships(profile_id,warehouse_id,sme_id,role) values($1,$2,$3,'sme'),($4,$2,null,'rider'),($5,$2,null,'staff')",[actor,w,sme,rider,staff]);
- for(let n=0;n<25;n++){const p=id();products.push(p);await q('insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty,reserved_qty) values($1,$2,null,$3,$4,25,$5)',[p,w,'CAT-'+n,'Product '+String(n).padStart(2,'0'),n===0?25:0]);if(n>=20)await q("insert into public.product_categorizations(product_id,category,status,reviewed_by,reviewed_at,review_note) values($1,'electronics','verified',$2,now(),'Verified test category')",[p,staff]);}
- const legacy=id();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,$3,'LEGACY','Private SME stock',10)",[legacy,w,sme]);
+ for(let n=0;n<25;n++){const p=id();products.push(p);await q('insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty,reserved_qty) values($1,$2,$6,$3,$4,25,$5)',[p,w,'CAT-'+n,'Product '+String(n).padStart(2,'0'),n===0?25:0,sme]);if(n>=20)await q("insert into public.product_categorizations(product_id,category,status,reviewed_by,reviewed_at,review_note) values($1,'electronics','verified',$2,now(),'Verified test category')",[p,staff]);}
+ const legacy=id();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,$3,'LEGACY','Private SME stock',10)",[legacy,w,otherSme]);
  await as(rider,()=>assert.rejects(()=>page(),e=>e.code==='42501'));await as(actor,()=>assert.rejects(()=>page({},other),e=>e.code==='42501'));
  await as(actor,async()=>{
   const first=await page({limit:12});assert.equal(first.total,24);assert.equal(first.items.length,12);assert(first.next_cursor);assert(!first.items.some(p=>p.id===products[0]));assert(!first.items.some(p=>p.id===legacy));assert.deepEqual(first.categories,['electronics','uncategorized']);

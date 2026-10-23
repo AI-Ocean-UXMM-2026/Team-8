@@ -22,22 +22,22 @@ export function DemoGate({children}:{children:ReactNode}){
     return()=>window.removeEventListener('pageshow',verify);
   },[pathname,route,params]);
   if(pathname==='/demo')return children;
-  if(check?.route!==route)return <main className="mx-auto max-w-xl p-6 pt-24"><p role="status">Checking demo access… · အသုံးပြုခွင့် စစ်ဆေးနေသည်</p></main>;
+  if(check?.route!==route)return <main className="mx-auto max-w-xl p-6 pt-24"><p role="status">Checking demo access…</p></main>;
   if(check.allowed)return children;
-  return <main className="mx-auto max-w-xl p-6 pt-24"><Card><h1 className="text-2xl font-semibold">Demo access required</h1><p role="alert" className="my-4">{check.error?'Browser session storage is unavailable. Enable it to use a demo.':check.role?'ဤစာမျက်နှာကို လက်ရှိ role ဖြင့် ကြည့်ခွင့်မရှိပါ။ · This page is outside your selected demo role.':'Demo role ကို အရင်ရွေးပါ။ · Choose a demo role before opening a workspace.'}</p><div className="flex flex-wrap gap-3"><Button asChild><Link href="/demo">Choose demo role · Role ရွေးရန်</Link></Button>{check.role&&<Button asChild variant="outline"><Link href={demoHomes[check.role]}>Back to my demo</Link></Button>}</div></Card></main>;
+  return <main className="mx-auto max-w-xl p-6 pt-24"><Card><h1 className="text-2xl font-semibold">Demo access required</h1><p role="alert" className="my-4">{check.error?'Browser session storage is unavailable. Enable it to use a demo.':check.role?'This page is outside your selected demo role.':'Choose a demo role before opening a workspace.'}</p><div className="flex flex-wrap gap-3"><Button asChild><Link href="/demo">Choose demo role</Link></Button>{check.role&&<Button asChild variant="outline"><Link href={demoHomes[check.role]}>Back to my demo</Link></Button>}</div></Card></main>;
 }
 
 export function DemoSelection(){
   const [error,setError]=useState('');
   const choices:Array<{role:DemoRole;label:string;description:string}>=[
-    {role:'rider',label:'Rider demo',description:'မိမိပို့ဆောင်မှု၊ route၊ GPS sharing နှင့် issue report'},
-    {role:'sme',label:'SME demo',description:'မိမိလုပ်ငန်း၏ stock၊ orders၊ tracking နှင့် report cases'},
-    {role:'warehouse',label:'Warehouse demo',description:'မိမိ warehouse ၏ stock၊ shipments၊ GPS နှင့် case operations'},
-    {role:'manager',label:'Manager demo',description:'Warehouse manager ၏ reports နှင့် review လုပ်ငန်းများ'},
+    {role:'rider',label:'Rider demo',description:'Your assigned deliveries, routes, GPS sharing and issue reports'},
+    {role:'sme',label:'SME demo',description:'Your business stock, orders, tracking and report cases'},
+    {role:'warehouse',label:'Warehouse demo',description:'Your warehouse stock, shipments, GPS and case operations'},
+    {role:'manager',label:'Manager demo',description:'Warehouse manager reports and review work'},
   ];
   function enter(role:DemoRole){
     try{sessionStorage.setItem(demoRoleKey,role);window.location.assign(demoHomes[role]);}
     catch{setError('Unable to save your demo role. Enable browser session storage and try again.');}
   }
-  return <main className="mx-auto max-w-4xl p-5 pt-24 md:p-10 md:pt-24"><h1 className="text-3xl font-semibold">Choose your demo role</h1><p className="my-4">စမ်းသုံးမည့် role ကို ရွေးပါ။ Role ပြောင်းရန် ဤစာမျက်နှာသို့ ပြန်လာပါ။</p><p className="mb-6 text-sm text-muted">Fictitious demo data. Each workspace is limited to the role you choose.</p>{error&&<p role="alert" className="mb-4">{error}</p>}<div className="grid gap-4 sm:grid-cols-2">{choices.map(c=><Card key={c.role}><h2 className="text-xl font-semibold">{c.label}</h2><p className="my-4 leading-7">{c.description}</p><Button onClick={()=>enter(c.role)}>Enter {c.label}</Button></Card>)}</div><Link className="mt-6 inline-flex min-h-11 items-center text-brand underline" href="/login">Sign in to your account →</Link></main>;
+  return <main className="mx-auto max-w-4xl p-5 pt-24 md:p-10 md:pt-24"><h1 className="text-3xl font-semibold">Choose your demo role</h1><p className="my-4">Pick the role you want to try. Return to this page to change your role.</p><p className="mb-6 text-sm text-muted">Fictitious demo data. Each workspace is limited to the role you choose.</p>{error&&<p role="alert" className="mb-4">{error}</p>}<div className="grid gap-4 sm:grid-cols-2">{choices.map(c=><Card key={c.role}><h2 className="text-xl font-semibold">{c.label}</h2><p className="my-4 leading-7">{c.description}</p><Button onClick={()=>enter(c.role)}>Enter {c.label}</Button></Card>)}</div><Link className="mt-6 inline-flex min-h-11 items-center text-brand underline" href="/login">Sign in to your account →</Link></main>;
 }

@@ -10,12 +10,12 @@ export async function testSharedStock(db){
  const q=(sql,args=[])=>db.query(sql,args),one=async(sql,args=[])=>(await q(sql,args)).rows[0];
  for(const id of [actor,staff,foreign,second]){await q('insert into auth.users(id,email) values($1,$2)',[id,id+'@test.invalid']);await q('insert into public.profiles(id,display_name) values($1,$2)',[id,'Orders test']);}
  await q("insert into public.memberships(profile_id,warehouse_id,sme_id,role) values($1,$2,$3,'sme'),($4,$2,null,'staff')",[actor,w,s,staff]);
- await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,null,($1::uuid)::text,'Order product',10)",[product,w]);
+ await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,$3,($1::uuid)::text,'Order product',10)",[product,w,s]);
  const as=async(id,fn)=>{await q('set role authenticated');await q("select set_config('request.jwt.claim.sub',$1,false)",[id]);try{return await fn();}finally{await q('reset role');}};
  const tenant2='20000000-0000-4000-8000-000000000002';
  await q("insert into public.memberships(profile_id,warehouse_id,sme_id,role) values($1,$2,$3,'sme')",[second,w,tenant2]);
  const profile=(id,value=null)=>one('select public.sme_delivery_profile($1,$2,$3::jsonb) r',[w,id,value?JSON.stringify(value):null]);
- const legacy=(await one('select id from public.products where warehouse_id=$1 and sme_id=$2 limit 1',[w,s])).id;
+ const legacy=randomUUID();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,null,$1::text,'Unassigned stock',20)",[legacy,w]);
  await as(actor,async()=>{assert.equal((await profile(s)).r,null);await assert.rejects(()=>profile(tenant2),/forbidden/);await assert.rejects(()=>q('select public.warehouse_catalog($1)',['10000000-0000-4000-8000-000000000002']),/forbidden/);});
  const body={warehouse_id:w,sme_id:s,order_kind:'sme_self_delivery',save_delivery_profile:true,recipient_name:'Test SME shop',recipient_phone:'091234567',address:'Yangon',latitude:16.84,longitude:96.17,maps_url:'https://maps.app.goo.gl/abc',notes:'Floor 2',lines:[{product_id:product,expected_qty:7}]};
  const command=async(id,b,key=randomUUID())=>(await one('select public.sme_order_command($1,$2,$3,$4::jsonb) r',[w,key,id,JSON.stringify(b)])).r;
@@ -33,16 +33,12 @@ export async function testSharedStock(db){
   await assert.rejects(()=>command(null,{...body,lines:[{product_id:product,expected_qty:1},{product_id:product.toUpperCase(),expected_qty:1}]}),/invalid_lines/);
  });
  await as(second,async()=>{
-  await assert.rejects(()=>command(null,{...body,sme_id:tenant2,lines:[{product_id:product,expected_qty:4}]}),/stock_unavailable/);
-  const other=await command(null,{...body,sme_id:tenant2,lines:[{product_id:product,expected_qty:3}]});
-  assert.equal((await one('select public.warehouse_catalog($1) r',[w])).r.find(p=>p.id===product).available_qty,0);
-  const visible=(await one('select public.sme_orders_read($1,$2) r',[w,tenant2])).r;assert.equal(visible.length,1);assert.equal(visible[0].id,other.id);
+  await assert.rejects(()=>command(null,{...body,sme_id:tenant2,lines:[{product_id:product,expected_qty:1}]}),/invalid_product/);
   await assert.rejects(()=>command(order.id,{action:'cancel'}),/forbidden/);
-  await command(other.id,{action:'cancel'});
  });
  await as(staff,async()=>{assert.equal((await profile(s)).r.address,'Updated shop address');await assert.rejects(()=>profile(s,{recipient_name:'Staff',recipient_phone:'09123',address:'Wrong',latitude:16,longitude:96}),/forbidden/);});
 
- await as(actor,async()=>{const list=(await one('select public.sme_orders_read($1,$2) r',[w,s])).r;assert.equal(list.find(o=>o.id===order.id).payload.lines[0].name,'Order product');const catalog=(await one('select public.warehouse_catalog($1) r',[w])).r;assert.equal(catalog.find(p=>p.id===product).available_qty,3);assert.deepEqual(Object.keys(catalog.find(p=>p.id===product)).sort(),['available_qty','id','name','sku','warehouse_id']);assert.ok(!(await q('select * from public.products')).rows.some(p=>p.id===product));});
+ await as(actor,async()=>{const list=(await one('select public.sme_orders_read($1,$2) r',[w,s])).r;assert.equal(list.find(o=>o.id===order.id).payload.lines[0].name,'Order product');const catalog=(await one('select public.sme_stock_catalog($1,$2) r',[w,s])).r.items;assert.equal(catalog.find(p=>p.id===product).available_qty,3);assert.deepEqual(Object.keys(catalog.find(p=>p.id===product)).sort(),['available_qty','id','name','sku','warehouse_id']);assert.ok((await q('select * from public.products')).rows.some(p=>p.id===product));});
  await as(foreign,async()=>{await assert.rejects(()=>command(null,body),/forbidden/);assert.equal((await q('select * from public.sme_orders')).rows.length,0);await assert.rejects(()=>q('select public.warehouse_catalog($1)',[w]),/forbidden/);});
  await as(actor,async()=>{await command(order.id,{action:'cancel'});await assert.rejects(()=>command(order.id,{action:'cancel'}),/stale_version/);});
  assert.equal((await one('select reserved_qty from public.products where id=$1',[product])).reserved_qty,0);
