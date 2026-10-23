@@ -8,14 +8,23 @@ import {usePolling} from './polling';
 import {DeliveryMap,type MapPoint} from '../tracking/delivery-map';
 import {catalogCategories,googleMapsUrl,type CatalogProduct,type OrderInput,type SmeOrder} from '../../shared/api/orders';
 import {useCommand} from '../warehouse/command';
+import {CheckIcon} from '@phosphor-icons/react';
+import {useMyanmar} from '../../shared/layout/account-menu';
 import '../tracking/tracking.css';
 import './orders.css';
+
+const orderStepConfig = [
+  { num: '01', title: 'Products', subtitle: 'Choose items', mySubtitle: 'ပစ္စည်းများ ရွေးချယ်ရန်' },
+  { num: '02', title: 'Delivery', subtitle: 'Address & contact', mySubtitle: 'လိပ်စာနှင့် ဖုန်း' },
+  { num: '03', title: 'Confirm', subtitle: 'Review & submit', mySubtitle: 'စစ်ဆေးပြီး အတည်ပြုရန်' },
+];
 
 type Place={latitude:number;longitude:number;label:string};
 export function SmeOrders(){
  const session=useSession();return <Checkout key={`${session.identity!.actor_id}:${session.warehouseId}:${session.smeId}`}/>;
 }
 function Checkout(){
+ const my=useMyanmar();
  const {api,warehouseId,smeId,identity,demo}=useSession();
  const [step,setStep]=useState(1),[qty,setQty]=useState<Record<string,number>>({}),[basket,setBasket]=useState<Record<string,CatalogProduct>>({});
  const [searchDraft,setSearchDraft]=useState(''),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[inStock,setInStock]=useState(true),[cursor,setCursor]=useState(''),[history,setHistory]=useState<string[]>([]);
@@ -67,7 +76,23 @@ function Checkout(){
  return <><PageTitle title="Order warehouse stock" my="ပို့ဆောင်ရန် အော်ဒါများ" description="Choose products, confirm delivery details and place your order."/>
  {message&&<Card className="mb-5"><p role="status">{message}</p>{command.result&&<><p>ORD-{command.result.id.slice(0,8)}</p><a className="text-brand underline" href={`#order-${command.result.id}`}>View order status and tracking below →</a></>}</Card>}
  <Card>{demo&&<p className="mb-4 text-sm">Demo orders stay in this browser session. No real delivery is requested.</p>}
- <nav aria-label="Order steps"><ol className="orderSteps">{['Products','Delivery','Confirm'].map((label,i)=><li key={label}><button type="button" aria-current={step===i+1?'step':undefined} disabled={locked||i+1>step} onClick={()=>{setStep(i+1);setAttempted(false);}}>{i+1}. {label}</button></li>)}</ol></nav>
+ <nav aria-label="Order steps" className="orderStepperNav">
+  <ol className="orderStepper">
+   {orderStepConfig.map((s,i)=>{
+    const stepNum=i+1,isCompleted=step>stepNum,isActive=step===stepNum,canClick=!locked&&stepNum<=step;
+    const status=isCompleted?'completed':isActive?'active':'pending';
+    return (
+     <li key={s.num} className="orderStepperItem" data-status={status}>
+      {i>0&&<span className="orderStepperLine" data-filled={step>=stepNum?'true':'false'} aria-hidden="true"/>}
+      <button type="button" className="orderStepperBtn" disabled={!canClick} aria-current={isActive?'step':undefined} onClick={()=>{if(canClick){setStep(stepNum);setAttempted(false);}}}>
+       <span className="orderStepperCircle" aria-hidden="true">{isCompleted?<CheckIcon size={18} weight="bold"/>:<span>{s.num}</span>}</span>
+       <span className="orderStepperInfo"><strong className="orderStepperTitle">{s.title}</strong><small className="orderStepperSubtitle">{my?s.mySubtitle:s.subtitle}</small></span>
+      </button>
+     </li>
+    );
+   })}
+  </ol>
+ </nav>
  {uncertain?<section className="my-5 rounded border p-4"><h2 className="font-semibold">Submission awaiting confirmation</h2><p data-user-content>{command.pending!.body.customer_name} · {command.pending!.body.address}</p><ul>{command.pending!.body.lines.map(l=><li key={l.product_id}>{l.name??l.product_id} × {l.expected_qty}</li>)}</ul><p>Retry the saved order to confirm its outcome. Do not create another order.</p><Button disabled={command.busy} onClick={()=>void submit()}>Retry same order</Button></section>:<>
  {step===1&&<div className="orderCatalogLayout"><section aria-label="Product catalogue"><h2 className="text-lg font-semibold">Choose products</h2><div className="orderCatalogFilters"><label>Search products<Input type="search" placeholder="Product name or SKU" value={searchDraft} maxLength={200} onChange={e=>setSearchDraft(e.target.value)}/></label><label>Category<select aria-label="Category" className="field" value={category} onChange={e=>{setCategory(e.target.value);setCursor('');setHistory([]);}}><option value="">All categories</option>{Object.entries(catalogCategories).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="flex items-center gap-2"><input type="checkbox" checked={inStock} onChange={e=>{setInStock(e.target.checked);setCursor('');setHistory([]);}}/>In-stock only</label></div>
  {catalog.error?<ErrorPanel error={catalog.error} retry={()=>{if(cursor){setCursor('');setHistory([]);}else catalog.reload();}}/>:!catalog.data?<Loading/>:<><p role="status" className="my-3 text-sm">{catalog.data.total} matching products</p>{!catalog.data.items.length&&<p className="my-4">No products match these filters. Clear search/category or ask the warehouse to add common stock.</p>}<div className="orderProductGrid">{catalog.data.items.map(p=><article className="orderProductCard" key={p.id}><h3 className="font-semibold" data-user-content>{p.name}</h3><p className="text-sm" data-user-content>{p.sku}</p><p className="text-sm">{catalogCategories[p.category]}</p><p className="my-2">Available: {p.available_qty}</p>{qty[p.id]!==undefined&&<p className="text-sm">In your order: {qty[p.id]}</p>}<Button type="button" disabled={locked||p.available_qty<1||(qty[p.id]??0)>=p.available_qty||selectedIds.length>=100&&qty[p.id]===undefined} onClick={()=>setAmount(p,(qty[p.id]??0)+1)}>{qty[p.id]===undefined?'Add':'Add another'}</Button></article>)}</div><div className="orderActions">{history.length>0&&<Button variant="outline" onClick={()=>{setCursor(history.at(-1)!);setHistory(v=>v.slice(0,-1));}}>Previous products</Button>}{catalog.data.next_cursor&&<Button variant="outline" onClick={()=>{setHistory(v=>[...v,cursor]);setCursor(catalog.data!.next_cursor!);}}>Next products</Button>}</div></>}
