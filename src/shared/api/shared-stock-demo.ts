@@ -1,15 +1,16 @@
+import demoCatalog from '../../../data/demo/sme-products.json';
 import fixture from '../../../contracts/fixtures/warehouse/initial.json';
 import {ApiError,type ApiRequest,type Schemas} from './transport';
 import {checkedOrder,checkedProfile,type DeliveryProfile,type SmeOrder,type OrderInput,type WarehouseCatalogItem} from './orders';
 type Store=Pick<Storage,'getItem'|'setItem'>;
 type DemoOrder=SmeOrder&{reserved?:boolean};
 type State={orders:DemoOrder[];profiles:Record<string,DeliveryProfile>;shipments:Schemas['ShipmentDetail'][];physical:Record<string,number>;replay:Record<string,{fingerprint:string;value:unknown}>};
-const key='parcelcare.sme-owned-release.demo.v2';
-export const demoCommonProducts=(warehouse:string):(WarehouseCatalogItem&{sme_id:string})[]=>[
- {id:'90000000-0000-4000-8000-000000000001',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[1].id,category:'food_beverages',sku:'COMMON-TEA',name:'SME green tea',available_qty:100},
- {id:'90000000-0000-4000-8000-000000000002',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[1].id,category:'beauty_personal_care',sku:'COMMON-SOAP',name:'SME botanical soap',available_qty:80},
- {id:'90000000-0000-4000-8000-000000000003',warehouse_id:warehouse,sme_id:fixture.body.directory.smes[0].id,category:'home_kitchen',sku:'SME-MUG',name:'SME ceramic mug',available_qty:50},
-];
+const key='parcelcare.sme-owned-release.demo.v3';
+export const demoCommonProducts=(warehouse:string):(WarehouseCatalogItem&{sme_id:string})[]=>demoCatalog.products.map((p,i)=>{
+ const owner=fixture.body.directory.smes.find(s=>s.name===p.sme||(p.sme==='Shwe Market'&&s.name==='River Market'));
+ if(!owner)throw new Error('Demo SME mapping is missing.');
+ return {id:`91000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`,warehouse_id:warehouse,sme_id:owner.id,category:p.category,sku:p.sku,name:p.name,available_qty:p.quantity};
+});
 // Fictitious shared state for SME and warehouse demos in this browser session.
 export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:Store){
  let memory:State={orders:[],profiles:{},shipments:[],physical:{},replay:{}};

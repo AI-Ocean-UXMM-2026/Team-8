@@ -160,4 +160,4 @@
 .orderDrawer .invoiceDetailsGrid{border:1px solid var(--border);border-radius:12px;padding:16px}
 @media(max-width:480px){.orderDrawer .invoiceDetailsGrid{grid-template-columns:1fr}}
 
-
+.releaseCatalogScroll{max-width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:10px}.releaseCatalogTable{width:100%;min-width:550px;border-collapse:collapse;text-align:left}.releaseCatalogTable th{padding:12px;background:var(--muted);font-size:12px;font-weight:600}.releaseCatalogTable td{padding:12px;border-top:1px solid var(--border);vertical-align:middle;font-size:14px}.releaseCatalogTable td:first-child{min-width:170px;overflow-wrap:anywhere}.releaseCatalogTable td:nth-child(3){width:140px}.releaseCatalogTable input{width:110px}.releaseCatalogTable small{display:block;font-size:12px;color:var(--muted-foreground);margin-top:4px}.releaseCatalogTable input[aria-invalid=true]+small{color:#b91c1c}.releaseCatalogSku{display:block;margin-top:4px;font-size:12px;color:var(--muted-foreground)}

@@ -84,7 +84,7 @@ test('case filters combine priority, handling and state independently', async ()
 test('warehouse overview counts linkable collections; SME/stock/direction filters and paging agree', async () => {
   const client = api();
   const summary = await client.getWarehouseOverview(warehouseId);
-  assert.equal(summary.unique_skus, (await client.listInventory()).items.length);
+  let inventoryCount=0,cursor:string|undefined;do{const page=await client.listInventory({cursor,limit:100});inventoryCount+=page.items.length;cursor=page.next_cursor??undefined;}while(cursor);assert.equal(summary.unique_skus,inventoryCount);
   assert.equal(summary.inbound_shipments, (await client.listShipments({ direction: 'inbound' })).items.length);
   assert.equal(summary.open_cases, (await client.listCases({ status: 'open' })).items.length);
   const filtered = await client.listInventory({ smeId: fixture.body.directory.smes[0].id, stockStatus: 'quarantined' });

@@ -1599,5 +1599,9 @@
   "Open case →": "အမှုဖွင့်ရန် →",
   "Uploading…": "တင်နေသည်…",
   "Retry original upload": "မူလ upload ကို ထပ်မံစမ်းသပ်ရန်",
-  "Upload": "တင်ရန်"
+  "Upload": "တင်ရန်",
+  "Quantity to add": "ထည့်သွင်းလိုသည့် အရေအတွက်",
+  "Available to release": "ထုတ်ပေးနိုင်သည့် အရေအတွက်",
+  "Add to request": "တောင်းဆိုမှုထဲ ထည့်ရန်",
+  "All available units selected": "ရရှိနိုင်သည့် အရေအတွက်အားလုံး ရွေးထားပြီး"
 }

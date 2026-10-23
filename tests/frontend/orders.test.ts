@@ -37,9 +37,10 @@ test('SME demo releases only its own stock to its shop, preserving profile and s
  const merchant=createApiClient(createSmeTrackingMockTransport(storage));const identity=await merchant.getMe();
  const {warehouse_id:warehouse,sme_id:sme}=identity.memberships[0];
  const catalog=await merchant.getWarehouseCatalog(warehouse,undefined,sme!);
- assert.equal(catalog.length,2);assert.ok(catalog.every(p=>!('sme_id' in p)&&!('shipment_ids' in p)));
+ const firstPage=await merchant.getCatalogPage(warehouse,{smeId:sme!});assert.equal(firstPage.total,15);assert.equal(firstPage.items.length,12);assert(firstPage.next_cursor);const nextPage=await merchant.getCatalogPage(warehouse,{smeId:sme!,cursor:firstPage.next_cursor!,selectedIds:[firstPage.items[0].id]});assert.equal(nextPage.items.length,3);assert.equal(nextPage.selected_items[0].id,firstPage.items[0].id);
+ assert.equal(catalog.length,15);assert.ok(catalog.every(p=>!('sme_id' in p)&&!('shipment_ids' in p)));
  await assert.rejects(merchant.getCatalogPage(warehouse,{smeId:'10000000-0000-4000-8000-000000000002'}));
- await assert.rejects(merchant.submitOrder({warehouse_id:warehouse,sme_id:sme!,order_kind:'sme_self_delivery',customer_name:'Shop',customer_phone:'09123',address:'SME shop',latitude:16,longitude:96,notes:'',maps_url:'',lines:[{product_id:'90000000-0000-4000-8000-000000000003',expected_qty:1}]},crypto.randomUUID()));
+ await assert.rejects(merchant.submitOrder({warehouse_id:warehouse,sme_id:sme!,order_kind:'sme_self_delivery',customer_name:'Shop',customer_phone:'09123',address:'SME shop',latitude:16,longitude:96,notes:'',maps_url:'',lines:[{product_id:'91000000-0000-4000-8000-000000000001',expected_qty:1}]},crypto.randomUUID()));
  const profile={recipient_name:'SME shop',recipient_phone:'091234567',address:'SME shop, Yangon',latitude:16.84,longitude:96.17,maps_url:'',notes:''};
  assert.equal(await merchant.getSMEDeliveryProfile(warehouse,sme!),null);
  await merchant.saveSMEDeliveryProfile(warehouse,sme!,profile);

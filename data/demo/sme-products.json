@@ -1,0 +1,1086 @@
+{
+  "synthetic": true,
+  "version": "parcelcare-sme-demo-v1",
+  "products": [
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-001",
+      "name": "Facial Cleanser - Gentle Gel 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-002",
+      "name": "Facial Cleanser - Hydrating Foam 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-003",
+      "name": "Facial Cleanser - Aloe Vera 120ml",
+      "category": "beauty_personal_care",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-004",
+      "name": "Facial Cleanser - Green Tea 120ml",
+      "category": "beauty_personal_care",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-005",
+      "name": "Facial Cleanser - Rice Water 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-006",
+      "name": "Facial Cleanser - Ceramide 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-007",
+      "name": "Facial Cleanser - Oil Control 100ml",
+      "category": "beauty_personal_care",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-008",
+      "name": "Facial Cleanser - Cream Wash 120ml",
+      "category": "beauty_personal_care",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-009",
+      "name": "Facial Cleanser - Sensitive Skin 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-010",
+      "name": "Facial Cleanser - Micellar Gel 150ml",
+      "category": "beauty_personal_care",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-011",
+      "name": "Serum - Vitamin C 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-012",
+      "name": "Serum - Niacinamide 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-013",
+      "name": "Serum - Hyaluronic Acid 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-014",
+      "name": "Serum - Centella 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-015",
+      "name": "Serum - Peptide 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-016",
+      "name": "Serum - Ceramide 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-017",
+      "name": "Serum - Green Tea 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-018",
+      "name": "Serum - Aloe Hydration 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-019",
+      "name": "Serum - Brightening Rice 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-020",
+      "name": "Serum - Calming Oat 30ml",
+      "category": "beauty_personal_care",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-021",
+      "name": "Sunscreen - Daily SPF30 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-022",
+      "name": "Sunscreen - Daily SPF50 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-023",
+      "name": "Sunscreen - Matte SPF50 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-024",
+      "name": "Sunscreen - Hydrating SPF50 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-025",
+      "name": "Sunscreen - Mineral SPF30 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-026",
+      "name": "Sunscreen - Mineral SPF50 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-027",
+      "name": "Sunscreen - Tinted SPF50 40ml",
+      "category": "beauty_personal_care",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-028",
+      "name": "Sunscreen - Sensitive SPF50 50ml",
+      "category": "beauty_personal_care",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-029",
+      "name": "Sunscreen - Water Resistant SPF50 80ml",
+      "category": "beauty_personal_care",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Golden Bloom",
+      "email": "goldenbloom@parcelcare.com",
+      "sku": "GB-030",
+      "name": "Sunscreen - Sport SPF50 80ml",
+      "category": "beauty_personal_care",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-001",
+      "name": "Bedsheet - Cotton Single White",
+      "category": "home_kitchen",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-002",
+      "name": "Bedsheet - Cotton Double White",
+      "category": "home_kitchen",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-003",
+      "name": "Bedsheet - Cotton Queen Beige",
+      "category": "home_kitchen",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-004",
+      "name": "Bedsheet - Cotton King Grey",
+      "category": "home_kitchen",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-005",
+      "name": "Bedsheet - Linen Queen Natural",
+      "category": "home_kitchen",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-006",
+      "name": "Towel - Cotton Face White",
+      "category": "home_kitchen",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-007",
+      "name": "Towel - Cotton Hand Beige",
+      "category": "home_kitchen",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-008",
+      "name": "Towel - Cotton Bath White",
+      "category": "home_kitchen",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-009",
+      "name": "Towel - Cotton Bath Grey",
+      "category": "home_kitchen",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-010",
+      "name": "Towel - Microfiber Bath Blue",
+      "category": "home_kitchen",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-011",
+      "name": "Storage Container - Airtight 500ml",
+      "category": "home_kitchen",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-012",
+      "name": "Storage Container - Airtight 1L",
+      "category": "home_kitchen",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-013",
+      "name": "Storage Container - Airtight 2L",
+      "category": "home_kitchen",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-014",
+      "name": "Storage Container - Stackable 5L",
+      "category": "home_kitchen",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Lotus Living",
+      "email": "lotusliving@parcelcare.com",
+      "sku": "LL-015",
+      "name": "Storage Container - Stackable 10L",
+      "category": "home_kitchen",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-001",
+      "name": "T-Shirt - Cotton White S",
+      "category": "clothing_accessories",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-002",
+      "name": "T-Shirt - Cotton White M",
+      "category": "clothing_accessories",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-003",
+      "name": "T-Shirt - Cotton White L",
+      "category": "clothing_accessories",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-004",
+      "name": "T-Shirt - Cotton Black S",
+      "category": "clothing_accessories",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-005",
+      "name": "T-Shirt - Cotton Black M",
+      "category": "clothing_accessories",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-006",
+      "name": "T-Shirt - Cotton Black L",
+      "category": "clothing_accessories",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-007",
+      "name": "T-Shirt - Cotton Navy M",
+      "category": "clothing_accessories",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-008",
+      "name": "T-Shirt - Cotton Navy L",
+      "category": "clothing_accessories",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-009",
+      "name": "T-Shirt - Oversized Beige M",
+      "category": "clothing_accessories",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-010",
+      "name": "T-Shirt - Oversized Beige L",
+      "category": "clothing_accessories",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-011",
+      "name": "Hoodie - Pullover Grey S",
+      "category": "clothing_accessories",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-012",
+      "name": "Hoodie - Pullover Grey M",
+      "category": "clothing_accessories",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-013",
+      "name": "Hoodie - Pullover Grey L",
+      "category": "clothing_accessories",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-014",
+      "name": "Hoodie - Pullover Black S",
+      "category": "clothing_accessories",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-015",
+      "name": "Hoodie - Pullover Black M",
+      "category": "clothing_accessories",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-016",
+      "name": "Hoodie - Pullover Black L",
+      "category": "clothing_accessories",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-017",
+      "name": "Hoodie - Zip Navy M",
+      "category": "clothing_accessories",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-018",
+      "name": "Hoodie - Zip Navy L",
+      "category": "clothing_accessories",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-019",
+      "name": "Hoodie - Zip Olive M",
+      "category": "clothing_accessories",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-020",
+      "name": "Hoodie - Zip Olive L",
+      "category": "clothing_accessories",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-021",
+      "name": "Trousers - Chino Beige 28",
+      "category": "clothing_accessories",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-022",
+      "name": "Trousers - Chino Beige 30",
+      "category": "clothing_accessories",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-023",
+      "name": "Trousers - Chino Beige 32",
+      "category": "clothing_accessories",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-024",
+      "name": "Trousers - Chino Navy 30",
+      "category": "clothing_accessories",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-025",
+      "name": "Trousers - Chino Navy 32",
+      "category": "clothing_accessories",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-026",
+      "name": "Trousers - Cargo Olive 30",
+      "category": "clothing_accessories",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-027",
+      "name": "Trousers - Cargo Olive 32",
+      "category": "clothing_accessories",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-028",
+      "name": "Trousers - Jogger Grey M",
+      "category": "clothing_accessories",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-029",
+      "name": "Trousers - Jogger Grey L",
+      "category": "clothing_accessories",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Urban Threads",
+      "email": "urbanthreads@parcelcare.com",
+      "sku": "UT-030",
+      "name": "Trousers - Straight Black 32",
+      "category": "clothing_accessories",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-001",
+      "name": "Tea Leaves - Pickled Original 200g",
+      "category": "food_beverages",
+      "quantity": 120,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-002",
+      "name": "Tea Leaves - Pickled Spicy 200g",
+      "category": "food_beverages",
+      "quantity": 180,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-003",
+      "name": "Tea Leaves - Pickled Mild 200g",
+      "category": "food_beverages",
+      "quantity": 240,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-004",
+      "name": "Tea Leaves - Green Tea 100g",
+      "category": "food_beverages",
+      "quantity": 300,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-005",
+      "name": "Tea Leaves - Roasted Tea 100g",
+      "category": "food_beverages",
+      "quantity": 360,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-006",
+      "name": "Fried Beans - Yellow Peas 200g",
+      "category": "food_beverages",
+      "quantity": 420,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-007",
+      "name": "Fried Beans - Chickpeas 200g",
+      "category": "food_beverages",
+      "quantity": 480,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-008",
+      "name": "Fried Beans - Broad Beans 200g",
+      "category": "food_beverages",
+      "quantity": 500,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-009",
+      "name": "Fried Beans - Mixed Crunch 250g",
+      "category": "food_beverages",
+      "quantity": 150,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-010",
+      "name": "Fried Beans - Garlic Peas 200g",
+      "category": "food_beverages",
+      "quantity": 250,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-011",
+      "name": "Palm Jaggery - Original Cubes 250g",
+      "category": "food_beverages",
+      "quantity": 120,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-012",
+      "name": "Palm Jaggery - Original Cubes 500g",
+      "category": "food_beverages",
+      "quantity": 180,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-013",
+      "name": "Palm Jaggery - Ginger Bites 250g",
+      "category": "food_beverages",
+      "quantity": 240,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-014",
+      "name": "Palm Jaggery - Sesame Bites 250g",
+      "category": "food_beverages",
+      "quantity": 300,
+      "unit": "pack"
+    },
+    {
+      "sme": "Mandalay Goods",
+      "email": "mandalaygoods@parcelcare.com",
+      "sku": "MG-015",
+      "name": "Palm Jaggery - Peanut Bites 250g",
+      "category": "food_beverages",
+      "quantity": 360,
+      "unit": "pack"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-001",
+      "name": "Phone Case - iPhone 13 Clear",
+      "category": "electronics",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-002",
+      "name": "Phone Case - iPhone 14 Clear",
+      "category": "electronics",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-003",
+      "name": "Phone Case - iPhone 15 Clear",
+      "category": "electronics",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-004",
+      "name": "Phone Case - iPhone 15 Silicone Black",
+      "category": "electronics",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-005",
+      "name": "Phone Case - iPhone 16 Clear",
+      "category": "electronics",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-006",
+      "name": "Phone Case - Galaxy A15 Clear",
+      "category": "electronics",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-007",
+      "name": "Phone Case - Galaxy A25 Silicone Black",
+      "category": "electronics",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-008",
+      "name": "Phone Case - Galaxy S24 Clear",
+      "category": "electronics",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-009",
+      "name": "Phone Case - Redmi Note 13 Clear",
+      "category": "electronics",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-010",
+      "name": "Phone Case - Redmi Note 14 Silicone Blue",
+      "category": "electronics",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-011",
+      "name": "Charging Cable - USB-A to USB-C 1m",
+      "category": "electronics",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-012",
+      "name": "Charging Cable - USB-A to USB-C 2m",
+      "category": "electronics",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-013",
+      "name": "Charging Cable - USB-C to USB-C 60W 1m",
+      "category": "electronics",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-014",
+      "name": "Charging Cable - USB-C to USB-C 60W 2m",
+      "category": "electronics",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-015",
+      "name": "Charging Cable - USB-C to USB-C 100W 1m",
+      "category": "electronics",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-016",
+      "name": "Charging Cable - USB-C to Lightning 1m",
+      "category": "electronics",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-017",
+      "name": "Charging Cable - USB-A to Lightning 1m",
+      "category": "electronics",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-018",
+      "name": "Charging Cable - Micro USB 1m",
+      "category": "electronics",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-019",
+      "name": "Charging Cable - Braided USB-C 1m",
+      "category": "electronics",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-020",
+      "name": "Charging Cable - Braided USB-C 2m",
+      "category": "electronics",
+      "quantity": 250,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-021",
+      "name": "Earphones - Wired 3.5mm White",
+      "category": "electronics",
+      "quantity": 120,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-022",
+      "name": "Earphones - Wired 3.5mm Black",
+      "category": "electronics",
+      "quantity": 180,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-023",
+      "name": "Earphones - Wired USB-C White",
+      "category": "electronics",
+      "quantity": 240,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-024",
+      "name": "Earphones - Wired USB-C Black",
+      "category": "electronics",
+      "quantity": 300,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-025",
+      "name": "Earphones - Wireless In-Ear White",
+      "category": "electronics",
+      "quantity": 360,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-026",
+      "name": "Earphones - Wireless In-Ear Black",
+      "category": "electronics",
+      "quantity": 420,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-027",
+      "name": "Earphones - Wireless Sport Blue",
+      "category": "electronics",
+      "quantity": 480,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-028",
+      "name": "Earphones - Wireless Sport Black",
+      "category": "electronics",
+      "quantity": 500,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-029",
+      "name": "Earphones - Wired In-Ear with Mic",
+      "category": "electronics",
+      "quantity": 150,
+      "unit": "piece"
+    },
+    {
+      "sme": "Shwe Market",
+      "email": "shwemarket@parcelcare.com",
+      "sku": "SM-030",
+      "name": "Earphones - Wireless Neckband Black",
+      "category": "electronics",
+      "quantity": 250,
+      "unit": "piece"
+    }
+  ]
+}
