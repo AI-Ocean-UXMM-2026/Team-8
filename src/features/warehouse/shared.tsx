@@ -33,8 +33,9 @@ export function useFilters() {
 export function PageTitle({ title, my, description }: { title: string; my: string; description?: string }) {
   const pathname = usePathname();
   const overview = /^\/(?:demo\/)?(?:warehouse|sme|courier|rider)\/?$/.test(pathname);
+  const compactOverview = /^\/(?:demo\/)?sme\/?$/.test(pathname);
   const kind: IllustrationKind = /inventory/.test(pathname) ? 'forklift' : /tracking|shipments|deliveries|courier|rider/.test(pathname) ? 'truck' : overview ? 'warehouse' : 'parcel';
-  return <div className="pc-illustrated-heading mb-6"><div><h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>{description && <p className="mt-3 text-sm text-muted-foreground">{description}</p>}</div><Illustration kind={kind} size={overview ? 'large' : 'small'} /></div>;
+  return <div className="pc-illustrated-heading mb-6"><div><h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>{description && <p className="mt-3 text-sm text-muted-foreground">{description}</p>}</div><Illustration kind={kind} size={overview && !compactOverview ? 'large' : 'small'} /></div>;
 }
 export function Loading() { return <Card><p role="status">Loading workspace…</p></Card>; }
 export function ErrorPanel({ error, retry }: { error: unknown; retry: () => void }) {
