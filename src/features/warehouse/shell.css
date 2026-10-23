@@ -52,3 +52,6 @@
 
 .warehouseCourierPreview{display:flex;align-items:center;min-height:44px;margin:12px 8px 0;font-size:12px;font-weight:600;color:var(--color-primary-800);text-decoration:underline;text-underline-offset:3px}
 .workspaceRoleLinks{display:grid;gap:12px;margin:20px 8px 0;font-size:12px;font-weight:600;color:var(--color-primary-800)}
+
+/* Portal session-pending state: hide the global topbar until the workspace shell is ready. */
+body.portalSessionPending .globalHeader{display:none}
