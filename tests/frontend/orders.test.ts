@@ -92,3 +92,11 @@ test('deadline demo requests reserve and create exactly one shipment without sta
  assert.equal((await merchant.getCatalogPage(w,{smeId:s!})).items.find(p=>p.id===product.id)!.available_qty,product.available_qty-3);
  const staff=createApiClient(createWarehouseMockTransport(storage));assert.equal((await staff.getShipment(order.shipment_id!,undefined,w)).status,'ready');
 });
+
+
+test('SME business identity is tenant scoped and uses its business name',async()=>{
+ const {createApiClient}=await import('../../src/shared/api/client');const client=createApiClient(createSmeTrackingMockTransport());
+ const membership=(await client.getMe()).memberships[0];const business=await client.getSMEBusiness(membership.warehouse_id,membership.sme_id!);
+ assert.equal(business.name,'Lotus Living');assert.equal(business.id,membership.sme_id);
+ await assert.rejects(client.getSMEBusiness(membership.warehouse_id,'10000000-0000-4000-8000-000000000002'));
+});

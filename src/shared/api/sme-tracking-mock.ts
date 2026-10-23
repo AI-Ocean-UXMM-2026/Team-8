@@ -22,6 +22,7 @@ export function createSmeTrackingMockTransport(storage?:Pick<Storage,'getItem'|'
   let value:unknown;
   if(request.method==='GET'){
    if(path==='/api/me')value={actor_id:'10000000-0000-4000-8000-000000000098',memberships:[{warehouse_id:warehouse,sme_id:sme,role:'sme'}]};
+   else if(path==='/api/sme/business'){if(url.searchParams.get('warehouse_id')!==warehouse||url.searchParams.get('sme_id')!==sme)return deny();value={id:sme,warehouse_id:warehouse,name:data.directory.smes.find(s=>s.id===sme)!.name};}
    else if(path==='/api/sme/overview'&&url.searchParams.get('sme_id')===sme)value={inventory:inventory(),shipments:[...demoInboundShipments(storage).filter(s=>s.sme_id===sme),...data.shipments.filter(s=>s.sme_id===sme),...shared.snapshot().shipments.filter(s=>s.sme_id===sme)],cases:state.cases,approvals:[]};
    else if(/^\/api\/deliveries\/[^/]+$/.test(path))value={shipment:ownShipment(path.split('/')[3]),session_id:null};
    else if(/^\/api\/exceptions\/[^/]+$/.test(path)){value=state.cases.find(c=>c.id===path.split('/')[3]);if(!value)return deny();}
