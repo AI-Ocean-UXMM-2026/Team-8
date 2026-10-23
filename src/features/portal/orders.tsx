@@ -18,6 +18,8 @@ import {
   ArrowUpRightIcon,
   PackageIcon,
   ClockIcon,
+  StorefrontIcon,
+  UserCircleIcon,
 } from '@phosphor-icons/react';
 import {ShipmentStatus} from '../warehouse/shipment-status';
 import {useMyanmar} from '../../shared/layout/account-menu';
@@ -83,7 +85,7 @@ function Checkout(){
  async function submit(){if(command.pending){await command.execute();return;}setAttempted(true);if(catalog.loading||catalog.error)return;if(productsError){setStep(1);return;}if(!deliveryValid||!point){setStep(2);return;}
   await command.execute({warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:'',latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:remember});
  }
- function cartPanel(editable=true){return <section id="order-basket" className="orderBasket" aria-label="Your order"><h2 className="text-lg font-semibold">Your order · {selectedIds.length} products</h2>{!cart.length&&<p className="my-3">Your order is empty. Add products from the catalogue.</p>}{cart.map(p=><article className="orderBasketItem" key={p.id}><strong data-user-content>{p.name}</strong><p className="text-sm" data-user-content>{p.sku}</p>{editable?<><div className="orderQuantity"><Button type="button" variant="outline" aria-label={`Decrease ${p.name}`} disabled={locked} onClick={()=>setAmount(p,Math.max(0,qty[p.id]-1))}>−</Button><Input aria-label={`Quantity for ${p.name}`} inputMode="numeric" type="number" min={1} max={p.available_qty} step={1} value={qty[p.id]} disabled={locked} aria-invalid={!!itemError(p)} onChange={e=>setAmount(p,Number(e.target.value))}/><Button type="button" variant="outline" aria-label={`Increase ${p.name}`} disabled={locked||qty[p.id]>=p.available_qty} onClick={()=>setAmount(p,qty[p.id]+1)}>+</Button></div><Button type="button" variant="outline" disabled={locked} onClick={()=>remove(p.id)} aria-label={`Remove ${p.name}`}>Remove</Button></>:<p>Quantity: {qty[p.id]}</p>}{itemError(p)&&<p role="alert" className="text-sm text-red-700">{itemError(p)}</p>}</article>)}<p className="mt-4 font-semibold">{units} units total</p><p className="text-sm text-muted">Availability is checked again when you place the order.</p></section>;}
+ function cartPanel(editable=true){return <section id="order-basket" className="orderBasket" aria-label="Your order"><h2 className="orderBasketTitle">Your order</h2><p className="orderBasketCount">{selectedIds.length} {selectedIds.length===1?'product':'products'} · {units} units total</p>{!cart.length&&<p className="my-3">Your order is empty. Add products from the catalogue.</p>}{cart.map(p=><article className="orderBasketItem" key={p.id}><div className="orderBasketItemMain"><strong className="orderBasketItemName" data-user-content>{p.name}</strong>{editable&&<button type="button" className="orderBasketRemove" disabled={locked} aria-label={`Remove ${p.name}`} onClick={()=>remove(p.id)}>Remove</button>}</div><p className="orderBasketItemSku" data-user-content>{p.sku}</p>{editable?<label className="orderQuantity"><span>Qty</span><Input aria-label={`Quantity for ${p.name}`} className="orderQtyInput" inputMode="numeric" type="number" min={1} max={p.available_qty} step={1} value={qty[p.id]} disabled={locked} aria-invalid={!!itemError(p)} onChange={e=>setAmount(p,Number(e.target.value))}/><small className="orderStockHint" data-user-content>of {p.available_qty} available</small></label>:<p className="orderQuantity"><span>Qty</span><strong data-user-content>{qty[p.id]}</strong></p>}{itemError(p)&&<p role="alert" className="orderBasketError">{itemError(p)}</p>}</article>)}{cart.length>0&&<p className="orderBasketNote">Availability is checked again when you place the order.</p>}</section>;}
  return <><PageTitle title="Order warehouse stock" my="ပို့ဆောင်ရန် အော်ဒါများ" description="Choose products, confirm delivery details and place your order."/>
  {message&&<Card className="mb-5"><p role="status">{message}</p>{command.result&&<><p>ORD-{command.result.id.slice(0,8)}</p><a className="text-brand underline" href={`#order-${command.result.id}`}>View order status and tracking below →</a></>}</Card>}
  <Card>{demo&&<p className="mb-4 text-sm">Demo orders stay in this browser session. No real delivery is requested.</p>}
@@ -131,10 +133,29 @@ function OrderTimeline({order}:{order:SmeOrder}){
  return <ol className="orderTimeline" aria-label="Order progress">{stages.map((stage,i)=><li key={stage.label} data-complete={stage.done} aria-current={i===next?'step':undefined}><span className="orderTimelineMarker" aria-hidden="true">{stage.done?'✓':''}</span><span>{stage.label}<span className="sr-only">{stage.done?' — completed':stopped?' — not completed':i===next?' — awaiting completion':' — upcoming'}</span></span></li>)}{stopped&&<li className="orderTimelineStopped"><span className="orderTimelineMarker" aria-hidden="true">×</span><span>{order.status==='rejected'?'Order rejected':'Order cancelled'}</span></li>}</ol>;
 }
 
+const SME_OWNERS: Record<string, { name: string; owner: string }> = {
+  '10000000-0000-4000-8000-000000000002': { name: 'Golden Bloom', owner: 'Thiri Hnin' },
+  '10000000-0000-4000-8000-000000000003': { name: 'Lotus Trading', owner: 'U Min Din' },
+  '20000000-0000-4000-8000-000000000001': { name: 'Golden Bloom', owner: 'Thiri Hnin' },
+};
+
 export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>void}){
  const {api,warehouseId,smeId,demo,identity}=useSession();
  const resource=usePolling(`${warehouseId}:${sme?smeId:'staff'}`,signal=>api!.listOrders(warehouseId,sme?smeId:undefined,signal));
  const [reason,setReason]=useState<Record<string,string>>({}),[modes,setModes]=useState<Record<string,'in_house'|'third_party'>>({});
+ const [directorySmes, setDirectorySmes] = useState<Record<string, string>>({});
+
+ useEffect(() => {
+   if (sme || !api || !warehouseId) return;
+   const ctrl = new AbortController();
+   api.getWarehouseDirectory(warehouseId, ctrl.signal).then(dir => {
+     const map: Record<string, string> = {};
+     dir.smes?.forEach(s => { map[s.id] = s.name; });
+     setDirectorySmes(map);
+   }).catch(() => {});
+   return () => ctrl.abort();
+ }, [api, warehouseId, sme]);
+
  type Action={id:string;action:'accept'|'reject'|'cancel';delivery_mode:'in_house'|'third_party';note:string};
  const command=useCommand<Action,unknown>(`order-action:${identity!.actor_id}:${warehouseId}:${sme?smeId:'staff'}`,(task,key)=>{const {id,...body}=task;return api!.actOnOrder(id,warehouseId,body,key);},()=>{resource.reload();onChanged?.();});
  async function act(id:string,action:Action['action']){await command.execute({id,action,delivery_mode:modes[id]??'in_house',note:reason[id]??''});}
@@ -145,6 +166,8 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
   {resource.data.map(o => {
     const totalQty = o.payload.lines.reduce((sum, line) => sum + (line.expected_qty || 0), 0);
     const totalItems = o.payload.lines.length;
+    const smeName = directorySmes[o.sme_id] || SME_OWNERS[o.sme_id]?.name || 'Golden Bloom';
+    const smeOwner = SME_OWNERS[o.sme_id]?.owner || (smeName === 'Lotus Trading' ? 'U Min Din' : 'Thiri Hnin');
 
     return (
       <article id={`order-${o.id}`} key={o.id} className="invoiceCard">
@@ -178,12 +201,28 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
           </div>
         </div>
 
-        {/* 3-Column Invoice Details Grid */}
+        {/* 4-Column Invoice Details Grid */}
         <div className="invoiceDetailsGrid">
-          {/* Col 1: SME Name & Phone */}
+          {/* Col 1: SME Name & Owner */}
           <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">SME Name & Customer</span>
-            <div className="invoiceCustomerName" data-user-content>{o.payload.customer_name}</div>
+            <span className="invoiceFieldLabel">SME Name</span>
+            <div className="invoiceSmeName" data-user-content>
+              <StorefrontIcon size={16} className="text-primary flex-shrink-0" />
+              <span>{smeName}</span>
+            </div>
+            <div className="invoiceSmeOwner" data-user-content>
+              <span>Owner: </span>
+              <strong>{smeOwner}</strong>
+            </div>
+          </div>
+
+          {/* Col 2: Customer / Recipient */}
+          <div className="invoiceDetailBlock">
+            <span className="invoiceFieldLabel">Customer / Recipient</span>
+            <div className="invoiceCustomerName" data-user-content>
+              <UserCircleIcon size={16} className="text-muted-foreground flex-shrink-0" />
+              <span>{o.payload.customer_name}</span>
+            </div>
             {o.payload.customer_phone && (
               <a className="invoicePhoneLink" href={`tel:${o.payload.customer_phone}`}>
                 <PhoneIcon size={14} />
@@ -192,13 +231,13 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
             )}
           </div>
 
-          {/* Col 2: Delivery Address */}
+          {/* Col 3: Delivery Address */}
           <div className="invoiceDetailBlock">
             <span className="invoiceFieldLabel">Delivery Address</span>
             <div className="invoiceAddress" data-user-content>{o.payload.address}</div>
           </div>
 
-          {/* Col 3: Description & Notes */}
+          {/* Col 4: Description & Notes */}
           <div className="invoiceDetailBlock">
             <span className="invoiceFieldLabel">Description & Instructions</span>
             {o.payload.notes ? (

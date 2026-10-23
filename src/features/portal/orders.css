@@ -48,11 +48,13 @@
 .status-pending{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
 .status-rejected{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 .status-cancelled{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
-.invoiceDetailsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:20px;border-bottom:1px solid var(--border)}
+.invoiceDetailsGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;padding:20px;border-bottom:1px solid var(--border)}
 .invoiceDetailBlock{display:flex;flex-direction:column;min-width:0}
 .invoiceFieldLabel{font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted-foreground);margin-bottom:6px}
 .invoiceFieldValue{font-size:14px;line-height:1.5;color:var(--foreground);overflow-wrap:anywhere}
-.invoiceCustomerName{font-size:15px;font-weight:650;color:var(--foreground)}
+.invoiceSmeName{font-size:15px;font-weight:650;color:var(--foreground);display:inline-flex;align-items:center;gap:6px}
+.invoiceSmeOwner{font-size:12px;color:var(--muted-foreground);margin-top:4px}
+.invoiceCustomerName{font-size:15px;font-weight:650;color:var(--foreground);display:inline-flex;align-items:center;gap:6px}
 .invoicePhoneLink{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;font-weight:500;color:var(--color-primary-700);text-decoration:none}
 .invoicePhoneLink:hover{text-decoration:underline}
 .invoiceAddress{font-size:13.5px;line-height:1.6}
@@ -94,7 +96,28 @@
 .invoiceRejectBtn:hover:not(:disabled){background:#fef2f2!important}
 .invoiceCancelBtn{border-color:#fca5a5!important;color:#b91c1c!important}
 .invoiceCancelBtn:hover{background:#fef2f2!important}
-@media(max-width:900px){.invoiceDetailsGrid{grid-template-columns:1fr;gap:14px}}
-@media(max-width:640px){.invoiceCardHeader{padding:14px}.invoiceDetailsGrid,.invoiceItemsSection,.invoiceCardFooter{padding:14px}.colSku{display:none}}
+@media(max-width:1024px){.invoiceDetailsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}
+@media(max-width:640px){.invoiceCardHeader{padding:14px}.invoiceDetailsGrid{grid-template-columns:1fr;gap:14px}.invoiceItemsSection,.invoiceCardFooter{padding:14px}.colSku{display:none}}
+
+/* Order basket (compact) */
+.orderBasketTitle{font-size:16px;font-weight:700;letter-spacing:-.01em;line-height:1.3;color:var(--foreground)}
+.orderBasketCount{margin:3px 0 10px;font-size:13px;font-weight:600;color:var(--color-primary-700)}
+.orderBasketItem{display:flex;flex-direction:column;gap:2px;padding:12px 0;border-top:1px solid var(--border)}
+.orderBasketItem:first-of-type{margin-top:8px}
+.orderBasketItemMain{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.orderBasketItemName{font-size:14px;font-weight:600;line-height:1.4;color:var(--foreground)}
+.orderBasketItemSku{font-size:11.5px;font-weight:500;letter-spacing:.03em;font-family:var(--font-mono,monospace);color:var(--muted-foreground)}
+.orderBasketRemove{flex-shrink:0;background:none;border:0;padding:2px 6px;border-radius:6px;font-size:12px;font-weight:600;line-height:1.4;color:#b91c1c;cursor:pointer}
+.orderBasketRemove:hover:not(:disabled){background:#fef2f2;text-decoration:underline}
+.orderBasketRemove:disabled{opacity:.5;cursor:default}
+.orderQuantity{display:flex;align-items:center;gap:8px;margin-top:6px}
+.orderQuantity>span{flex-shrink:0;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted-foreground)}
+.orderQuantity input{width:72px;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;color:var(--foreground);background:var(--background)}
+.orderQuantity input:disabled{color:var(--muted-foreground);background:var(--muted)}
+.orderQtyInput::-webkit-outer-spin-button,.orderQtyInput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.orderQtyInput[type=number]{-moz-appearance:textfield;appearance:textfield}
+.orderStockHint{font-size:11.5px;color:var(--muted-foreground)}
+.orderBasketError{margin-top:4px;font-size:12.5px;font-weight:500;color:#991b1b}
+.orderBasketNote{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted-foreground)}
 
 

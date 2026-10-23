@@ -11,3 +11,38 @@
 @media(max-width:767px){.shipmentStatusMessage{align-items:flex-start}.shipmentStatusMessage>p{flex-basis:100%}}
 
 @media(min-width:768px){.shipmentTable th:nth-child(1){width:23%}.shipmentTable th:nth-child(2){width:17%}.shipmentTable th:nth-child(3){width:16%}.shipmentTable th:nth-child(4){width:17%}.shipmentTable th:nth-child(5){width:17%}.shipmentTable th:nth-child(6){width:10%}.shipmentTable{min-width:900px}}
+
+/* Create outbound shipment */
+.createShipmentToggle{display:flex;align-items:center;gap:12px;width:100%;padding:14px 18px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--muted) 40%,white);cursor:pointer;list-style:none;transition:border-color .2s ease,background .2s ease}
+.createShipmentToggle::-webkit-details-marker{display:none}
+.createShipmentToggle:hover{background:color-mix(in srgb,var(--muted) 55%,white)}
+.createShipment[open] .createShipmentToggle{border-color:color-mix(in srgb,var(--primary) 30%,var(--border))}
+.createShipment[open] .createShipmentToggle:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.createShipmentIcon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:color-mix(in srgb,var(--primary) 12%,white);color:var(--primary);flex-shrink:0}
+.createShipmentCopy{display:flex;flex-direction:column;gap:2px;line-height:1.35;min-width:0}
+.createShipmentCopy strong{font-size:15.5px;font-weight:700;letter-spacing:-.01em;color:var(--foreground)}
+.createShipmentCopy small{font-size:12.5px;color:var(--muted-foreground)}
+.createShipmentChevron{margin-left:auto;color:var(--muted-foreground);flex-shrink:0;transition:transform .2s ease}
+.createShipment[open] .createShipmentChevron{transform:rotate(180deg)}
+.createShipmentBody{margin-top:16px}
+.createShipmentHint{margin-bottom:12px;font-size:13.5px;line-height:1.6;color:var(--muted-foreground)}
+.createShipmentSuccess{margin:12px 0;padding:12px 14px;border:1px solid #a7f3d0;background:#ecfdf5;color:#065f46;border-radius:8px;font-size:13.5px}
+.createShipmentAlert{margin:12px 0;padding:12px 14px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:8px;font-size:13.5px}
+.createShipmentPending{margin:12px 0;padding:12px 14px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;font-size:13.5px}
+.createShipmentFields{display:flex;flex-direction:column;gap:14px;min-width:0}
+.createShipmentGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.createShipmentGrid label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--foreground)}
+.createShipmentGrid select{height:44px;width:100%;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:white;font-size:14px;color:var(--foreground)}
+.createShipmentItems{border:1px solid var(--border);border-radius:10px;max-height:340px;overflow-y:auto}
+.createShipmentItem{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;padding:12px 16px;border-top:1px solid var(--border);background:var(--background)}
+.createShipmentItem:first-child{border-top:0}
+.createShipmentItemInfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 200px}
+.createShipmentItemInfo strong{font-size:14px;font-weight:600;color:var(--foreground)}
+.createShipmentItemInfo small{font-size:11.5px;letter-spacing:.03em;font-family:var(--font-mono,monospace);color:var(--muted-foreground)}
+.createShipmentStock{flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--color-primary-700)}
+.createShipmentQty{display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--muted-foreground)}
+.createShipmentQty .createShipmentQtyInput{width:80px;text-align:center}
+.createShipmentReview{margin:4px 0;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--muted) 30%,white);font-size:13.5px;line-height:1.7}
+.createShipmentReview>p{margin:0}
+.createShipmentReview>p+p{margin-top:2px}
+@media(max-width:640px){.createShipmentGrid{grid-template-columns:1fr}.createShipmentToggle{padding:12px 14px}.createShipmentItem{padding:10px 12px}}

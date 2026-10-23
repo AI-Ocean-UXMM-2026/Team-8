@@ -7,6 +7,7 @@ import { Button, Card, Input } from '../../shared/ui';
 import { useSession } from '../auth/session';
 import { useCommand } from './command';
 import { ErrorPanel, Loading, useResource } from './shared';
+import { CaretDownIcon, TruckIcon } from '@phosphor-icons/react';
 
 export function CreateOutboundShipment({smes,refresh}:{smes:{id:string;name:string}[];refresh:()=>void}) {
   const {api,warehouseId,identity}=useSession();
@@ -40,19 +41,28 @@ export function CreateOutboundShipment({smes,refresh}:{smes:{id:string;name:stri
     if(!review){setReview(true);return;}
     void command.execute({sme_id:sme,reference:reference.trim(),direction:'outbound',delivery_mode:mode,lines});
   }
-  return <Card className="my-5"><details><summary className="cursor-pointer text-lg font-semibold">Create outbound shipment · အထွက်ပို့ဆောင်မှု အသစ်ဖန်တီးရန်</summary>
-    <p className="my-4">For warehouse-created shipments. After saving, open delivery management to set the destination and arrange pickup or carrier handover. Stock is checked and deducted at dispatch or handover.</p>
-    {command.result&&<p role="status" className="my-4">Shipment created. <Link className="text-brand underline" href={`/warehouse/shipments/${command.result.id}`}>Open {command.result.reference} →</Link></p>}
-    {(error||command.error)&&<p role="alert">{error||command.error}</p>}
-    {command.pending&&<div className="my-4"><p>Creation is awaiting confirmation: {command.pending.body.reference}. Retry the saved request before creating another shipment.</p><Button disabled={command.busy} onClick={()=>void command.execute()}>Retry shipment creation</Button></div>}
-    <form onSubmit={submit}><fieldset disabled={!command.ready||command.busy||!!command.pending} className="min-w-0 max-w-full space-y-4">
-      <label className="block">Shipment SME<select required aria-label="Shipment SME" className="mt-2 block w-full min-w-0 rounded border p-3" value={sme} onChange={e=>{setSme(e.target.value);setQuantities({});setReview(false);}}><option value="">Select SME</option>{smes.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-      <label className="block">Stock pool<select aria-label="Stock pool" className="mt-2 block w-full rounded border p-3" value={pool} onChange={e=>{setPool(e.target.value as typeof pool);setQuantities({});setReview(false);}}><option value="common">Warehouse common stock</option><option value="legacy">Legacy SME stock</option></select></label>
-      <label className="block">Shipment reference<Input required maxLength={120} value={reference} onChange={e=>{setReference(e.target.value);setReview(false);}}/></label>
-      <label className="block">Shipment delivery mode<select aria-label="Shipment delivery mode" className="mt-2 block w-full min-w-0 rounded border p-3" value={mode} onChange={e=>{setMode(e.target.value as typeof mode);setReview(false);}}><option value="in_house">In-house rider</option><option value="third_party">Third-party courier</option></select></label>
-      {inventory.error?<ErrorPanel error={inventory.error} retry={inventory.reload}/>:inventory.loading?<Loading/>:sme&&inventory.data?.length?inventory.data.map(p=><label className="flex flex-wrap items-center justify-between gap-3" key={p.id}>{p.name} · {p.sku} · Available {p.available_qty}<Input className="w-28" aria-label={`Shipment quantity for ${p.name}`} type="number" min={0} max={p.available_qty} step={1} value={quantities[p.id]??''} onChange={e=>{setQuantities(q=>({...q,[p.id]:e.target.value}));setReview(false);}}/></label>):sme&&<p>No stock available in the selected pool.</p>}
-      {review&&<section aria-label="Outbound shipment review" className="rounded border p-4"><p>{reference} · {smes.find(s=>s.id===sme)?.name} · {mode==='in_house'?'In-house rider':'Third-party courier'}</p>{lines.map(l=><p key={l.product_id}>{inventory.data?.find(p=>p.id===l.product_id)?.name} × {l.expected_qty}</p>)}<p>Stock is not reserved by direct shipment creation. Set the delivery destination before arranging delivery.</p></section>}
+  return <Card className="my-5"><details className="createShipment">
+    <summary className="createShipmentToggle">
+      <span className="createShipmentIcon" aria-hidden="true"><TruckIcon size={20} weight="bold"/></span>
+      <span className="createShipmentCopy"><strong>Create outbound shipment</strong><small>အထွက်ပို့ဆောင်မှု အသစ်ဖန်တီးရန်</small></span>
+      <span className="createShipmentChevron" aria-hidden="true"><CaretDownIcon size={18} weight="bold"/></span>
+    </summary>
+    <div className="createShipmentBody">
+    <p className="createShipmentHint">For warehouse-created shipments. After saving, open delivery management to set the destination and arrange pickup or carrier handover. Stock is checked and deducted at dispatch or handover.</p>
+    {command.result&&<p role="status" className="createShipmentSuccess">Shipment created. <Link className="text-brand underline" href={`/warehouse/shipments/${command.result.id}`}>Open {command.result.reference} →</Link></p>}
+    {(error||command.error)&&<p role="alert" className="createShipmentAlert">{error||command.error}</p>}
+    {command.pending&&<div className="createShipmentPending"><p>Creation is awaiting confirmation: {command.pending.body.reference}. Retry the saved request before creating another shipment.</p><Button disabled={command.busy} onClick={()=>void command.execute()}>Retry shipment creation</Button></div>}
+    <form onSubmit={submit}><fieldset disabled={!command.ready||command.busy||!!command.pending} className="createShipmentFields">
+      <div className="createShipmentGrid">
+        <label>Shipment SME<select required aria-label="Shipment SME" value={sme} onChange={e=>{setSme(e.target.value);setQuantities({});setReview(false);}}><option value="">Select SME</option>{smes.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+        <label>Stock pool<select aria-label="Stock pool" value={pool} onChange={e=>{setPool(e.target.value as typeof pool);setQuantities({});setReview(false);}}><option value="common">Warehouse common stock</option><option value="legacy">Legacy SME stock</option></select></label>
+        <label>Delivery mode<select aria-label="Shipment delivery mode" value={mode} onChange={e=>{setMode(e.target.value as typeof mode);setReview(false);}}><option value="in_house">In-house rider</option><option value="third_party">Third-party courier</option></select></label>
+        <label>Shipment reference<Input required maxLength={120} value={reference} onChange={e=>{setReference(e.target.value);setReview(false);}}/></label>
+      </div>
+      {inventory.error?<ErrorPanel error={inventory.error} retry={inventory.reload}/>:inventory.loading?<Loading/>:sme&&inventory.data?.length?<div className="createShipmentItems">{inventory.data.map(p=><div className="createShipmentItem" key={p.id}><span className="createShipmentItemInfo"><strong data-user-content>{p.name}</strong><small data-user-content>{p.sku}</small></span><span className="createShipmentStock">{p.available_qty} available</span><label className="createShipmentQty"><span>Qty</span><Input aria-label={`Shipment quantity for ${p.name}`} type="number" min={0} max={p.available_qty} step={1} value={quantities[p.id]??''} onChange={e=>{setQuantities(q=>({...q,[p.id]:e.target.value}));setReview(false);}}/></label></div>)}</div>:sme&&<p>No stock available in the selected pool.</p>}
+      {review&&<section aria-label="Outbound shipment review" className="createShipmentReview"><p>{reference} · {smes.find(s=>s.id===sme)?.name} · {mode==='in_house'?'In-house rider':'Third-party courier'}</p>{lines.map(l=><p key={l.product_id}>{inventory.data?.find(p=>p.id===l.product_id)?.name} × {l.expected_qty}</p>)}<p>Stock is not reserved by direct shipment creation. Set the delivery destination before arranging delivery.</p></section>}
       <Button type="submit" disabled={!!inventory.error||inventory.loading}>{review?'Confirm create shipment':'Review outbound shipment'}</Button>
     </fieldset></form>
+    </div>
   </details></Card>;
 }
