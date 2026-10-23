@@ -1,2 +1,2 @@
-import { RiderTasks } from '../../features/portal/rider';
-export default function Page(){return <RiderTasks/>;}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/courier');}
