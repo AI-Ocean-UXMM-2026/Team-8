@@ -4,7 +4,7 @@ import {demoRoleKey} from '../../features/auth/demo-access';
 import {LanguageMenu,ProfileMenu} from './account-menu';
 import {usePathname} from 'next/navigation';
 import {useEffect,useState} from 'react';
-import {ListIcon,PackageIcon,HouseIcon,MapPinIcon,WarningCircleIcon,GearIcon,TruckIcon,ClockIcon,ArrowsLeftRightIcon} from '@phosphor-icons/react';
+import {SidebarSimpleIcon,PackageIcon,HouseIcon,MapPinIcon,WarningCircleIcon,GearIcon,TruckIcon,ClockIcon,ArrowsLeftRightIcon} from '@phosphor-icons/react';
 
 export function NavLabel({name,count}:{name:string;count?:number}){const Icon=({Overview:HouseIcon,Inventory:PackageIcon,Shipments:TruckIcon,'GPS tracking':MapPinIcon,'Report Cases':WarningCircleIcon,'Delivery Orders':TruckIcon,'Open cases':WarningCircleIcon,'Admin settings':GearIcon,'Case deadlines':ClockIcon,'My deliveries':TruckIcon,'Change demo role · Role ပြောင်းရန်':ArrowsLeftRightIcon} as Record<string,typeof HouseIcon>)[name]||PackageIcon;return <><span className="navIcon" aria-hidden="true"><Icon size={20}/>{count!==undefined&&count>0&&<span className="warehouseCaseCount">{count>99?'99+':count}</span>}</span><span className="navText">{name}</span></>;}
 export function GlobalHeader(){
@@ -17,5 +17,6 @@ export function GlobalHeader(){
  useEffect(()=>{try{setDemoManager(sessionStorage.getItem(demoRoleKey)==='manager')}catch{setDemoManager(false)}},[pathname]);
  const manager=demoManager&&(pathname==='/demo/workspace'||pathname.startsWith('/demo/manager'));
  if(pathname==='/login')return <div className="loginLanguageToggle"><LanguageMenu/></div>;
- return <header className={`globalHeader ${demo?'globalHeaderDemo':''}`}><button className="sidebarToggle" aria-label={collapsed?'Expand sidebar':'Collapse sidebar'} aria-expanded={!collapsed} onClick={()=>{if(window.innerWidth<768){const menu=document.querySelector<HTMLButtonElement>('.warehouseMenuToggle,#workspaceMenu');menu?.click();}else setCollapsed(v=>!v)}}><ListIcon size={22}/></button><div id="workspace-controls">{manager&&<><span>Manager</span><Link className="hidden text-sm text-brand underline md:inline-flex" href="/demo">Change demo role</Link><span>Warehouse · Yangon Hub</span><div className="topAccount"><ProfileMenu role="Manager" actorId="Demo account" context="Warehouse · Yangon Hub" accountHref="/demo/manager/account" signOut={async()=>{sessionStorage.removeItem(demoRoleKey);window.location.assign('/demo')}}/></div></>}</div><div className="topUtilities">{demo&&<Link href="/demo" className="globalDemoBadge">Demo Data</Link>}<LanguageMenu/></div></header>;
+ return <header className={`globalHeader ${demo?'globalHeaderDemo':''}`}><button className="sidebarToggle" aria-label={collapsed?'Expand sidebar':'Collapse sidebar'} aria-expanded={!collapsed} onClick={()=>{if(window.innerWidth<768){const menu=document.querySelector<HTMLButtonElement>('.warehouseMenuToggle,#workspaceMenu');menu?.click();}else setCollapsed(v=>!v)}}><SidebarSimpleIcon size={20}/></button><div id="workspace-controls">{manager&&<><span>Manager</span><Link className="hidden text-sm text-brand underline md:inline-flex" href="/demo">Change demo role</Link><span>Warehouse · Yangon Hub</span></>}</div><div className="topUtilities">{demo&&<Link href="/demo" className="globalDemoBadge">Demo Data</Link>}<LanguageMenu/></div></header>;
 }
+

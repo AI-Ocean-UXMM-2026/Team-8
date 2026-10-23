@@ -27,6 +27,12 @@ try{
   if(path===`/api/deliveries/${shipmentId}/arrival`)return route.fulfill({json:{shipment_id:shipmentId,arrived_at:new Date().toISOString(),latitude:16.84,longitude:96.17,delivered:received}});
   if(path===`/api/deliveries/${shipmentId}/confirm`){assert.equal(req.postDataJSON().proof_id,proofId);received=true;return route.fulfill({json:delivery()});}
   if(path==='/api/maps/resolve')return route.continue();
+  if(path==='/api/orders/catalog-page'){
+   const all=[{id:p,warehouse_id:w,name:'Test product',sku:'TEST',category:'food_beverages',available_qty:order?7:10},...Array.from({length:24},(_,i)=>({id:`50000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`,warehouse_id:w,name:`Item ${String(i+1).padStart(2,'0')}`,sku:`SKU-${i+1}`,category:'electronics',available_qty:10}))];
+   const selected=u.searchParams.getAll('selected_ids'),category=u.searchParams.get('category'),search=(u.searchParams.get('search')??'').toLowerCase(),offset=Number(u.searchParams.get('cursor')??0);
+   const filtered=all.filter(p=>(!category||p.category===category)&&(!search||(p.name+' '+p.sku).toLowerCase().includes(search)));
+   return route.fulfill({json:{items:filtered.slice(offset,offset+12),selected_items:all.filter(p=>selected.includes(p.id)),categories:['electronics','food_beverages'],total:filtered.length,next_cursor:offset+12<filtered.length?String(offset+12):null}});
+  }
   if(path==='/api/orders/catalog')return route.fulfill({json:[{id:p,warehouse_id:w,name:'Test product',sku:'TEST',available_qty:order?7:10}]});
   if(path==='/api/orders/delivery-profile'){if(req.method()==='PUT')profile=req.postDataJSON();return route.fulfill({json:profile});}
   if(path==='/api/me')return route.fulfill({json:{actor_id:actor,memberships:[{warehouse_id:w,role,sme_id:role==='sme'?s:null}]}});
@@ -44,17 +50,22 @@ try{
  });
  await page.goto(origin+'/login');await page.getByLabel('Email',{exact:true}).fill('orders@test.invalid');await page.getByLabel('Password',{exact:true}).fill('fixture-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.waitForURL(origin+'/sme');
  await page.getByRole('link',{name:/Create delivery order/}).click();
- await page.getByRole('button',{name:'Order stocks',exact:true}).click();await page.getByText('Enter the delivery contact name.',{exact:true}).waitFor();await page.getByText('Enter a contact phone number with at least 3 characters.',{exact:true}).waitFor();await page.getByText('Enter the street address, floor or landmark.',{exact:true}).waitFor();await page.getByText('Select at least one product with quantity 1 or more.',{exact:true}).waitFor();
- await page.getByLabel('Quantity for Test product').fill('3');await page.getByLabel('Name').fill('SME Shop A');await page.getByLabel('Phone').fill('091234567');await page.getByLabel('Address, floor').fill('Yangon, Floor 2');
- await page.route(origin+'/api/places**',async route=>{if(new URL(route.request().url()).searchParams.get('q')==='missing')return route.fulfill({json:[]});return route.fulfill({json:[{latitude:16.84,longitude:96.17,label:'Yangon test location'}]});});
- assert.equal(await page.getByRole('button',{name:'Save SME delivery address',exact:true}).count(),0);
- assert.equal(await page.getByLabel('Google Maps link for your SME').count(),0);
- await page.getByRole('button',{name:'Order stocks',exact:true}).click();await page.getByText('Search for a place or click the map to select a delivery location.',{exact:true}).waitFor();assert.equal(keys.length,0);
- await page.getByLabel('Search place or township',{exact:true}).fill('missing');await page.getByLabel('Search place or township',{exact:true}).press('Enter');await page.getByText('No places found. Try a nearby township or landmark, or click the map.',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Continue to delivery',exact:true}).click();await page.getByText('Add at least one product to your order.',{exact:true}).waitFor();
+ const basket=page.getByRole('region',{name:'Your order',exact:true});
+ await page.getByRole('article').filter({has:page.getByRole('heading',{name:'Test product',exact:true})}).getByRole('button',{name:'Add',exact:true}).click();
+ await basket.getByLabel('Quantity for Test product').fill('3');
+ await page.getByRole('button',{name:'Next products',exact:true}).click();await page.getByRole('article').filter({has:page.getByRole('heading',{name:'Item 12',exact:true})}).getByRole('button',{name:'Add',exact:true}).click();await basket.getByLabel('Quantity for Item 12').waitFor();assert.equal(await basket.getByLabel('Quantity for Test product').inputValue(),'3');await basket.getByRole('button',{name:'Remove Item 12',exact:true}).click();
+ await page.getByLabel('Category',{exact:true}).selectOption('electronics');await page.getByText('24 matching products',{exact:true}).waitFor();assert.equal(await basket.getByLabel('Quantity for Test product').inputValue(),'3');
+ await page.getByLabel('Search products',{exact:true}).fill('SKU-24');await page.getByText('1 matching products',{exact:true}).waitFor();await page.getByRole('heading',{name:'Item 24',exact:true}).waitFor();assert.equal(await basket.getByLabel('Quantity for Test product').inputValue(),'3');
+ await page.getByRole('button',{name:'Continue to delivery',exact:true}).click();await page.getByRole('button',{name:'Continue to confirmation',exact:true}).click();await page.getByText('Enter the delivery contact name.',{exact:true}).waitFor();await page.getByText('Enter a phone number with at least 3 characters.',{exact:true}).waitFor();await page.getByText('Enter the street address, floor or landmark.',{exact:true}).waitFor();
+ await page.getByLabel('Name').fill('SME Shop A');await page.getByLabel('Phone').fill('091234567');await page.getByLabel('Address, floor').fill('Yangon, Floor 2');
+ await page.route(origin+'/api/places**',route=>route.fulfill({json:[{latitude:16.84,longitude:96.17,label:'Yangon test location'}]}));
+ assert.equal(await page.getByRole('button',{name:'Save SME delivery address',exact:true}).count(),0);assert.equal(await page.getByLabel('Google Maps link for your SME').count(),0);
  await page.getByLabel('Search place or township',{exact:true}).fill('Yangon');await page.getByLabel('Search place or township',{exact:true}).press('Enter');await page.getByRole('checkbox',{name:'Confirm SME delivery pin'}).waitFor();await page.getByRole('checkbox',{name:'Confirm SME delivery pin'}).check();
- page.once('dialog',dialog=>dialog.dismiss());await page.getByRole('button',{name:'Order stocks',exact:true}).click();assert.equal(keys.length,0);
- page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Order stocks',exact:true}).click();await page.getByRole('button',{name:'Retry same order'}).waitFor();await page.getByRole('button',{name:'Retry same order'}).click();await page.getByText('Order placed. Awaiting warehouse approval.',{exact:true}).waitFor();assert.equal(keys.length,2);assert.equal(keys[0],keys[1]);assert.equal(profile.address,'Yangon, Floor 2');
- await page.reload();await page.getByRole('heading',{name:'Delivery orders',exact:true}).waitFor();await page.waitForFunction(()=>document.querySelector('input[maxlength="120"]')?.value==='SME Shop A');assert.equal(await page.getByRole('checkbox',{name:'Confirm SME delivery pin'}).isChecked(),false);const originalAddress=order.payload.address;await page.getByLabel('Address, floor').fill('New SME shop address');assert.equal(order.payload.address,originalAddress);
+ await page.getByRole('button',{name:'Continue to confirmation',exact:true}).click();await page.getByRole('region',{name:'Confirm order',exact:true}).waitFor();assert.equal(keys.length,0);
+ await page.getByRole('button',{name:'Back',exact:true}).click();await page.getByRole('heading',{name:'Delivery details',exact:true}).waitFor();await page.getByRole('checkbox',{name:'Confirm SME delivery pin'}).check();await page.getByRole('button',{name:'Continue to confirmation',exact:true}).click();
+ await page.getByRole('button',{name:'Place order',exact:true}).click();await page.getByRole('button',{name:'Retry same order',exact:true}).waitFor();await page.getByRole('button',{name:'Retry same order',exact:true}).click();await page.getByText('Order placed. Awaiting warehouse approval.',{exact:true}).waitFor();assert.equal(keys.length,2);assert.equal(keys[0],keys[1]);assert.equal(profile.address,'Yangon, Floor 2');await page.getByText('Awaiting warehouse approval. Tracking will appear after approval.',{exact:true}).waitFor();assert.equal(await page.getByRole('link',{name:'View order status and tracking below →'}).getAttribute('href'),'#order-'+id);
+ await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('heading',{name:'Order warehouse stock',exact:true}).waitFor();await page.getByRole('article').filter({has:page.getByRole('heading',{name:'Test product',exact:true})}).getByRole('button',{name:'Add',exact:true}).click();await page.getByRole('button',{name:'Continue to delivery',exact:true}).click();await page.waitForFunction(()=>document.querySelector('input[maxlength="120"]')?.value==='SME Shop A');assert.equal(await page.getByRole('checkbox',{name:'Confirm SME delivery pin'}).isChecked(),false);const originalAddress=order.payload.address;await page.getByLabel('Address, floor').fill('New SME shop address');assert.equal(order.payload.address,originalAddress);
  await page.getByRole('button',{name:/Cancel order/}).click();await page.getByRole('heading',{name:/cancelled/i}).waitFor();
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile overflow');await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/sme-orders-mobile.png',fullPage:true});assert.deepEqual(errors,[]);
  if(process.env.ORDER_FORM_ONLY!=='1'){
@@ -66,5 +77,5 @@ try{
   process.env.LOCALIZATION_TEST_URL=origin;process.env.LOCALIZATION_TEST_ROLE='SME';process.env.LOCALIZATION_TEST_WIDTH='390';await import('./check-localization.mjs');
  }
  }
- console.log('PASS SME order form: inline validation, single location field, map confirmation, saved profile, cancelled confirmation, idempotent retry and mobile layout. API simulated.');
+ console.log('PASS checkout: catalogue paging/search/categories, cart persistence, three steps, validation, delivery pin, saved address, safe retry, tracking status/link and mobile layout. API simulated.');
 }catch(e){console.error(output);throw e;}finally{await browser?.close();server.kill();}

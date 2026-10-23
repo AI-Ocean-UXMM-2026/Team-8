@@ -1,7 +1,7 @@
 """SME outbound requests; authorization and stock reservations are atomic in SQL."""
 from typing import Annotated, Literal
 from uuid import UUID
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import AliasChoices, Field, model_validator
 from ...contracts import DTO
 from ...core.auth import AuthContext, current_identity
@@ -62,6 +62,25 @@ def catalog(request: Request, identity: Identity, warehouse_id: UUID):
     if not any(m.warehouse_id == warehouse_id and m.role in ('sme', 'staff', 'owner') for m in identity.memberships):
         raise AppError(403, 'FORBIDDEN', 'Access denied.')
     return call(request, identity, 'warehouse_catalog', {'p_warehouse': str(warehouse_id)})
+
+class CatalogProduct(WarehouseCatalogItem):
+    category: str
+class CatalogPage(DTO):
+    items: list[CatalogProduct]
+    selected_items: list[CatalogProduct]
+    next_cursor: str | None
+    total: int
+    categories: list[str]
+@router.get('/catalog-page', response_model=CatalogPage, operation_id='warehouseCatalogPage')
+def catalog_page(request: Request, identity: Identity, warehouse_id: UUID,
+                 search: Annotated[str, Query(max_length=200)] = '', category: Literal['','uncategorized','food_beverages','clothing_accessories','home_kitchen','electronics','beauty_personal_care','health_medical','office_stationery','other'] = '',
+                 in_stock_only: bool = True, limit: Annotated[int, Query(ge=1,le=48)] = 12,
+                 cursor: Annotated[str, Query(max_length=3000)] | None = None,
+                 selected_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None):
+    from ...core.errors import AppError
+    if not any(m.warehouse_id == warehouse_id and m.role in ('sme','staff','owner') for m in identity.memberships):
+        raise AppError(403,'FORBIDDEN','Access denied.')
+    return call(request,identity,'warehouse_catalog_page',{'p_warehouse':str(warehouse_id),'p_filters':{'search':search.strip(),'category':category,'in_stock_only':in_stock_only,'limit':limit,'cursor':cursor,'selected_ids':[str(id) for id in selected_ids or []]}})
 
 @router.get('/delivery-profile', response_model=DeliveryProfile | None, operation_id='getSMEDeliveryProfile')
 def profile(request: Request, identity: Identity, warehouse_id: UUID, sme_id: UUID):

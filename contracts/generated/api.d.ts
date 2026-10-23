@@ -877,6 +877,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/catalog-page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog Page */
+        get: operations["warehouseCatalogPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orders/delivery-profile": {
         parameters: {
             query?: never;
@@ -1836,6 +1853,40 @@ export interface components {
             manager_id: string | null;
             /** Server Now */
             server_now: string;
+        };
+        /** CatalogPage */
+        CatalogPage: {
+            /** Items */
+            items: components["schemas"]["CatalogProduct"][];
+            /** Selected Items */
+            selected_items: components["schemas"]["CatalogProduct"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Total */
+            total: number;
+            /** Categories */
+            categories: string[];
+        };
+        /** CatalogProduct */
+        CatalogProduct: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /** Sku */
+            sku: string;
+            /** Name */
+            name: string;
+            /** Available Qty */
+            available_qty: number;
+            /** Category */
+            category: string;
         };
         /** CategoryOptions */
         CategoryOptions: {
@@ -5017,6 +5068,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WarehouseCatalogItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    warehouseCatalogPage: {
+        parameters: {
+            query: {
+                warehouse_id: string;
+                search?: string;
+                category?: "" | "uncategorized" | "food_beverages" | "clothing_accessories" | "home_kitchen" | "electronics" | "beauty_personal_care" | "health_medical" | "office_stationery" | "other";
+                in_stock_only?: boolean;
+                limit?: number;
+                cursor?: string | null;
+                selected_ids?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogPage"];
                 };
             };
             /** @description Validation Error */

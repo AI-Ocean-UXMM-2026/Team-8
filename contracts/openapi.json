@@ -4555,6 +4555,148 @@
         "x-implementation-status": "implemented"
       }
     },
+    "/api/orders/catalog-page": {
+      "get": {
+        "tags": [
+          "SME orders"
+        ],
+        "summary": "Catalog Page",
+        "operationId": "warehouseCatalogPage",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Warehouse Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "",
+                "uncategorized",
+                "food_beverages",
+                "clothing_accessories",
+                "home_kitchen",
+                "electronics",
+                "beauty_personal_care",
+                "health_medical",
+                "office_stationery",
+                "other"
+              ],
+              "type": "string",
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "in_stock_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "In Stock Only"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 48,
+              "minimum": 1,
+              "default": 12,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "selected_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "maxItems": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented"
+      }
+    },
     "/api/orders/delivery-profile": {
       "get": {
         "tags": [
@@ -7176,6 +7318,98 @@
           "server_now"
         ],
         "title": "CaseSLA"
+      },
+      "CatalogPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogProduct"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "selected_items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogProduct"
+            },
+            "type": "array",
+            "title": "Selected Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "selected_items",
+          "next_cursor",
+          "total",
+          "categories"
+        ],
+        "title": "CatalogPage"
+      },
+      "CatalogProduct": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "warehouse_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Warehouse Id"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "available_qty": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Available Qty"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "warehouse_id",
+          "sku",
+          "name",
+          "available_qty",
+          "category"
+        ],
+        "title": "CatalogProduct"
       },
       "CategoryOptions": {
         "properties": {

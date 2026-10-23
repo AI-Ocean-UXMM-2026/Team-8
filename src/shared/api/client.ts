@@ -1,5 +1,5 @@
 import {checkedSettings,checkedArrival,type TrackingSettings} from './tracking-control';
-import {checkedOrder,checkedProfile,checkedCatalog,type DeliveryProfile,type OrderInput,type SmeOrder} from './orders';
+import {checkedCatalogPage,checkedOrder,checkedProfile,checkedCatalog,type DeliveryProfile,type OrderInput,type SmeOrder} from './orders';
 import {checkedRoute,checkedSharedRoute,checkedCalculatedRoute,type RouteRequest} from './route';
 import {checkedPosition} from './tracking';
 import {checkedAssignments,checkedDelivery,type CourierAction} from './courier';
@@ -31,6 +31,7 @@ function query(options: ListOptions & { direction?: string; status?: string; sto
 // FE1 and FE2 share this client. All actual mutations belong to FastAPI.
 export function createApiClient(transport: Transport) {
   return {
+    async getCatalogPage(warehouseId:string,options:{search?:string;category?:string;inStockOnly?:boolean;cursor?:string;selectedIds?:string[];signal?:AbortSignal}={}){const q=new URLSearchParams({warehouse_id:entity(warehouseId),limit:'12',search:options.search??'',category:options.category??'',in_stock_only:String(options.inStockOnly??true)});if(options.cursor)q.set('cursor',options.cursor);for(const id of options.selectedIds??[])q.append('selected_ids',entity(id));return checkedCatalogPage(await transport<unknown>({method:'GET',path:`/api/orders/catalog-page?${q}`,signal:options.signal}),warehouseId);},
     async getWarehouseCatalog(warehouseId:string,signal?:AbortSignal){return checkedCatalog(await transport<unknown>({method:'GET',path:`/api/orders/catalog${query({warehouseId})}`,signal}),warehouseId);},
     async getSMEDeliveryProfile(warehouseId:string,smeId:string,signal?:AbortSignal){const p=await transport<unknown>({method:'GET',path:`/api/orders/delivery-profile${query({warehouseId,smeId})}`,signal});return p===null?null:checkedProfile(p);},
     async saveSMEDeliveryProfile(warehouseId:string,smeId:string,body:DeliveryProfile){return checkedProfile(await transport<unknown>({method:'PUT',path:`/api/orders/delivery-profile${query({warehouseId,smeId})}`,body}));},

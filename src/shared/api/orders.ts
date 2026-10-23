@@ -5,7 +5,7 @@ export type OrderInput = {
  latitude:number;longitude:number;lines:{product_id:string;expected_qty:number;name?:string;sku?:string}[];
 };
 export type DeliveryProfile={recipient_name:string;recipient_phone:string;address:string;notes:string;maps_url:string;latitude:number;longitude:number};
-export type WarehouseCatalogItem={id:string;warehouse_id:string;sku:string;name:string;available_qty:number};
+export type WarehouseCatalogItem={id:string;warehouse_id:string;sku:string;name:string;available_qty:number;category?:string};
 export function checkedProfile(value:unknown):DeliveryProfile {
  const p=value as DeliveryProfile;
  if(!p||typeof p.recipient_name!=='string'||!p.recipient_name.trim()||typeof p.recipient_phone!=='string'||p.recipient_phone.trim().length<3||typeof p.address!=='string'||!p.address.trim()||typeof p.notes!=='string'||typeof p.maps_url!=='string'||(p.maps_url!==''&&!googleMapsUrl(p.maps_url))||!Number.isFinite(p.latitude)||Math.abs(p.latitude)>90||!Number.isFinite(p.longitude)||Math.abs(p.longitude)>180)throw new ApiError(502,'INVALID_RESPONSE','SME delivery profile could not be verified.');
@@ -42,4 +42,14 @@ export function mapsCoordinates(value:string):[number,number]|null {
  const pair=marker??query?.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
  if(!pair)return null;const lat=Number(pair[1]),lng=Number(pair[2]);
  return Number.isFinite(lat)&&Math.abs(lat)<=90&&Number.isFinite(lng)&&Math.abs(lng)<=180?[lat,lng]:null;
+}
+
+export type CatalogProduct=WarehouseCatalogItem & {category:string};
+export type CatalogPage={items:CatalogProduct[];selected_items:CatalogProduct[];next_cursor:string|null;total:number;categories:string[]};
+export const catalogCategories:Record<string,string>={food_beverages:'Food & beverages',clothing_accessories:'Clothing & accessories',home_kitchen:'Home & kitchen',electronics:'Electronics',beauty_personal_care:'Beauty & personal care',health_medical:'Health & medical',office_stationery:'Office & stationery',other:'Other',uncategorized:'Uncategorized'};
+export function checkedCatalogPage(value:unknown,warehouse:string):CatalogPage{
+ const p=value as CatalogPage;
+ if(!p||!Array.isArray(p.items)||!Array.isArray(p.selected_items)||!Array.isArray(p.categories)||!p.categories.every(c=>typeof c==='string'&&Object.hasOwn(catalogCategories,c))||!Number.isSafeInteger(p.total)||p.total<0||(p.next_cursor!==null&&typeof p.next_cursor!=='string'))throw new ApiError(502,'INVALID_RESPONSE','Product catalogue could not be verified.');
+ const rows=(values:unknown[])=>checkedCatalog(values,warehouse).map((product,i)=>{const category=(values[i] as CatalogProduct).category??'uncategorized';if(!Object.hasOwn(catalogCategories,category))throw new ApiError(502,'INVALID_RESPONSE','Product category could not be verified.');return {...product,category};});
+ return {...p,items:rows(p.items),selected_items:rows(p.selected_items)};
 }

@@ -5,8 +5,8 @@ type DemoOrder=SmeOrder&{reserved?:boolean};
 type State={orders:DemoOrder[];profiles:Record<string,DeliveryProfile>;shipments:Schemas['ShipmentDetail'][];physical:Record<string,number>;replay:Record<string,{fingerprint:string;value:unknown}>};
 const key='parcelcare.shared-stock.demo.v1';
 export const demoCommonProducts=(warehouse:string):WarehouseCatalogItem[]=>[
- {id:'90000000-0000-4000-8000-000000000001',warehouse_id:warehouse,sku:'COMMON-TEA',name:'Warehouse green tea',available_qty:100},
- {id:'90000000-0000-4000-8000-000000000002',warehouse_id:warehouse,sku:'COMMON-SOAP',name:'Warehouse botanical soap',available_qty:80},
+ {id:'90000000-0000-4000-8000-000000000001',warehouse_id:warehouse,category:'food_beverages',sku:'COMMON-TEA',name:'Warehouse green tea',available_qty:100},
+ {id:'90000000-0000-4000-8000-000000000002',warehouse_id:warehouse,category:'beauty_personal_care',sku:'COMMON-SOAP',name:'Warehouse botanical soap',available_qty:80},
 ];
 // Fictitious shared state for SME and warehouse demos in this browser session.
 export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:Store){
@@ -25,6 +25,14 @@ export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:
    const state=read();
    if(request.method==='GET'){
     if(path==='/api/orders/catalog')return {value:catalog(state)};
+    if(path==='/api/orders/catalog-page'){
+     const all=catalog(state).map(p=>({...p,category:p.category??'uncategorized'})).sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+     const search=(url.searchParams.get('search')??'').toLowerCase(),category=url.searchParams.get('category'),stock=url.searchParams.get('in_stock_only')!=='false';
+     const rows=all.filter(p=>(!stock||p.available_qty>0)&&(!category||p.category===category)&&(p.name+' '+p.sku).toLowerCase().includes(search));
+     const offset=Number(url.searchParams.get('cursor')??0),limit=12,selected=url.searchParams.getAll('selected_ids');
+     return {value:{items:rows.slice(offset,offset+limit),selected_items:all.filter(p=>selected.includes(p.id)),categories:[...new Set(all.map(p=>p.category))],total:rows.length,next_cursor:offset+limit<rows.length?String(offset+limit):null}};
+    }
+
     if(path==='/api/orders/delivery-profile'){const id=url.searchParams.get('sme_id')!;if(!id||(sme&&id!==sme))return deny();return {value:state.profiles[id]??null};}
     if(path==='/api/orders'){if(sme&&url.searchParams.get('sme_id')!==sme)return deny();return {value:state.orders.filter(o=>!sme||o.sme_id===sme).map(o=>({...o,shipment_status:state.shipments.find(s=>s.id===o.shipment_id)?.status??null}))};}
     const match=path.match(/^\/api\/orders\/shipment\/([^/]+)\/customer$/);if(match){const o=state.orders.find(o=>o.shipment_id===match[1]);if(!o)return {value:null};if(sme&&o.sme_id!==sme)return deny();return {value:o.payload};}
