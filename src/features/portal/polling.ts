@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { useResource } from '../warehouse/shared';
-export function usePolling<T>(key: string, load: (signal: AbortSignal) => Promise<T>, interval = 15000) {
-  const resource = useResource(key, load);
+export function usePolling<T>(key: string, load: (signal: AbortSignal) => Promise<T>, interval = 15000, keepPreviousData = false) {
+  const resource = useResource(key, load, keepPreviousData);
   const reload = resource.reload;
   // A refresh must not abort a slow read that still has time before its deadline.
   const loading = useRef(resource.loading);

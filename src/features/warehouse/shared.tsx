@@ -7,18 +7,18 @@ import { ApiError } from '../../shared/api';
 import { Button, Card } from '../../shared/ui';
 import { Illustration, type IllustrationKind } from '../../shared/ui/illustration';
 
-export function useResource<T>(key: string, load: (signal: AbortSignal) => Promise<T>) {
+export function useResource<T>(key: string, load: (signal: AbortSignal) => Promise<T>, keepPreviousData = false) {
   const loader = useRef(load); loader.current = load;
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{ key: string; data: T | null; error: unknown; loading: boolean }>({ key, data: null, error: null, loading: true });
   useEffect(() => {
     const controller = new AbortController();
-    setState(previous => ({ key, data: previous.key === key ? previous.data : null, error: null, loading: true }));
+    setState(previous => ({ key, data: previous.key === key || keepPreviousData ? previous.data : null, error: null, loading: true }));
     Promise.resolve().then(() => loader.current(controller.signal)).then(data => { if (!controller.signal.aborted) setState({ key, data, error: null, loading: false }); })
       .catch(error => { if (!controller.signal.aborted) setState(previous => ({ ...previous, error, loading: false })); });
     return () => controller.abort();
-  }, [key, revision]);
-  return { ...(state.key === key ? state : { data: null, error: null, loading: true }), reload: () => setRevision(n => n + 1) };
+  }, [key, revision, keepPreviousData]);
+  return { ...(state.key === key ? state : { data: keepPreviousData ? state.data : null, error: null, loading: true }), reload: () => setRevision(n => n + 1) };
 }
 export function useFilters() {
   const params = useSearchParams(); const path = usePathname();
