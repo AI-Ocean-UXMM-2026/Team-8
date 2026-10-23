@@ -70,12 +70,11 @@ export function SidebarProfile(){
  useEffect(()=>{
   if(session.status!=='ready'||!session.api)return;
   const controller=new AbortController(),signal=controller.signal;
-  void session.api.getWarehouseDirectory(session.warehouseId,signal).then(d=>{
-   setWarehouseName(d.name);
-   setSmeName(d.smes.find(s=>s.id===session.smeId)?.name??'');
-  }).catch(()=>{});
+  setSmeName('');setWarehouseName('');
+  if(session.audience==='sme')void session.api.getSMEBusiness(session.warehouseId,session.smeId,signal).then(b=>{if(!signal.aborted)setSmeName(b.name);}).catch(()=>{});
+  else if(session.audience==='warehouse')void session.api.getWarehouseDirectory(session.warehouseId,signal).then(d=>{if(!signal.aborted)setWarehouseName(d.name);}).catch(()=>{});
   return()=>controller.abort();
- },[session.status,session.api,session.warehouseId,session.smeId]);
+ },[session.status,session.api,session.warehouseId,session.smeId,session.audience]);
  if(session.status!=='ready'||!session.identity)return null;
  const audience=session.audience==='rider'?'courier':session.audience;
  const isOwner=session.identity.memberships.some(m=>m.warehouse_id===session.warehouseId&&m.role==='owner');
