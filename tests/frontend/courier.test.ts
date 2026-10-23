@@ -208,3 +208,21 @@ test('delivery preview defaults to SME and keeps all role actions separate',()=>
 test('shared demo restart has a new epoch even when its revision resets',()=>{
  const a=createDemoHub(),b=createDemoHub();assert.notEqual(a.read().epoch,b.read().epoch);assert.equal(b.read().revision,0);assert.ok(checkedDemoPacket(b.read()));
 });
+
+
+test('in-house transport progress requires physical steps and SME receipt, not proof alone',async()=>{
+ const {inHouseFlow}=await import('../../src/shared/api/in-house-flow');
+ const shipment={status:'ready',events:[]} as Pick<import('../../src/shared/api/transport').Schemas['ShipmentDetail'],'status'|'events'>;
+ assert.equal(inHouseFlow(shipment,[],[]).next!.id,'prepare');
+ shipment.events=['picked','packed'].map(type=>({type})) as typeof shipment.events;
+ assert.equal(inHouseFlow(shipment,[],[]).next!.id,'assign');
+ const assignments=[{accepted_at:null as string|null,picked_up_at:null as string|null}];
+ assert.equal(inHouseFlow(shipment,assignments,[]).next!.id,'accept');
+ assignments[0].accepted_at=new Date().toISOString();assert.equal(inHouseFlow(shipment,assignments,[]).next!.id,'pickup');
+ assignments[0].picked_up_at=new Date().toISOString();assert.equal(inHouseFlow(shipment,assignments,[]).next!.id,'dispatch');
+ shipment.events.push({type:'dispatched'} as typeof shipment.events[number]);shipment.status='in_transit';
+ assert.equal(inHouseFlow(shipment,assignments,[]).next!.id,'proof');
+ assert.equal(inHouseFlow(shipment,assignments,[{confirmed_at:null}]).next!.id,'receipt');
+ shipment.status='delivered';assert.equal(inHouseFlow(shipment,[],[{confirmed_at:new Date().toISOString()}]).next,null);
+ shipment.status='cancelled';assert.equal(inHouseFlow(shipment,assignments,[]).next,null);
+});

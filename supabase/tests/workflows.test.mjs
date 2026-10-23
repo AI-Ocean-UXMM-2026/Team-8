@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-export async function testWorkflows(db){
+export async function testWorkflows(db,{autoRelease=false}={}){
  const w='10000000-0000-4000-8000-000000000001',sme='20000000-0000-4000-8000-000000000001';
  const staff=randomUUID(),customer=randomUUID(),rider=randomUUID(),other=randomUUID(),riderId=randomUUID(),product=randomUUID(),corr=randomUUID();
  const q=(sql,args=[])=>db.query(sql,args),one=async(sql,args=[])=>(await q(sql,args)).rows[0];
@@ -19,15 +19,23 @@ export async function testWorkflows(db){
  const create=async(mode='in_house')=>ops('create',null,{sme_id:sme,reference:randomUUID(),direction:'outbound',delivery_mode:mode,lines:[{product_id:product,expected_qty:5}]});
  const physical=(version,type)=>({expected_version:version,type,verified_at:new Date().toISOString(),notes:'Physically checked',evidence_ids:[]});
  let shipment,delivery,session,evidence,proof;
+ if(autoRelease)await as(customer,async()=>{
+  const payload={warehouse_id:w,sme_id:sme,order_kind:'sme_self_delivery',customer_name:'SME shop',customer_phone:'091234567',address:'Yangon delivery entrance',notes:'',maps_url:'',latitude:16.8409,longitude:96.1735,delivery_due_at:new Date(Date.now()+86400000).toISOString(),lines:[{product_id:product,expected_qty:5}]},key=randomUUID();
+  const submit=()=>one('select public.sme_order_command($1,$2,null,$3::jsonb) r',[w,key,JSON.stringify(payload)]);
+  const order=(await submit()).r;assert.equal(order.status,'accepted');assert.equal((await submit()).r.shipment_id,order.shipment_id);
+  shipment=(await one('select public.delivery_read($1) r',[order.shipment_id])).r.shipment;
+  assert.equal((await one('select reserved_qty from public.products where id=$1',[product])).reserved_qty,5);
+ });
+
  await as(staff,async()=>{
-  shipment=await create();
+  if(!autoRelease)shipment=await create();
   await ops('event',shipment.id,physical(1,'picked'));await ops('event',shipment.id,physical(2,'packed'));
   delivery=await deliver('assign',shipment.id,{expected_version:3,note:'Assign active rider',rider_id:riderId});
   assert.equal(delivery.shipment.status,'assigned');
  });
  const pin={latitude:16.8409,longitude:96.1735,label:'Yangon delivery entrance'};
  const destination=async(value=null)=>(await one('select public.delivery_destination($1,$2::jsonb) result',[shipment.id,value===null?null:JSON.stringify(value)])).result;
- await as(staff,async()=>{assert.equal(await destination(),null);assert.deepEqual(await destination(pin),pin);await reject(()=>destination({...pin,latitude:91}),'invalid_destination');});
+ await as(staff,async()=>{if(autoRelease)assert.deepEqual(await destination(),pin);else assert.equal(await destination(),null);assert.deepEqual(await destination(pin),pin);await reject(()=>destination({...pin,latitude:91}),'invalid_destination');});
  await as(rider,async()=>{assert.deepEqual(await destination(),pin);await reject(()=>destination(pin),'forbidden');});
  await as(customer,()=>reject(()=>destination(pin),'forbidden'));
  await as(other,()=>reject(()=>destination(),'forbidden'));

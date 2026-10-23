@@ -36,7 +36,7 @@ export function SMEDashboard() {
     } catch (error) { setGenerateError(error instanceof Error ? error.message : 'Demo release request could not be saved.'); }
     finally { setGenerating(false); }
   }
-  const resource = usePolling(smeId, async signal => {const [overview,catalog]=await Promise.all([api!.getSMEOverview(smeId,signal),api!.getWarehouseCatalog(warehouseId,signal,smeId)]);return {...overview,catalog};});
+  const resource = usePolling(`${warehouseId}:${smeId}`, async signal => {if(demo){const [overview,catalog]=await Promise.all([api!.getSMEOverview(smeId,signal),api!.getWarehouseCatalog(warehouseId,signal,smeId)]);return {...overview,catalog};}const overview=await api!.getSMEOverview(smeId,signal);return {...overview,catalog:overview.inventory};});
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;
   const data = resource.data;

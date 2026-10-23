@@ -12,13 +12,14 @@ import {Badge,Button,Card,Input} from '../../shared/ui';
 import {ApiError} from '../../shared/api';
 import type {CourierAction,RiderAssignment} from '../../shared/api/courier';
 import {useCommand} from '../warehouse/command';
-import {dateTime,ErrorPanel,Loading,PageTitle,useResource,human} from '../warehouse/shared';
+import {dateTime,ErrorPanel,Loading,PageTitle,human} from '../warehouse/shared';
 import {ShipmentStatus} from '../warehouse/shipment-status';
 import '../warehouse/shell.css';
 import '../warehouse/overview.css';
 import '../warehouse/shipments.css';
 import {SidebarProfile} from '../../shared/layout/account-menu';
 import './courier.css';
+import {usePolling} from '../portal/polling';
 export function CourierWorkspace(){
  const session=useSession(),[view,setView]=useState('overview'),[menu,setMenu]=useState(false);const toggle=useRef<HTMLButtonElement>(null);
  useEffect(()=>{if(session.status==='signed_out'&&!session.demo)window.location.replace('/login');},[session.status,session.demo]);
@@ -28,7 +29,7 @@ export function CourierWorkspace(){
 }
 function CourierDeliveries({view}:{view:string}){
  const {api,demo}=useSession();const [search,setSearch]=useState(''),[status,setStatus]=useState('all'),[selected,setSelected]=useState(''),[reportShipment,setReportShipment]=useState(''),[reportRequest,setReportRequest]=useState(0);
- const resource=useResource('courier-assignments',signal=>api!.listRiderAssignments(signal));
+ const resource=usePolling('courier-assignments',signal=>api!.listRiderAssignments(signal));
  useEffect(()=>{const refresh=()=>resource.reload();window.addEventListener('focus',refresh);const timer=setInterval(refresh,30000);return()=>{window.removeEventListener('focus',refresh);clearInterval(timer)}},[]);
  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
  if(!resource.data)return <Loading/>;
@@ -45,7 +46,7 @@ function DeliveryPanel({assignment,refreshAssignments,reportRequested=false,repo
  const {api,identity,demo}=useSession();const [report,setReport]=useState(reportRequested&&!!assignment.accepted_at),[note,setNote]=useState(''),[recipient,setRecipient]=useState(''),[evidence,setEvidence]=useState(''),[issue,setIssue]=useState<'recipient_unavailable'|'delivery_failed'|'transit_damage'|'courier_delay'>('recipient_unavailable'),[confirmed,setConfirmed]=useState(false),[review,setReview]=useState<CourierAction|null>(null);
  const dialog=useRef<HTMLDialogElement>(null),heading=useRef<HTMLHeadingElement>(null);
  useEffect(()=>{if(reportRequested&&assignment.accepted_at)setReport(true);},[reportRequested,reportRequest,assignment.accepted_at]);
- const resource=useResource(assignment.shipment_id,async signal=>{const d=await api!.getCourierDelivery(assignment.shipment_id,signal);if(!identity!.memberships.some(m=>m.role==='rider'&&m.warehouse_id===d.shipment.warehouse_id))throw new ApiError(403,'FORBIDDEN','This delivery is outside your rider membership.');return d;});
+ const resource=usePolling(assignment.shipment_id,async signal=>{const d=await api!.getCourierDelivery(assignment.shipment_id,signal);if(!identity!.memberships.some(m=>m.role==='rider'&&m.warehouse_id===d.shipment.warehouse_id))throw new ApiError(403,'FORBIDDEN','This delivery is outside your rider membership.');return d;});
  const command=useCommand(`parcelcare.command.${demo?'demo':'live'}.${identity!.actor_id}.${assignment.shipment_id}.courier`,(body:CourierAction,key)=>api!.recordCourierAction(assignment.shipment_id,body,{idempotencyKey:key}),()=>{resource.reload();refreshAssignments()});
  useEffect(()=>{heading.current?.focus();if(reportRequested&&resource.data)document.getElementById('report-issue')?.scrollIntoView({behavior:'smooth'});},[resource.data?.shipment.id,reportRequested,reportRequest]);
  useEffect(()=>{if(command.result){setNote('');setConfirmed(false);setReport(false)}},[command.result]);
