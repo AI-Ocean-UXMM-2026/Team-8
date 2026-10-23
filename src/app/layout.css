@@ -41,3 +41,8 @@ body{padding-top:0}
 .accountContext{display:flex;align-items:center;gap:5px;padding-top:4px}.accountContext svg{flex-shrink:0}.accountContext span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
 .profilePopup .accountMenuItem,.profileDrawer .accountMenuItem{min-height:44px;padding:10px;gap:10px;line-height:1.6}.accountMenuItem svg{flex-shrink:0}.accountMenuItem small{display:block;font-size:11px;line-height:1.6;font-weight:400;color:var(--muted-foreground);margin-top:1px}.signOutItem{margin-top:4px;padding-top:12px!important;border-radius:0 0 6px 6px}.signOutItem:hover,.signOutItem[data-highlighted]{background:#fef2f2}.profileTrigger .profileAvatar{background:color-mix(in srgb,var(--primary) 10%,var(--background));color:var(--color-primary-900)}.profileTrigger[aria-expanded=true]{background:var(--muted);border-color:color-mix(in srgb,var(--primary) 35%,var(--border))}.profileTrigger[aria-expanded=true]>svg:last-child{transform:rotate(180deg)}
 .profileDrawer .accountIdentity{padding:20px 4px;margin-bottom:8px}.profileDrawer .accountContext span{max-width:240px}
+
+/* Sign-in needs only the language control, without workspace header space. */
+body:has(.loginLanguageToggle){padding-top:0}
+.loginLanguageToggle{position:fixed;top:10px;right:20px;z-index:60}
+@media(max-width:767px){.loginLanguageToggle{top:12px;right:12px}}
