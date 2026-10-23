@@ -102,5 +102,13 @@ try {
  await act(historical.id,'cancel',{expected_version:2,note:'Historical return'});
  await assert.rejects(()=>act(historical.id,'return',{...rb,expected_version:3,evidence_id:he}),/unposted_handover_return/);
  assert.deepEqual(await stock(),{available_qty:17,quarantined_qty:2,reserved_qty:0});
+ // Delivery events often have no explicit verified_at. PostgreSQL text timestamps
+ // end in +00, which the API's AwareDatetime rejects; JSON timestamps must use +00:00.
+ const detail=(await as(staff,()=>one("select public.ops_read($1,'detail',$2::jsonb) r",[w,JSON.stringify({shipment_id:internal.id})]))).r;
+ assert.ok(detail.events.length>0);
+ for(const event of detail.events){
+  assert.match(event.verified_at, /T.*(?:Z|[+-]\d{2}:\d{2})$/, 'verified_at must be an ISO timestamp with full timezone');
+  assert.ok(Number.isFinite(Date.parse(event.verified_at)));
+ }
  console.log('PASS outbound: direct and order handover stock once, re-handover, insufficient stock rollback, cancellation without restock, incremental evidenced returns, quarantine, limits, atomic rollback, replay, authorization, audit/outbox');
 } finally {await db.close();}

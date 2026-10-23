@@ -22,14 +22,15 @@ try{
  let scenario='queued',submitted=0;
  function detail(){
   const legacy=scenario==='legacy_unchecked',approved=scenario==='approved',error=scenario==='error';
-  const analysis={id:job,model:'fixture-maker',created_at:new Date().toISOString(),output:{summary:'Recorded shortage is 10.',missing_information:[]},
+  const analysis={id:job,model:'fixture-maker',created_at:new Date().toISOString(),output:{summary:'Recorded shortage is 10.',missing_information:[],recommended_action:'save_summary',requires_human:false},
    ...(!legacy?{review_status:scenario,execution_status:approved?'executed':'blocked',review_reason:approved?null:error?'checker_timeout':'checker_rejected',checker_model:error?null:'fixture-checker',
     checker_output:error?null:{evidence_supported:true,classification_correct:true,priority_correct:approved,action_authorized:true,findings:approved?[]:['The proposed priority is unsupported by the recorded facts.']}}:{})};
-  return {...raw,owner_id:null,responsibility_basis:null,policy_version:1,allowed_actions:['save_summary','escalate'],analyses:scenario==='queued'?[]:[analysis],
+  return {...raw,...(scenario==='no_policy'?{source_version:raw.source_version.replace(/:[0-9]+$/,':0')}:{}),owner_id:null,responsibility_basis:null,policy_version:1,allowed_actions:['save_summary','escalate'],analyses:scenario==='queued'?[]:[analysis],
    jobs:[{id:job,pipeline_stage:scenario==='queued'?'queued':approved?'completed':'blocked',status:scenario==='queued'?'queued':error?'failed':'completed',review_reason:error?'checker_timeout':scenario==='rejected'?'checker_rejected':null}],actions:[],approvals:[],verifications:[],job_id:scenario==='queued'?job:null};
  }
  await p.route(origin+'/api/**',async r=>{
   const request=r.request(),url=new URL(request.url());
+  if(url.pathname==='/api/workspace-health')return r.fulfill({json:{ready:true}});
   if(url.pathname==='/api/exceptions/'+id+'/analyze'){
    assert.equal(request.method(),'POST');assert.ok(request.headers()['idempotency-key']);assert.equal(request.postDataJSON().expected_version,raw.version);submitted++;return r.fulfill({status:202,json:detail()});
   }
@@ -38,6 +39,8 @@ try{
  });
  await p.goto(origin+'/login');await p.getByLabel('Email',{exact:true}).fill('fixture@example.test');await p.getByLabel('Password',{exact:true}).fill('fixture-password');await p.getByRole('button',{name:'Sign in',exact:true}).click();await p.getByRole('heading',{name:'Warehouse overview',exact:true}).waitFor();
  await p.goto(origin+'/warehouse/exceptions/'+id);await p.getByText('Evidence, analysis and verification',{exact:true}).click();
+ scenario='no_policy';await p.reload();await p.getByText('Evidence, analysis and verification',{exact:true}).click();await p.getByLabel('Case operation',{exact:true}).selectOption('analyze');assert.equal(await p.getByRole('button',{name:'Submit case request',exact:true}).isDisabled(),true);await p.getByText('No active resolution policy.',{exact:false}).waitFor();assert.equal(submitted,0);
+ scenario='queued';await p.reload();await p.getByText('Evidence, analysis and verification',{exact:true}).click();
  await p.getByLabel('Case operation',{exact:true}).selectOption('analyze');await p.getByLabel('Case note',{exact:true}).fill('Please investigate and independently check these recorded facts.');await p.getByRole('button',{name:'Submit case request',exact:true}).click();await p.getByText('Analysis queued; awaiting worker result.',{exact:false}).waitFor();assert.equal(submitted,1);
  await mkdir('test-results',{recursive:true});
  for(const width of [1440,390]){
@@ -45,7 +48,7 @@ try{
   for(scenario of ['approved','rejected','error','legacy_unchecked']){
    await p.reload();await p.getByText('Evidence, analysis and verification',{exact:true}).click();
    const review=p.getByRole('region',{name:'Independent AI checker',exact:true});await review.waitFor();
-   if(scenario==='approved'){await review.getByText('Execution: executed',{exact:true}).waitFor();assert.equal(await review.getByText('Passed',{exact:true}).count(),4)}
+   if(scenario==='approved'){await p.getByText('Suggested next action',{exact:true}).waitFor();await p.getByText('No — policy and checker gates still apply',{exact:true}).waitFor();await review.getByText('Execution: executed',{exact:true}).waitFor();assert.equal(await review.getByText('Passed',{exact:true}).count(),4)}
    if(scenario==='rejected'){await review.getByText('Checker: rejected',{exact:true}).waitFor();await review.getByText('Failed',{exact:true}).waitFor()}
    if(scenario==='error'){await p.getByText('Human review required: checker timeout',{exact:true}).waitFor();await review.getByText('Execution: blocked',{exact:true}).waitFor()}
    if(scenario==='legacy_unchecked')await review.getByText('This older analysis has no independent checker approval. Automatic execution is blocked.',{exact:true}).waitFor();

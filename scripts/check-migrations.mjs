@@ -9,7 +9,8 @@ for (const file of files) {
   assert.ok(!seen.has(timestamp), `Duplicate migration timestamp: ${timestamp}`);
   seen.add(timestamp);
   const content = await readFile(`supabase/migrations/${file}`, 'utf8');
-  assert.match(content, /^begin;/i, `${file}: migration must be transactional`);
+  const statements = content.replace(/^(?:\s|--[^\n]*(?:\n|$))*/, '');
+  assert.match(statements, /^begin;/i, `${file}: migration must be transactional`);
   assert.match(content.trim(), /commit;$/i, `${file}: missing transaction commit`);
   assert.ok(!content.includes('tests/bootstrap.sql'), 'Test bootstrap cannot be a migration');
 }

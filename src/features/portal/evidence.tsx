@@ -3,15 +3,29 @@ import { safeError } from '../../shared/i18n/errors';
 import { useRef, useState, type FormEvent } from 'react';
 import { useSession } from '../auth/session';
 import { Button, Card, Input } from '../../shared/ui';
+import { ApiError } from '../../shared/api';
 export function EvidenceUpload({ shipmentId, refresh, variant }: { shipmentId: string; refresh: () => void; variant?: 'card' | 'inline' }) {
   const { api, demo } = useSession(); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   const lock = useRef(false); const reservation = useRef<{ id: string; file: File } | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (lock.current || demo) return;
-    const file = new FormData(event.currentTarget).get('file');
+    // The picker is disabled during reconciliation and is omitted from FormData.
+    // Retry the exact reserved bytes rather than requiring a new selection.
+    const file = reservation.current?.file ?? new FormData(event.currentTarget).get('file');
     if (!(file instanceof File) || !['image/jpeg', 'image/png', 'application/pdf'].includes(file.type) || file.size < 1 || file.size > 10485760) { setMessage('Select JPEG, PNG or PDF, up to 10 MB.'); return; }
     lock.current = true; setBusy(true); setMessage('');
     try {
+      if (reservation.current) {
+        // Storage is immutable. A lost upload response may mean the original
+        // object is already present; confirm availability before retrying PUT.
+        try {
+          await api!.downloadEvidence(reservation.current.id);
+          setMessage(`Evidence already stored: ${reservation.current.id}. Review the uploaded file before physical verification.`);
+          reservation.current = null; refresh(); return;
+        } catch (error) {
+          if (!(error instanceof ApiError) || error.status !== 404) throw error;
+        }
+      }
       if (!reservation.current) reservation.current = { ...await api!.reserveEvidence({ shipment_id: shipmentId, mime_type: file.type, size_bytes: file.size, sme_visible: true }), file };
       await api!.uploadEvidence(reservation.current.id, reservation.current.file);
       setMessage(`Evidence uploaded: ${reservation.current.id}. Physical verification is separate.`); reservation.current = null; refresh();

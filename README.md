@@ -64,3 +64,5 @@ GPS remains foreground-only: leaving the courier page or going offline stops loc
 ### AI investigation pipeline (local/manual worker)
 
 See [implementation and test guide](docs/AI-PIPELINE-IMPLEMENTATION-AND-TESTS.md). Apply `20261022007000_be2_investigation_execution.sql` before running the updated worker. Configure server-only `SUPABASE_WORKER_KEY`, `OPENAI_API_KEY`, vision-capable `OPENAI_MODEL` and `OPENAI_CHECKER_MODEL`. From `api/`, use `python -m app.worker --once` to process one polling cycle. Automatic actions default OFF (`AI_AUTO_EXECUTE=false`); approved safe actions additionally require SQL policy/source/evidence checks. The optional paid worker configuration is isolated in `render-worker.yaml` and is not part of the existing free web-service blueprint. No paid worker is created by this change.
+
+Exception workflow: [full signed-in demonstration guide](docs/SME-WAREHOUSE-AI-DEMONSTRATION.md). The isolated `/design-preview/illustrated` page uses original transparent artwork from the supplied Canva presentation and sample data only.

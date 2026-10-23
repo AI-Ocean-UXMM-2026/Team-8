@@ -231,3 +231,14 @@ test('workspace identity tolerates temporary gateway errors, preserves permissio
  const controller=new AbortController();await assert.rejects(loadWorkspaceIdentity(async()=>{controller.abort(new Error('Cancelled'));throw new ApiError(503,'SERVICE_UNAVAILABLE','Starting')},{signal:controller.signal}),/Cancelled/);
  await assert.rejects(loadWorkspaceIdentity(async()=>{throw new ApiError(503,'SERVICE_UNAVAILABLE','Workspace service is not configured.')},{wait:async()=>{throw Error('Must not wait')}}),/not configured/);
 });
+
+test('SME report acknowledgement must bind shipment, issue, stage and a usable case version', async () => {
+  const body = { shipment_id: '10000000-0000-4000-8000-000000000010', stage: 'inbound' as const, type: 'quantity_mismatch' as const, note: '100 expected, 90 received', evidence_ids: [] };
+  const saved = { id:'30000000-0000-4000-8000-000000000001', ...body, version:1, source_version:'1:1:1' };
+  let value: unknown = saved;
+  const client=createApiClient(async <T>(request: import('../../src/shared/api/transport').ApiRequest)=>{assert.equal(request.path,'/api/exceptions');assert.equal(request.idempotencyKey,key);return value as T;});
+  assert.equal((await client.reportCase(body,key)).id,saved.id);
+  for(const patch of [{id:'invalid'},{shipment_id:saved.id},{stage:'warehouse'},{type:'damaged_goods'},{version:0},{version:1.5},{source_version:null}]){
+    value={...saved,...patch};await assert.rejects(client.reportCase(body,key),(error:ApiError)=>error.code==='INVALID_RESPONSE');
+  }
+});
