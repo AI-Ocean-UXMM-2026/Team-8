@@ -10,6 +10,8 @@ type Command = { kind: 'actions' | 'verifications' | 'close' | 'information' | '
 export function CaseControls({ detail, refresh, sme = false }: { detail: Schemas['CaseDetail']; refresh: () => void; sme?: boolean }) {
   const { api, demo, identity } = useSession(); const [note, setNote] = useState(''); const [kind, setKind] = useState<Command['kind']>(sme ? 'information' : 'actions');
   const [action, setAction] = useState(''); const [fact, setFact] = useState(''); const [evidence, setEvidence] = useState<string[]>([]); const [error, setError] = useState('');
+  const policyVersion = /^\d+:\d+:(\d+)$/.exec(detail.source_version)?.[1];
+  const policyMissing = !sme && ['actions','analyze'].includes(kind) && (!policyVersion || Number(policyVersion) < 1);
   const command = useCommand<Command, Schemas['CaseDetail']>(`parcelcare.case.${demo ? 'demo' : 'live'}.${identity!.actor_id}.${detail.id}`, async (saved, key) => {
     const result = await api!.caseCommand(detail.id, saved.kind, saved.body, key);
     if (result.id !== detail.id || !Number.isInteger(result.version) || result.version < saved.body.expected_version || typeof result.source_version !== 'string') throw new ApiError(502, 'INVALID_RESPONSE', 'Case update could not be confirmed. Retry the original command.');
@@ -17,6 +19,7 @@ export function CaseControls({ detail, refresh, sme = false }: { detail: Schemas
   }, refresh);
   function submit(event: FormEvent) {
     event.preventDefault(); setError('');
+    if (policyMissing) { setError('No active resolution policy. Ask your warehouse administrator to configure this SME before requesting AI or policy actions.'); return; }
     if (!note.trim()) { setError('A written note is required.'); return; }
     const body: Schemas['CaseCommand'] = { expected_version: detail.version, source_version: detail.source_version, note: note.trim(), evidence_ids: evidence };
     if (kind === 'actions' && !detail.allowed_actions?.includes(action)) { setError('Choose an allowed action.'); return; }
@@ -26,6 +29,7 @@ export function CaseControls({ detail, refresh, sme = false }: { detail: Schemas
   }
   if (['closed','resolved'].includes(detail.status)) return null;
   return <Card className="my-5"><h2 className="text-lg font-semibold">{sme ? 'Provide information' : 'Case actions'}</h2>
+    {policyMissing && <p role="status" className="my-3">No active resolution policy. Ask your warehouse administrator to configure this SME before requesting AI or policy actions.</p>}
     {command.result && <p role="status" className="my-3">Saved case state: {human(command.result.status)}{command.result.job_id ? ' · Analysis queued; awaiting worker result.' : ''}</p>}
     {(error || command.error) && <p role="alert" className="my-3 text-red-700">{error || command.error}</p>}
     {command.pending && <div role="status" className="my-3"><p>The original request needs reconciliation.</p><Button disabled={command.busy} onClick={() => void command.execute()}>Retry original case request</Button></div>}
@@ -35,6 +39,6 @@ export function CaseControls({ detail, refresh, sme = false }: { detail: Schemas
       {kind === 'verifications' && <label className="block">Physical fact<select aria-label="Physical fact" className="ml-3 max-w-full rounded border p-2" value={fact} onChange={e => setFact(e.target.value)}><option value="">Select</option>{[...new Set([...detail.required_facts.filter(f => f !== 'sme_decision_recorded'), 'remainder_completed'])].map(f => <option key={f} value={f}>{human(f)}</option>)}</select></label>}</>}
       <label className="block">Written note<textarea aria-label="Case note" value={note} onChange={e => setNote(e.target.value)} required maxLength={2000} className="mt-2 block min-h-24 w-full rounded border p-3" /></label>
       <div>Uploaded evidence{detail.evidence.filter((e): e is Record<string, unknown> & { id: string } => e.uploaded === true && typeof e.id === 'string').map(e => <label key={e.id} className="mt-2 block break-all text-sm"><input type="checkbox" checked={evidence.includes(e.id)} onChange={event => setEvidence(current => event.target.checked ? [...current,e.id] : current.filter(id => id !== e.id))} /> {e.id}</label>)}</div>
-      <Button type="submit">{command.busy ? 'Saving…' : 'Submit case request'}</Button>
+      <Button type="submit" disabled={policyMissing}>{command.busy ? 'Saving…' : 'Submit case request'}</Button>
     </fieldset></form></Card>;
 }

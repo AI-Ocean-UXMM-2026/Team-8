@@ -6,13 +6,14 @@ import { useSession } from '../auth/session';
 import { Badge, Button, Card } from '../../shared/ui';
 import { type WarehouseCase, type WarehouseCaseAction } from '../../shared/api/case-workflow';
 import { useCommand } from './command';
-import { dateTime, ErrorPanel, human, Loading, PageTitle, useResource } from './shared';
+import { dateTime, ErrorPanel, human, Loading, PageTitle } from './shared';
+import { usePolling } from '../portal/polling';
 import { CaseSLAPanel } from '../sla/sla';
 import { CaseDetail } from './case-detail';
 
 export function CaseInvestigation({ id }: { id: string }) {
   const { api, warehouseId, demo } = useSession();
-  const resource = useResource(`${warehouseId}:${id}`, signal => api!.getWarehouseCase(id, warehouseId, signal));
+  const resource = usePolling(`${warehouseId}:${id}`, signal => api!.getWarehouseCase(id, warehouseId, signal));
   const base = demo ? '/demo/warehouse' : '/warehouse';
   if (resource.error) return <ErrorPanel error={resource.error} retry={resource.reload} />;
   if (!resource.data) return <Loading />;

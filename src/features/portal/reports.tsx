@@ -17,6 +17,10 @@ const issues: Array<[Schemas['CaseReport']['type'],string]> = [
   ['transit_damage','Damage in transit'],
   ['quantity_mismatch','Quantity mismatch'],
   ['damaged_goods','Damaged goods'],
+  ['missing_stock','Missing stock'],
+  ['wrong_pick','Wrong item picked'],
+  ['short_pick','Missing item in a pick'],
+  ['transit_loss','Lost in transit'],
 ];
 export function SMEReports(){
   const {api,smeId,warehouseId,demo}=useSession();

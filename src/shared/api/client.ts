@@ -105,7 +105,7 @@ export function createApiClient(transport: Transport) {
     getCase(id: string, signal?: AbortSignal) { return transport<Schemas['CaseSummary'] | Schemas['CaseDetail']>({ method: 'GET', path: `/api/exceptions/${entity(id)}`, signal }); },
     async reportCase(body: Schemas['CaseReport'], key: string) {
       const result = await transport<Schemas['CaseDetail']>({method:'POST',path:'/api/exceptions',body,idempotencyKey:key});
-      if (!result || !isUUID(result.id) || result.shipment_id !== body.shipment_id || result.type !== body.type || result.stage !== body.stage) throw new ApiError(502,'INVALID_RESPONSE','Case result could not be verified. Retry the same saved request.');
+      if (!result || !isUUID(result.id) || result.shipment_id !== body.shipment_id || result.type !== body.type || result.stage !== body.stage || !Number.isSafeInteger(result.version) || result.version < 1 || typeof result.source_version !== 'string') throw new ApiError(502,'INVALID_RESPONSE','Case result could not be verified. Retry the same saved request.');
       return result;
     },
     getApproval(id: string, signal?: AbortSignal) { return transport<Schemas['ApprovalSummary']>({ method: 'GET', path: `/api/approvals/${entity(id)}`, signal }); },

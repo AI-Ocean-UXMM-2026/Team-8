@@ -12,6 +12,19 @@ ID = '00000000-0000-4000-8000-000000000001'
 
 
 class MakerCheckerTests(unittest.TestCase):
+    def test_both_independent_calls_receive_human_replies_without_prior_ai(self):
+        self.source['case']['human_updates'] = [{'type': 'information', 'actor_type': 'sme',
+            'note': 'Receipt confirms the remaining ten units have not arrived.'}]
+        self.source['case']['analyses'] = [{'summary': 'Untrusted previous AI conclusion'}]
+        maker, checker = self.providers()
+        result = maker.investigate(self.source)
+        checker.review(self.source, result)
+        maker_input = json.loads(maker.client.responses.parse.call_args.kwargs['input'])
+        checker_input = json.loads(checker.client.responses.parse.call_args.kwargs['input'])['source']
+        for source in (maker_input, checker_input):
+            self.assertEqual(source['case']['human_updates'], self.source['case']['human_updates'])
+            self.assertNotIn('analyses', source['case'])
+
     def setUp(self):
         self.source = {'lease_token': ID, 'source_version': '2:3:1', 'policy_id': ID, 'policy_version': 1,
             'case': {'id': ID, 'type': 'quantity_mismatch', 'priority': 'normal',

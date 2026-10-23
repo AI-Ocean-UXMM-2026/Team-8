@@ -39,7 +39,9 @@
     "test:orders:database": "node supabase/tests/orders.test.mjs",
     "test:outbound:database": "node supabase/tests/outbound.test.mjs",
     "test:outbound:browser": "node scripts/check-outbound.mjs",
-    "test:shared-stock:database": "node supabase/tests/shared-stock.test.mjs"
+    "test:shared-stock:database": "node supabase/tests/shared-stock.test.mjs",
+    "test:exception-workflow": "node scripts/check-sme-live-workflow.mjs",
+    "test:illustrated-preview": "node scripts/check-illustrated-preview.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

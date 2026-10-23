@@ -62,6 +62,9 @@ def bounded_snapshot(snapshot):
     for key in ('risk_context', 'priority_classification', 'priority_override', 'escalated'):
         if key in snapshot['case']:
             bounded['case'][key] = deepcopy(snapshot['case'][key])
+    # Original human reports/replies are source records, not previous AI output.
+    # Both independent calls need the same conversation facts on re-analysis.
+    bounded['case']['human_updates'] = deepcopy(snapshot['case'].get('human_updates', []))
     bounded['source_version'] = snapshot['source_version']
     bounded['policy_rules'] = deepcopy(snapshot.get('policy_rules', {}))
     return bounded

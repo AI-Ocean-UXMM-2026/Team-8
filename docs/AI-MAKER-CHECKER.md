@@ -37,8 +37,7 @@ SME decisions, correction proposals, physical verification, stock changes,
 dispatch, delivery confirmation, GPS consent and case closure stay outside this
 automatic path. Worker credentials and internal AI results are never public.
 
-Both AIs receive recorded facts and evidence metadata, not image/PDF file
-contents. The prompts prohibit claiming to have inspected unsupplied contents.
+Both AIs receive recorded facts and bounded uploaded JPEG/PNG/PDF content through the trusted evidence reader (at most three files / 20 MB combined). Omitted evidence forces human review. With migration `20261023220000_be2_analysis_human_updates.sql`, both also receive the latest 50 original human reports, replies, decisions and verification/review notes. Prior AI analyses are excluded. The prompts prohibit claiming to have inspected unsupplied contents.
 
 ## Run automated tests without API keys
 
@@ -160,3 +159,5 @@ commit;
 No hosted migration, paid worker provisioning or real-model call is implied by
 passing local tests. Real activation requires the selected project's credentials
 and a running worker; they are not supplied by the fixture tests.
+
+Full signed-in walkthrough: [SME → Warehouse → AI demonstration guide](SME-WAREHOUSE-AI-DEMONSTRATION.md).

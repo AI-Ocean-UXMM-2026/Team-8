@@ -13,13 +13,15 @@ export async function testMakerChecker(db) {
  const command=async(kind,id,body,key=randomUUID())=>(await one('select public.case_command($1,$2,$3,$4::jsonb,$5) r',[kind,id,key,JSON.stringify(body),randomUUID()])).r;
  const read=async id=>(await one('select public.case_read($1) r',[id])).r;
  const priorRules=(await one('select rules from public.resolution_policies where sme_id=$1 order by version desc limit 1',[sme])).rules;
- async function prepare({action='save_summary',auto=true,human=false,missing=[]}={}){
+ async function prepare({action='save_summary',auto=true,human=false,missing=[],humanReply=false}={}){
   await q("update public.resolution_policies set rules=jsonb_set(rules,'{ai_auto_actions}',$2::jsonb) where sme_id=$1",[sme,JSON.stringify(auto?['save_summary','notify_sme','request_information','escalate']:[])]);
   const product=randomUUID(),shipment=randomUUID();
   await q("insert into public.products(id,warehouse_id,sme_id,sku,name) values($1::uuid,$2,$3,$1::uuid::text,'Recorded product')",[product,w,sme]);
   await q("insert into public.shipments(id,warehouse_id,sme_id,reference,direction) values($1::uuid,$2,$3,$1::uuid::text,'inbound')",[shipment,w,sme]);
   await q('insert into public.shipment_items(shipment_id,warehouse_id,sme_id,product_id,expected_qty,received_qty) values($1,$2,$3,$4,100,90)',[shipment,w,sme,product]);
-  let c,job;await user(staff,async()=>{c=await command('report',shipment,{stage:'inbound',type:'quantity_mismatch',note:'Recorded shortage 10',evidence_ids:[]});job=(await command('analyze',c.id,{expected_version:c.version,source_version:c.source_version,note:'Investigate current records',evidence_ids:[]})).job_id});
+  let c,job;await user(staff,async()=>{c=await command('report',shipment,{stage:'inbound',type:'quantity_mismatch',note:'Recorded shortage 10',evidence_ids:[]})});
+  if(humanReply)await user(customer,async()=>{c=await command('information',c.id,{expected_version:c.version,source_version:c.source_version,note:'SME receipt confirms remaining ten are missing',evidence_ids:[]})});
+  await user(staff,async()=>{job=(await command('analyze',c.id,{expected_version:c.version,source_version:c.source_version,note:'Investigate current records',evidence_ids:[]})).job_id});
   const snapshot=(await one('select public.analysis_claim($1) r',[job])).r;
   const maker={policy_id:snapshot.policy_id,model:'fixture-maker',provider_response_id:'maker-'+job,configuration:{fake:true},input_tokens:10,output_tokens:10,proposal_hash:'a'.repeat(64),
    output:{exception_type:c.type,priority:c.priority,summary:'Recorded shortage is 10.',evidence_ids:[],recommended_action:action,requires_human:human,missing_information:missing}};
@@ -32,6 +34,12 @@ export async function testMakerChecker(db) {
  }
  const noAction=async run=>assert.equal((await one('select count(*)::int n from public.action_executions where case_id=$1',[run.c.id])).n,0);
  try{
+  const withReply=await prepare({humanReply:true});
+  assert.ok(withReply.snapshot.case.human_updates.some(e=>e.type==='information'&&e.actor_type==='sme'&&e.note==='SME receipt confirms remaining ten are missing'));
+  assert.ok(withReply.snapshot.case.human_updates.every(e=>['report','information','decision','verify','review'].includes(e.type)));
+  await user(customer,async()=>{const c=await read(withReply.c.id);await command('information',c.id,{expected_version:c.version,source_version:c.source_version,note:'New evidence arrived while AI was running',evidence_ids:[]})});
+  assert.equal((await withReply.finish()).execution_status,'blocked');await noAction(withReply);
+  console.log('PASS MAKER-CHECKER: human SME replies enter source; replies during analysis block stale execution');
   const happy=await prepare();const first=await happy.finish();
   assert.equal(first.review_status,'approved');assert.equal(first.execution_status,'executed');
   assert.deepEqual(await happy.finish(),first);

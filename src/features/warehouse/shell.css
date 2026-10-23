@@ -40,6 +40,7 @@
 @media(max-height:600px) and (min-width:768px){.warehouseSidebarBrand{padding:0 12px}.warehouseSidebarFooter{padding:10px 12px}.warehouseSelector{margin-top:16px}}
 
 @media(max-width:767px){
+ .warehousePage,.sidebarCollapsed .warehousePage{margin-left:0;width:100%}
  .warehouseLayout{display:block}.warehouseSidebar{position:sticky;left:auto;top:var(--pc-header-height);width:100%;height:auto;z-index:40;border-right:0;border-bottom:1px solid var(--border);grid-template-rows:auto}
  .warehouseSidebarBrand{padding:16px;justify-content:space-between}.warehouseLogo{max-width:160px}
  .warehouseMenuToggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 14px;border:1px solid var(--input);border-radius:var(--radius-md);font-size:13px;font-weight:600;background:var(--background);color:var(--foreground)}
