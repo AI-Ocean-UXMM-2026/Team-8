@@ -55,7 +55,7 @@ function Checkout(){
  const prefilled=useRef(false),searchVersion=useRef(0),selectedQuery=useRef(''),completedSearch=useRef('');
  const command=useCommand<OrderInput,SmeOrder>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{prefilled.current=false;setEditingLocation(false);setQty({});setBasket({});setAttempted(false);setStep(1);setMessage('Release request saved. Check Request history for reservation and dispatch status.');resource.reload();catalog.reload();});
  const uncertain=!!command.pending,locked=command.busy||uncertain||locationSaving;
- useEffect(()=>{const timer=setTimeout(()=>{setSearch(searchDraft.trim());setCursor('');setHistory([]);},350);return()=>clearTimeout(timer);},[searchDraft]);
+ useEffect(()=>{if(searchDraft.trim()===search)return;const timer=setTimeout(()=>{setSearch(searchDraft.trim());setCursor('');setHistory([]);},350);return()=>clearTimeout(timer);},[searchDraft,search]);
  useEffect(()=>{
   if(!resource.data||!command.ready||prefilled.current)return;
   prefilled.current=true;
