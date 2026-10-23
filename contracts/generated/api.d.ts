@@ -5141,6 +5141,7 @@ export interface operations {
         parameters: {
             query: {
                 warehouse_id: string;
+                sme_id?: string | null;
                 search?: string;
                 category?: "" | "uncategorized" | "food_beverages" | "clothing_accessories" | "home_kitchen" | "electronics" | "beauty_personal_care" | "health_medical" | "office_stationery" | "other";
                 in_stock_only?: boolean;

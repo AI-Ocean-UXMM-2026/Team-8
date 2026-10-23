@@ -52,7 +52,7 @@ export function SMEDashboard() {
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button type="button" disabled={generating} onClick={() => void generateOrder()}>
-            {generating ? 'Generating…' : 'Generate demo order'}
+            {generating ? 'Generating…' : 'Generate demo release request'}
           </Button>
         </div>
         {generated && <p role="status" className="mt-3 text-sm text-brand font-medium">{generated}</p>}
@@ -72,7 +72,7 @@ export function SMEDashboard() {
           <span className="smeQuickActionIcon" aria-hidden="true"><PackageIcon size={26} weight="duotone" /></span>
           <span className="smeQuickActionCopy">
             <strong>Create stock release request</strong>
-            <small>Choose products from your SME-owned stock and place your order.</small>
+            <small>Choose products from your SME-owned stock and submit a stock release request.</small>
           </span>
           <ArrowRightIcon className="smeQuickActionArrow" aria-hidden="true" size={18} weight="bold" />
         </Link>
@@ -131,7 +131,7 @@ export function SMEDashboard() {
             <span className="smeSectionIcon" aria-hidden="true"><PackageIcon size={18} weight="duotone" /></span>
             <h2 className="smeSectionTitle">Available Warehouse Inventory & Catalog</h2>
           </div>
-          <p className="smeSectionDescription">Current verified stock stored at the warehouse hub ready for immediate ordering and outbound fulfillment.</p>
+          <p className="smeSectionDescription">Current verified stock stored at the warehouse hub available for release to your SME location.</p>
         </div>
         {data.catalog.length ? (
           <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Available your SME-owned stock">
@@ -164,7 +164,7 @@ export function SMEDashboard() {
             <span className="smeSectionIcon" aria-hidden="true"><ArrowsLeftRightIcon size={18} weight="duotone" /></span>
             <h2 className="smeSectionTitle">Inbound & Outbound Shipment Records</h2>
           </div>
-          <p className="smeSectionDescription">Recorded inbound supplier receipts and outbound customer dispatches with real-time delivery statuses.</p>
+          <p className="smeSectionDescription">Recorded inbound supplier receipts and outbound deliveries to your SME location with real-time delivery statuses.</p>
         </div>
         {data.shipments.length ? (
           <div className="smeTableScroll" tabIndex={0} role="region" aria-label="Shipments">

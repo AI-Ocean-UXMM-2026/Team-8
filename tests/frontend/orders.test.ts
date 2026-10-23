@@ -38,13 +38,15 @@ test('SME demo releases only its own stock to its shop, preserving profile and s
  const {warehouse_id:warehouse,sme_id:sme}=identity.memberships[0];
  const catalog=await merchant.getWarehouseCatalog(warehouse,undefined,sme!);
  assert.equal(catalog.length,2);assert.ok(catalog.every(p=>!('sme_id' in p)&&!('shipment_ids' in p)));
+ await assert.rejects(merchant.getCatalogPage(warehouse,{smeId:'10000000-0000-4000-8000-000000000002'}));
+ await assert.rejects(merchant.submitOrder({warehouse_id:warehouse,sme_id:sme!,order_kind:'sme_self_delivery',customer_name:'Shop',customer_phone:'09123',address:'SME shop',latitude:16,longitude:96,notes:'',maps_url:'',lines:[{product_id:'90000000-0000-4000-8000-000000000003',expected_qty:1}]},crypto.randomUUID()));
  const profile={recipient_name:'SME shop',recipient_phone:'091234567',address:'SME shop, Yangon',latitude:16.84,longitude:96.17,maps_url:'',notes:''};
  assert.equal(await merchant.getSMEDeliveryProfile(warehouse,sme!),null);
  await merchant.saveSMEDeliveryProfile(warehouse,sme!,profile);
  const body={...profile,customer_name:profile.recipient_name,customer_phone:profile.recipient_phone,order_kind:'sme_self_delivery' as const,warehouse_id:warehouse,sme_id:sme!,lines:[{product_id:catalog[0].id,expected_qty:4}]};
  const key=crypto.randomUUID(),order=await merchant.submitOrder(body,key);
  assert.equal((await merchant.submitOrder(body,key)).id,order.id);
- assert.equal((await merchant.getWarehouseCatalog(warehouse,undefined,sme!))[0].available_qty,96);
+ assert.equal((await merchant.getWarehouseCatalog(warehouse,undefined,sme!)).find(p=>p.id===catalog[0].id)!.available_qty,catalog[0].available_qty-4);
  await merchant.saveSMEDeliveryProfile(warehouse,sme!,{...profile,address:'New shop'});
  assert.equal((await merchant.listOrders(warehouse,sme!))[0].payload.address,'SME shop, Yangon');
  const staff=createApiClient(createWarehouseMockTransport(storage));

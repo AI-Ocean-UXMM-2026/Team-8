@@ -4600,6 +4600,23 @@
             }
           },
           {
+            "name": "sme_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sme Id"
+            }
+          },
+          {
             "name": "search",
             "in": "query",
             "required": false,

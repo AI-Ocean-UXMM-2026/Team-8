@@ -147,4 +147,16 @@ begin
  return result;
 end $$;
 
+create or replace function private.check_product_scope() returns trigger
+language plpgsql security definer set search_path='' as $$
+declare owner uuid;
+begin
+ select sme_id into owner from public.products where id=new.product_id and warehouse_id=new.warehouse_id;
+ if not found or (owner is not null and owner is distinct from new.sme_id)
+  or (tg_table_name='shipment_items' and tg_op='INSERT' and owner is null) then
+  raise exception 'product_scope_mismatch' using errcode='23503';
+ end if;
+ return new;
+end $$;
+
 commit;

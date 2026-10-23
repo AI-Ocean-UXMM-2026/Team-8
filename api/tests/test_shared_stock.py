@@ -27,6 +27,8 @@ class SharedStockTests(unittest.TestCase):
         self.headers={'Authorization':'Bearer verified','Idempotency-Key':str(uid(20))}
         self.query=f'?warehouse_id={uid(2)}&sme_id={uid(4)}'
     def test_catalog_has_no_tenant_or_shipment_fields_and_is_scoped(self):
+        self.assertEqual(self.client.get(f'/api/orders/catalog?warehouse_id={uid(2)}',headers=self.headers).status_code,403)
+        self.identity=staff
         r=self.client.get(f'/api/orders/catalog?warehouse_id={uid(2)}',headers=self.headers)
         self.assertEqual(r.status_code,200,r.text)
         self.assertEqual(set(r.json()[0]),{'id','warehouse_id','sku','name','available_qty'})

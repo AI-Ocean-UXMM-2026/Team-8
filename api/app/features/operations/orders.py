@@ -58,9 +58,7 @@ class WarehouseCatalogItem(DTO):
 
 @router.get('/catalog', response_model=list[WarehouseCatalogItem], operation_id='warehouseCatalog')
 def catalog(request: Request, identity: Identity, warehouse_id: UUID):
-    from ...core.errors import AppError
-    if not any(m.warehouse_id == warehouse_id and m.role in ('sme', 'staff', 'owner') for m in identity.memberships):
-        raise AppError(403, 'FORBIDDEN', 'Access denied.')
+    identity.require_staff(warehouse_id)
     return call(request, identity, 'warehouse_catalog', {'p_warehouse': str(warehouse_id)})
 
 class CatalogProduct(WarehouseCatalogItem):

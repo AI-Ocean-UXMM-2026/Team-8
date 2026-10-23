@@ -15,10 +15,21 @@ export async function testSharedStock(db){
  const tenant2='20000000-0000-4000-8000-000000000002';
  await q("insert into public.memberships(profile_id,warehouse_id,sme_id,role) values($1,$2,$3,'sme')",[second,w,tenant2]);
  const profile=(id,value=null)=>one('select public.sme_delivery_profile($1,$2,$3::jsonb) r',[w,id,value?JSON.stringify(value):null]);
- const legacy=randomUUID();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1,$2,null,$1::text,'Unassigned stock',20)",[legacy,w]);
+ const legacy=randomUUID();await q("insert into public.products(id,warehouse_id,sme_id,sku,name,available_qty) values($1::uuid,$2,null,$1::text,'Unassigned stock',20)",[legacy,w]);
  await as(actor,async()=>{assert.equal((await profile(s)).r,null);await assert.rejects(()=>profile(tenant2),/forbidden/);await assert.rejects(()=>q('select public.warehouse_catalog($1)',['10000000-0000-4000-8000-000000000002']),/forbidden/);});
  const body={warehouse_id:w,sme_id:s,order_kind:'sme_self_delivery',save_delivery_profile:true,recipient_name:'Test SME shop',recipient_phone:'091234567',address:'Yangon',latitude:16.84,longitude:96.17,maps_url:'https://maps.app.goo.gl/abc',notes:'Floor 2',lines:[{product_id:product,expected_qty:7}]};
  const command=async(id,b,key=randomUUID())=>(await one('select public.sme_order_command($1,$2,$3,$4::jsonb) r',[w,key,id,JSON.stringify(b)])).r;
+ await as(actor,async()=>{
+  await assert.rejects(()=>q('select public.warehouse_catalog($1)',[w]),/forbidden/);
+  await assert.rejects(()=>q('select public.sme_stock_catalog($1,$2)',[w,tenant2]),/forbidden/);
+  await assert.rejects(()=>command(null,{...body,lines:[{product_id:product,expected_qty:1},{product_id:legacy,expected_qty:1}]}),/invalid_product/);
+ });
+ assert.equal((await one('select reserved_qty from public.products where id=$1',[product])).reserved_qty,0);
+ const historical=randomUUID();
+ await q('update public.products set reserved_qty=2 where id=$1',[legacy]);
+ await q('insert into public.sme_orders(id,warehouse_id,sme_id,created_by,payload) values($1,$2,$3,$4,$5::jsonb)',[historical,w,s,actor,JSON.stringify({...body,lines:[{product_id:legacy,expected_qty:2}]})]);
+ await as(staff,async()=>{await assert.rejects(()=>command(historical,{action:'accept',delivery_mode:'in_house'}),/stock_owner_mismatch/);await command(historical,{action:'reject',note:'Resubmit using SME-owned stock'});});
+ assert.equal((await one('select reserved_qty from public.products where id=$1',[legacy])).reserved_qty,0);
  let order;const key=randomUUID();
  await as(actor,async()=>{order=await command(null,body,key);assert.equal((await command(null,body,key)).id,order.id);await assert.rejects(()=>command(null,{...body,notes:'changed'},key),/idempotency_conflict/);await assert.rejects(()=>command(null,body),/stock_unavailable/);await assert.rejects(()=>command(order.id,{action:'accept',delivery_mode:'in_house'}),/forbidden/);});
  assert.equal((await one('select available_qty,reserved_qty from public.products where id=$1',[product])).reserved_qty,7);
@@ -38,7 +49,7 @@ export async function testSharedStock(db){
  });
  await as(staff,async()=>{assert.equal((await profile(s)).r.address,'Updated shop address');await assert.rejects(()=>profile(s,{recipient_name:'Staff',recipient_phone:'09123',address:'Wrong',latitude:16,longitude:96}),/forbidden/);});
 
- await as(actor,async()=>{const list=(await one('select public.sme_orders_read($1,$2) r',[w,s])).r;assert.equal(list.find(o=>o.id===order.id).payload.lines[0].name,'Order product');const catalog=(await one('select public.sme_stock_catalog($1,$2) r',[w,s])).r.items;assert.equal(catalog.find(p=>p.id===product).available_qty,3);assert.deepEqual(Object.keys(catalog.find(p=>p.id===product)).sort(),['available_qty','id','name','sku','warehouse_id']);assert.ok((await q('select * from public.products')).rows.some(p=>p.id===product));});
+ await as(actor,async()=>{const list=(await one('select public.sme_orders_read($1,$2) r',[w,s])).r;assert.equal(list.find(o=>o.id===order.id).payload.lines[0].name,'Order product');const catalog=(await one('select public.sme_stock_catalog($1,$2) r',[w,s])).r.items;assert.equal(catalog.find(p=>p.id===product).available_qty,3);assert.deepEqual(Object.keys(catalog.find(p=>p.id===product)).sort(),['available_qty','category','id','name','sku','warehouse_id']);assert.ok((await q('select * from public.products')).rows.some(p=>p.id===product));});
  await as(foreign,async()=>{await assert.rejects(()=>command(null,body),/forbidden/);assert.equal((await q('select * from public.sme_orders')).rows.length,0);await assert.rejects(()=>q('select public.warehouse_catalog($1)',[w]),/forbidden/);});
  await as(actor,async()=>{await command(order.id,{action:'cancel'});await assert.rejects(()=>command(order.id,{action:'cancel'}),/stale_version/);});
  assert.equal((await one('select reserved_qty from public.products where id=$1',[product])).reserved_qty,0);
@@ -91,7 +102,7 @@ export async function testSharedStock(db){
   await delivery('return',b,k);await delivery('return',b,k);
  });
  assert.deepEqual(await one('select available_qty,quarantined_qty,reserved_qty from public.products where id=$1',[product]),{available_qty:2,quarantined_qty:1,reserved_qty:0});
- assert.equal((await one('select sme_id from public.products where id=$1',[product])).sme_id,null);
+ assert.equal((await one('select sme_id from public.products where id=$1',[product])).sme_id,s);
  await as(staff,async()=>{
   const version=(await one('select version from public.products where id=$1',[product])).version;
   const b={expected_version:version,available_delta:1,quarantined_delta:0,notes:'Verified warehouse common stock count',evidence_ids:[record.id]},k=randomUUID();
