@@ -1,0 +1,418 @@
+/* Total Stock in Warehouse Styles */
+.stockWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.stockHeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.stockBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary-700);
+  text-decoration: none;
+  transition: transform .15s ease, color .15s ease;
+}
+
+.stockBackLink:hover {
+  color: var(--color-primary-900);
+  transform: translateX(-2px);
+  text-decoration: underline;
+}
+
+/* KPI Summary Cards */
+.stockKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stockKpiCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.stockKpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+}
+
+.stockKpiIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.stockKpiIconBlue {
+  background: var(--color-primary-50, rgba(8,113,122,.08));
+  color: var(--color-primary-700, #08717a);
+}
+
+.stockKpiIconGreen {
+  background: rgba(16, 185, 129, .1);
+  color: #059669;
+}
+
+.stockKpiIconAmber {
+  background: rgba(245, 158, 11, .12);
+  color: #d97706;
+}
+
+.stockKpiIconRose {
+  background: rgba(239, 68, 68, .1);
+  color: #dc2626;
+}
+
+.stockKpiContent {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stockKpiLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.stockKpiValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+/* Filters & Toolbar */
+.stockToolbarCard {
+  padding: 20px;
+}
+
+.stockToolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stockSearchWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.stockSearchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.stockSearchInput {
+  width: 100%;
+  height: 42px;
+  padding-left: 38px !important;
+  padding-right: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input);
+  background: var(--background);
+  font-size: 14px;
+}
+
+.stockFilterGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stockSelect {
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 14px;
+  font-size: 13.5px;
+  cursor: pointer;
+  outline: none;
+}
+
+.stockSelect:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+  outline-offset: 2px;
+}
+
+/* Table Card */
+.stockTableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.stockTableHeaderBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.stockTableTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.stockCountBadge {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.stockTableContainer {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.stockTableContainer:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+}
+
+.stockTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.stockTable th {
+  padding: 12px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.stockTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.stockTable tbody tr:hover td {
+  background: color-mix(in srgb, var(--primary) 3%, transparent);
+}
+
+.stockTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.stockIndexCell {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  width: 44px;
+  text-align: center;
+}
+
+.stockProductName {
+  font-weight: 600;
+  color: var(--foreground);
+  font-size: 14px;
+  display: block;
+  line-height: 1.4;
+}
+
+.stockProductSub {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.stockSkuBadge {
+  display: inline-block;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--muted);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.stockCategoryBadge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(8, 113, 122, .08);
+  color: var(--color-primary-800);
+}
+
+.stockQtyCell {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  text-align: right;
+  padding-right: 24px !important;
+}
+
+/* Stock Status Badges */
+.stockBadgeInStock {
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 600;
+}
+
+.stockBadgeLow {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a !important;
+  font-weight: 600;
+}
+
+.stockBadgeOut {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+  font-weight: 600;
+}
+
+/* Pagination Bar */
+.stockPaginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  flex-wrap: wrap;
+}
+
+.stockPaginationInfo {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.stockPaginationInfo strong {
+  color: var(--foreground);
+}
+
+.stockPaginationNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stockPageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.stockPageBtn:hover:not(:disabled) {
+  background: var(--muted);
+  border-color: var(--color-primary-600);
+  color: var(--color-primary-800);
+}
+
+.stockPageBtn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.stockPageBtnActive {
+  background: var(--color-primary-700) !important;
+  border-color: var(--color-primary-700) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
+.stockPageEllipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 34px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stockKpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .stockKpiGrid {
+    grid-template-columns: 1fr;
+  }
+  .stockToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stockFilterGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stockSelect {
+    width: 100%;
+  }
+  .stockPaginationBar {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+}

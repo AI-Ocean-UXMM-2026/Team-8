@@ -74,3 +74,4 @@
 .smeCardHeader{margin-bottom:16px;display:flex;flex-direction:column;gap:3px}
 .smeCardHeaderWithAction{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
 .smeCardHeaderWithAction>div{flex:1;min-width:min(100%,320px)}
+.smeCardFooter{display:flex;justify-content:flex-end;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}

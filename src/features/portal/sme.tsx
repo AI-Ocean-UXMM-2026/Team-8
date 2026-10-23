@@ -144,7 +144,7 @@ export function SMEDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {data.catalog.map(item => (
+                {data.catalog.slice(0, 10).map(item => (
                   <tr key={item.id}>
                     <td data-user-content>{item.name}</td>
                     <td data-user-content>{item.sku}</td>
@@ -157,6 +157,13 @@ export function SMEDashboard() {
         ) : (
           <Empty text="No products recorded yet." />
         )}
+        <div className="smeCardFooter">
+          <Button variant="outline" asChild>
+            <Link href={demo ? '/demo/sme/stock' : '/sme/stock'}>
+              View more →
+            </Link>
+          </Button>
+        </div>
       </Card>
       <Card id="sme-shipments">
         <div className="smeCardHeader">
