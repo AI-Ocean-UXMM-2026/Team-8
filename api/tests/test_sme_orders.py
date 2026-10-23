@@ -37,3 +37,10 @@ class OrderTests(unittest.TestCase):
     def test_listing_scope(self):
         self.assertEqual(self.client.get(f'/api/orders?warehouse_id={uid(2)}&sme_id={uid(4)}',headers=self.headers).status_code,200)
         self.assertEqual(self.client.get(f'/api/orders?warehouse_id={uid(2)}',headers=self.headers).status_code,403)
+
+    def test_deadline_validation_and_wire_value(self):
+        for due in ['invalid', '2030-01-01T12:00:00']:
+            self.assertEqual(self.client.post('/api/orders',json={**self.body,'delivery_due_at':due},headers=self.headers).status_code,422)
+        r=self.client.post('/api/orders',json={**self.body,'delivery_due_at':'2030-01-01T12:00:00Z'},headers=self.headers)
+        self.assertEqual(r.status_code,201,r.text)
+        self.assertIn('delivery_due_at',self.calls[-1][1]['p_body'])

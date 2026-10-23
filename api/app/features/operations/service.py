@@ -33,7 +33,7 @@ def call(request, identity, function, parameters):
             raise AppError(409, message.upper(), 'Refresh the record or retry the original command.') from exc
         if message == 'closure_pending':
             raise AppError(409, 'CLOSURE_PENDING', 'Required decisions, verified outcomes or actions are still pending.') from exc
-        if code in ('22023', '22P02', '23505', '23503', '23514', '22003'):
+        if code in ('22023', '22007', '22008', '22P02', '23505', '23503', '23514', '22003'):
             raise AppError(422, 'VALIDATION_ERROR', 'Operation violates warehouse rules.') from exc
         raise AppError(503, 'SERVICE_UNAVAILABLE', 'Database operation could not be confirmed; retry with the same key.') from exc
 

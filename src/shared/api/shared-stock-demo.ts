@@ -58,6 +58,11 @@ export function createSharedStockDemo(warehouse:string,sme:string|null,storage?:
     if(payload.order_kind!=='sme_self_delivery')throw new ApiError(422,'VALIDATION_ERROR','Choose shared warehouse stock.');
     const available=catalog(state);const seen=new Set();for(const l of payload.lines){if(seen.has(l.product_id)||!Number.isSafeInteger(l.expected_qty)||l.expected_qty<=0||l.expected_qty>(available.find(p=>p.id===l.product_id)?.available_qty??0))throw new ApiError(409,'STOCK_UNAVAILABLE','Choose available stock owned by your SME.');seen.add(l.product_id);}
     value=checkedOrder({id:crypto.randomUUID(),warehouse_id:warehouse,sme_id:sme,created_at:new Date().toISOString(),status:'pending',payload:{...payload,lines:payload.lines.map(l=>({...l,name:available.find(p=>p.id===l.product_id)?.name,sku:available.find(p=>p.id===l.product_id)?.sku}))},note:'',shipment_id:null,reserved:true});
+    if(payload.delivery_due_at){
+     const due=Date.parse(payload.delivery_due_at);if(!Number.isFinite(due)||due<=Date.now()||due>Date.now()+30*86400000)throw new ApiError(422,'VALIDATION_ERROR','Choose a future delivery deadline within 30 days.');
+     const order=value as DemoOrder,shipment:Schemas['ShipmentDetail']={id:crypto.randomUUID(),warehouse_id:warehouse,sme_id:sme!,reference:'ORD-'+order.id,direction:'outbound',delivery_mode:'in_house',status:'ready',version:1,created_at:new Date().toISOString(),evidence_ids:[],evidence:[],events:[],allowed_events:['picked'],items:order.payload.lines.map(l=>({product_id:l.product_id,sku:l.sku??'',name:l.name??'Product',expected_qty:l.expected_qty,received_qty:0,damaged_qty:0}))};
+     state.shipments.push(shipment);order.status='accepted';order.shipment_id=shipment.id;
+    }
     if(payload.save_delivery_profile)state.profiles[sme!]=checkedProfile({...payload,recipient_name:payload.customer_name,recipient_phone:payload.customer_phone});
     state.orders.unshift(value as DemoOrder);
    }else{

@@ -1,5 +1,6 @@
 """SME outbound requests; authorization and stock reservations are atomic in SQL."""
 from typing import Annotated, Literal
+from datetime import datetime
 from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import AliasChoices, Field, model_validator
@@ -39,12 +40,18 @@ class DeliveryProfile(DTO):
 class OrderInput(DeliveryProfile):
     warehouse_id: UUID
     sme_id: UUID
+    delivery_due_at: datetime | None = None
     order_kind: Literal['sme_self_delivery'] | None = None
     save_delivery_profile: bool = False
     lines: Annotated[list[CreateLine], Field(min_length=1, max_length=100)]
 
     @model_validator(mode='after')
     def unique_lines(self):
+        if self.delivery_due_at is not None:
+            due = self.delivery_due_at
+            # SQL checks time after idempotency replay, so late retries remain valid.
+            if due.tzinfo is None:
+                raise ValueError('Delivery deadline must include a timezone')
         if len({x.product_id for x in self.lines}) != len(self.lines):
             raise ValueError('Duplicate products')
         return self

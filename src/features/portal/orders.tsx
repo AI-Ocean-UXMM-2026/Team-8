@@ -6,7 +6,7 @@ import {Button,Card,Input} from '../../shared/ui';
 import {PageTitle,Loading,ErrorPanel,dateTime,human} from '../warehouse/shared';
 import {usePolling} from './polling';
 import {DeliveryMap,type MapPoint} from '../tracking/delivery-map';
-import {catalogCategories,googleMapsUrl,type DeliveryProfile,type CatalogProduct,type OrderInput,type SmeOrder} from '../../shared/api/orders';
+import {releaseTiming,catalogCategories,googleMapsUrl,type DeliveryProfile,type CatalogProduct,type OrderInput,type SmeOrder} from '../../shared/api/orders';
 import {useCommand} from '../warehouse/command';
 import {
   CheckIcon,
@@ -41,6 +41,7 @@ export function SmeOrders(){
 function Checkout(){
  const my=useMyanmar();
  const {api,warehouseId,smeId,identity,demo}=useSession();
+ const [deadline,setDeadline]=useState('');
  const [step,setStep]=useState(1),[qty,setQty]=useState<Record<string,number>>({}),[basket,setBasket]=useState<Record<string,CatalogProduct>>({});
  const [searchDraft,setSearchDraft]=useState(''),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[cursor,setCursor]=useState(''),[history,setHistory]=useState<string[]>([]);
  const [addQty,setAddQty]=useState<Record<string,string>>({});
@@ -52,14 +53,14 @@ function Checkout(){
  const [query,setQuery]=useState(''),[submittedQuery,setSubmittedQuery]=useState(''),[searchAttempt,setSearchAttempt]=useState(0),[places,setPlaces]=useState<Place[]>([]),[searching,setSearching]=useState(false),[searchError,setSearchError]=useState('');
  const [savedLocation,setSavedLocation]=useState<DeliveryProfile|null>(null),[editingLocation,setEditingLocation]=useState(false),[locationSaving,setLocationSaving]=useState(false),[locationError,setLocationError]=useState('');
  const prefilled=useRef(false),searchVersion=useRef(0),selectedQuery=useRef(''),completedSearch=useRef('');
- const command=useCommand<OrderInput,SmeOrder>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{prefilled.current=false;setEditingLocation(false);setQty({});setBasket({});setAttempted(false);setStep(1);setMessage('Release request submitted. Awaiting warehouse approval.');resource.reload();catalog.reload();});
+ const command=useCommand<OrderInput,SmeOrder>(`${demo?'demo-order-submit':'order-submit'}:${identity!.actor_id}:${warehouseId}:${smeId}`,(body,key)=>api!.submitOrder(body,key),()=>{prefilled.current=false;setEditingLocation(false);setQty({});setBasket({});setAttempted(false);setStep(1);setMessage('Release request saved. Check Request history for reservation and dispatch status.');resource.reload();catalog.reload();});
  const uncertain=!!command.pending,locked=command.busy||uncertain||locationSaving;
  useEffect(()=>{const timer=setTimeout(()=>{setSearch(searchDraft.trim());setCursor('');setHistory([]);},350);return()=>clearTimeout(timer);},[searchDraft]);
  useEffect(()=>{
   if(!resource.data||!command.ready||prefilled.current)return;
   prefilled.current=true;
   const p=command.pending?.body;
-  if(p){setName(p.customer_name);setPhone(p.customer_phone);setAddress(p.address);setNotes(p.notes);setPoint([p.latitude,p.longitude]);return;}
+  if(p){setDeadline(p.delivery_due_at?new Date(Date.parse(p.delivery_due_at)-new Date(p.delivery_due_at).getTimezoneOffset()*60000).toISOString().slice(0,16):'');setName(p.customer_name);setPhone(p.customer_phone);setAddress(p.address);setNotes(p.notes);setPoint([p.latitude,p.longitude]);return;}
   const profile=resource.data.profile;if(profile){setName(profile.recipient_name);setPhone(profile.recipient_phone);setAddress(profile.address);setNotes(profile.notes);setPoint([profile.latitude,profile.longitude]);setConfirmed(true);setSavedLocation(profile);}else setEditingLocation(true);
  },[resource.data,command.ready,command.pending]);
  useEffect(()=>{
@@ -79,6 +80,7 @@ function Checkout(){
  const lines=selectedIds.map(id=>({product_id:id,expected_qty:qty[id]}));
  const itemError=(p:CatalogProduct)=>!Number.isSafeInteger(qty[p.id])||qty[p.id]<1?'Enter a whole quantity of 1 or more.':qty[p.id]>p.available_qty?`Only ${p.available_qty} units available. Reduce the quantity or remove this product.`:'';
  const productsError=!lines.length?'Add at least one product to your release request.':cart.length!==lines.length||cart.some(p=>itemError(p))?'Update the highlighted product quantities before continuing.':'';
+ const deadlineError=!deadline?'Choose when delivery must reach your SME.':!Number.isFinite(Date.parse(deadline))||Date.parse(deadline)<=Date.now()||Date.parse(deadline)>Date.now()+30*86400000?'Choose a future delivery deadline within 30 days.':'';
  const errors={name:!name.trim()?'Enter the SME location contact name.':'',phone:phone.trim().length<3?'Enter a phone number with at least 3 characters.':'',address:!address.trim()?'Enter the SME location address, floor or landmark.':'',location:!point?'Search for a place or click the map to select a delivery location.':!confirmed?'Check the map pin and confirm the delivery location.':''};
  const deliveryValid=!Object.values(errors).some(Boolean),units=selectedIds.reduce((n,id)=>n+(Number.isSafeInteger(qty[id])?Math.max(0,qty[id]):0),0);
  function setAmount(p:CatalogProduct,n:number){setBasket(v=>({...v,[p.id]:p}));setQty(v=>{const next={...v};if(n===0)delete next[p.id];else next[p.id]=n;return next;});}
@@ -86,8 +88,8 @@ function Checkout(){
  function choose(p:MapPoint){searchVersion.current++;setSearching(false);setSearchError('');setPlaces([]);setPoint(p);setConfirmed(false);}
  function error(key:keyof typeof errors){return attempted&&errors[key]?<p id={`order-${key}-error`} role="alert" className="mt-1 text-sm text-red-700">{errors[key]}</p>:null;}
  function advance(){setAttempted(true);if(catalog.loading||catalog.error||productsError)return;setStep(2);setAttempted(false);}
- async function submit(){if(command.pending){await command.execute();return;}setAttempted(true);if(catalog.loading||catalog.error)return;if(productsError){setStep(1);return;}if(!deliveryValid||!point||!savedLocation||editingLocation){setStep(2);setEditingLocation(true);return;}
-  await command.execute({warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:'',latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:false});
+ async function submit(){if(command.pending){await command.execute();return;}setAttempted(true);if(catalog.loading||catalog.error)return;if(productsError){setStep(1);return;}if(deadlineError)return;if(!deliveryValid||!point||!savedLocation||editingLocation){setStep(2);setEditingLocation(true);return;}
+  await command.execute({delivery_due_at:new Date(deadline).toISOString(),warehouse_id:warehouseId,sme_id:smeId,customer_name:name.trim(),customer_phone:phone.trim(),address:address.trim(),notes:notes.trim(),maps_url:'',latitude:point[0],longitude:point[1],lines,order_kind:'sme_self_delivery',save_delivery_profile:false});
  }
  async function saveLocation(){
   setAttempted(true);if(!deliveryValid||!point)return;setLocationSaving(true);setLocationError('');
@@ -128,7 +130,7 @@ function Checkout(){
  <label className="block">Search place or township<Input value={query} maxLength={200} placeholder="Type a place, township or landmark" onChange={e=>{searchVersion.current++;setSearching(false);setPlaces([]);setQuery(e.target.value);setPoint(null);setConfirmed(false);}} onBlur={()=>setSubmittedQuery(query.trim())} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();setSubmittedQuery(query.trim());setSearchAttempt(n=>n+1);}}}/></label><p className="text-sm text-muted">Type at least 3 characters, then press Enter or leave the field. Check the result on the map.</p>{searching&&<p role="status">Finding locations…</p>}{searchError&&<p role="alert" className="text-red-700">{searchError}</p>}{places.map((p,i)=><button key={i} type="button" className="block w-full rounded border p-3 text-left" onClick={()=>{selectedQuery.current=p.label;choose([p.latitude,p.longitude]);setQuery(p.label);}}>{p.label}</button>)}</fieldset>
  <DeliveryMap destination={point} onDestination={locked?undefined:choose}/>{point&&<label className="my-4 flex gap-3"><input aria-label="Confirm SME delivery pin" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>This map pin matches my delivery address.</label>}{error('location')}
  <label className="my-4 block">Delivery instructions (optional)<Input maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></label><div className="orderActions"><Button disabled={locked} onClick={()=>void saveLocation()}>{locationSaving?'Saving location…':'Save SME location'}</Button>{savedLocation&&<Button variant="outline" disabled={locked} onClick={cancelLocationEdit}>Cancel location edit</Button>}</div>{locationError&&<p role="alert" className="text-red-700">{locationError}</p>}</section>}
- {step===2&&!editingLocation&&<section aria-label="Confirm release request"><h2 className="text-lg font-semibold">Confirm your release request</h2>{cartPanel(false)}<h3 className="mt-5 font-semibold">Saved SME location</h3><Button variant="outline" disabled={locked} onClick={()=>{setEditingLocation(true);setAttempted(false);}}>Edit SME location</Button><p data-user-content>{name} · {phone}</p><p data-user-content>{address}</p><p data-user-content>{notes}</p>{point&&<a className="text-brand underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${point[0]},${point[1]}`}>Check delivery pin ↗</a>}<p className="my-4">Stock will be reserved. Your release request requires warehouse approval. Track progress in Request history.</p></section>}
+ {step===2&&!editingLocation&&<section aria-label="Confirm release request"><h2 className="text-lg font-semibold">Confirm your release request</h2><label className="my-4 block">Deliver to SME by<Input type="datetime-local" value={deadline} disabled={locked} aria-invalid={attempted&&!!deadlineError} aria-describedby="release-deadline-help" onChange={e=>setDeadline(e.target.value)}/></label><p id="release-deadline-help" className="text-sm">Your local time. Within 72 hours: Urgent. More than 72 hours: Can wait. Maximum 30 days.</p>{attempted&&deadlineError&&<p role="alert" className="text-red-700">{deadlineError}</p>}{cartPanel(false)}<h3 className="mt-5 font-semibold">Saved SME location</h3><Button variant="outline" disabled={locked} onClick={()=>{setEditingLocation(true);setAttempted(false);}}>Edit SME location</Button><p data-user-content>{name} · {phone}</p><p data-user-content>{address}</p><p data-user-content>{notes}</p>{point&&<a className="text-brand underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${point[0]},${point[1]}`}>Check delivery pin ↗</a>}<p className="my-4">Stock will be reserved and the request accepted automatically. Staff will prepare and dispatch it. Track progress in Request history.</p></section>}
  {attempted&&productsError&&<p role="alert" className="my-3 text-red-700">{productsError}</p>}{catalog.error&&step!==1&&<p role="alert" className="my-3 text-red-700">Stock availability could not be checked. Return to Products and retry.</p>}
  <div className="orderActions">{step>1&&<Button type="button" variant="outline" disabled={command.busy} onClick={()=>{setStep(v=>v-1);setAttempted(false);}}>Back</Button>}{step===1?<Button type="button" disabled={command.busy||catalog.loading||!!catalog.error} onClick={advance}>Review release request</Button>:<Button type="button" disabled={locked||editingLocation||!savedLocation||catalog.loading||!!catalog.error||!command.ready} onClick={()=>void submit()}>{command.busy?'Submitting request…':'Submit release request'}</Button>}</div>
  {step===1&&selectedIds.length>0&&<a className="orderMobileCart" href="#order-basket">View request · {selectedIds.length} products · {units} units</a>}
@@ -137,7 +139,7 @@ function Checkout(){
 }
 
 export function SmeOrderHistory(){
-  return <><PageTitle title="Stock Release Request History" my="စတော့ ထုတ်ပေးရေး တောင်းဆိုမှု မှတ်တမ်း" description="Follow the approval and delivery progress of your stock release requests."/><OrderList sme/></>;
+  return <><PageTitle title="Stock Release Request History" my="စတော့ ထုတ်ပေးရေး တောင်းဆိုမှု မှတ်တမ်း" description="Follow the preparation and delivery progress of your stock release requests."/><OrderList sme/></>;
 }
 
 function OrderTimeline({order}:{order:SmeOrder}){
@@ -145,7 +147,7 @@ function OrderTimeline({order}:{order:SmeOrder}){
  const approved=order.status==='accepted';
  const delivered=approved&&order.shipment_status==='delivered';
  const transit=approved&&(['in_transit','out_for_delivery','delivered'].includes(order.shipment_status??''));
- const stages=[{label:'Request submitted',done:true},{label:'Warehouse approved',done:approved},{label:'In transit',done:transit},{label:'Delivered',done:delivered}];
+ const stages=[{label:'Request submitted',done:true},{label:'Stock reserved',done:approved},{label:'In transit',done:transit},{label:'Delivered',done:delivered}];
  const next=stopped?-1:stages.findIndex(stage=>!stage.done);
  return <ol className="orderTimeline" aria-label="Release request progress">{stages.map((stage,i)=><li key={stage.label} data-complete={stage.done} aria-current={i===next?'step':undefined}><span className="orderTimelineMarker" aria-hidden="true">{stage.done?'✓':''}</span><span>{stage.label}<span className="sr-only">{stage.done?' — completed':stopped?' — not completed':i===next?' — awaiting completion':' — upcoming'}</span></span></li>)}{stopped&&<li className="orderTimelineStopped"><span className="orderTimelineMarker" aria-hidden="true">×</span><span>{order.status==='rejected'?'Release request rejected':'Release request cancelled'}</span></li>}</ol>;
 }
@@ -177,6 +179,8 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
   const command=useCommand<Action,unknown>(`order-action:${identity!.actor_id}:${warehouseId}:${sme?smeId:'staff'}`,(task,key)=>{const {id,...body}=task;return api!.actOnOrder(id,warehouseId,body,key);},()=>{resource.reload();onChanged?.();});
   async function act(id:string,action:Action['action']){await command.execute({id,action,delivery_mode:modes[id]??'in_house',note:reason[id]??''});}
   const [openId,setOpenId]=useState<string|null>(null);
+  const [clock,setClock]=useState(()=>Date.now());
+  useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),15000);return()=>clearInterval(timer);},[]);
   useEffect(()=>{
     const fromHash=()=>{const id=window.location.hash.replace(/^#order-/,'');if(id)setOpenId(id);};
     fromHash();window.addEventListener('hashchange',fromHash);
@@ -185,6 +189,7 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
 
   if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
   if(!resource.data)return <Loading/>;
+  const orders=resource.data;
   const open=openId?resource.data.find(o=>o.id===openId):null;
 
   if(!sme) {
@@ -194,10 +199,10 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
         {command.error&&<p role="alert">{command.error}</p>}
         {command.pending&&<Button type="button" disabled={command.busy} onClick={()=>void command.execute()}>Retry same action</Button>}
         {!resource.data.length&&<p className="my-4">No release requests yet</p>}
-        <div className="orderList">
-          {resource.data.map(o => (
+        {['Urgent','Can wait','Other requests'].map(pool=><section key={pool} className="my-5"><h3 className="font-semibold">{pool} ({orders.filter(o=>{const t=releaseTiming(o,clock);return (t.active?t.pool:'Other requests')===pool;}).length})</h3><div className="orderList">
+          {orders.filter(o=>{const t=releaseTiming(o,clock);return (t.active?t.pool:'Other requests')===pool;}).sort((a,b)=>Date.parse(a.payload.delivery_due_at??'9999-01-01')-Date.parse(b.payload.delivery_due_at??'9999-01-01')).map(o => (
             <article id={`order-${o.id}`} key={o.id} className="invoiceCard">
-              <InvoiceCardContent
+              <p className={releaseTiming(o,clock).pool==='Urgent'?'p-4 font-semibold text-red-700':'p-4'}>{releaseTiming(o,clock).label}{o.payload.delivery_due_at&&<> · Due {dateTime(o.payload.delivery_due_at)}</>}</p><InvoiceCardContent
                 order={o}
                 sme={false}
                 modes={modes}
@@ -211,7 +216,7 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
               />
             </article>
           ))}
-        </div>
+        </div></section>)}
       </Card>
     );
   }
@@ -256,7 +261,7 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
                     <span>{totalItems} item{totalItems === 1 ? '' : 's'} · {totalQty} unit{totalQty === 1 ? '' : 's'}</span>
                   </span>
                 </span>
-                <span className="orderRowStatus">
+                <span className="orderRowStatus"><span>{releaseTiming(o,clock).active?releaseTiming(o,clock).pool:''} · {releaseTiming(o,clock).label}</span>
                   <span className={`invoiceStatusBadge status-${o.status}`}>{human(o.status)}</span>
                   {o.shipment_status && <ShipmentStatus status={o.shipment_status} />}
                   {o.status === 'pending' && (
@@ -345,7 +350,7 @@ function InvoiceCardContent({
       ? 'Release request cancelled; no delivery is scheduled.'
       : ord.shipment_status
       ? `Delivery status: ${human(ord.shipment_status)}`
-      : 'Approved; preparing your delivery.';
+      : 'Stock reserved; preparing your delivery.';
 
   return (
     <>
@@ -390,6 +395,7 @@ function InvoiceCardContent({
         </div>
       )}
 
+      {o.payload.delivery_due_at&&<p className="px-5 py-3 text-sm"><strong>Deliver to SME by:</strong> <time dateTime={o.payload.delivery_due_at}>{dateTime(o.payload.delivery_due_at)}</time></p>}
       <div className="invoiceDetailsGrid">
         {/* Col 1: SME Name & Owner */}
         <div className="invoiceDetailBlock">

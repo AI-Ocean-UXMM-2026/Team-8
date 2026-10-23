@@ -8320,6 +8320,18 @@
             "format": "uuid",
             "title": "Sme Id"
           },
+          "delivery_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Due At"
+          },
           "order_kind": {
             "anyOf": [
               {

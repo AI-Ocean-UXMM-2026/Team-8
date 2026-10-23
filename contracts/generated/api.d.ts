@@ -2195,6 +2195,8 @@ export interface components {
              * Format: uuid
              */
             sme_id: string;
+            /** Delivery Due At */
+            delivery_due_at?: string | null;
             /** Order Kind */
             order_kind?: "sme_self_delivery" | null;
             /**
