@@ -1,0 +1,16 @@
+>>warehouse staff
+warehouse123@parcelcare.com
+warehouse@12345
+--------------------------------------------------------------------
+>>SME 5 ခု
+Golden Bloom — goldenbloom@parcelcare.com
+Lotus Living — lotusliving@parcelcare.com
+Urban Threads — urbanthreads@parcelcare.com
+Mandalay Goods — mandalaygoods@parcelcare.com
+Shwe Market — shwemarket@parcelcare.com
+
+passwords for all SME - sme@12345
+------------------------------------------------------------------
+>>in-house courier
+courier123@parcelcare.com
+courier@12345
