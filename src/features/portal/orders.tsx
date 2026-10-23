@@ -20,7 +20,10 @@ import {
   ClockIcon,
   StorefrontIcon,
   UserCircleIcon,
+  CaretRightIcon,
+  XIcon,
 } from '@phosphor-icons/react';
+import {Dialog} from '@base-ui/react/dialog';
 import {ShipmentStatus} from '../warehouse/shipment-status';
 import {useMyanmar} from '../../shared/layout/account-menu';
 import '../tracking/tracking.css';
@@ -162,13 +165,24 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
    return () => ctrl.abort();
  }, [api, warehouseId, sme]);
 
- type Action={id:string;action:'accept'|'reject'|'cancel';delivery_mode:'in_house'|'third_party';note:string};
- const command=useCommand<Action,unknown>(`order-action:${identity!.actor_id}:${warehouseId}:${sme?smeId:'staff'}`,(task,key)=>{const {id,...body}=task;return api!.actOnOrder(id,warehouseId,body,key);},()=>{resource.reload();onChanged?.();});
- async function act(id:string,action:Action['action']){await command.execute({id,action,delivery_mode:modes[id]??'in_house',note:reason[id]??''});}
- if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
- if(!resource.data)return <Loading/>;
- return <Card className="my-5"><h2 className="text-lg font-semibold">{sme?'Your stock release requests':'Stock release requests'}</h2>{command.error&&<p role="alert">{command.error}</p>}{command.pending&&<Button type="button" disabled={command.busy} onClick={()=>void command.execute()}>Retry same action</Button>}
- {!resource.data.length&&<p className="my-4">No release requests yet</p>}
+  type Action={id:string;action:'accept'|'reject'|'cancel';delivery_mode:'in_house'|'third_party';note:string};
+  const command=useCommand<Action,unknown>(`order-action:${identity!.actor_id}:${warehouseId}:${sme?smeId:'staff'}`,(task,key)=>{const {id,...body}=task;return api!.actOnOrder(id,warehouseId,body,key);},()=>{resource.reload();onChanged?.();});
+  async function act(id:string,action:Action['action']){await command.execute({id,action,delivery_mode:modes[id]??'in_house',note:reason[id]??''});}
+  const [openId,setOpenId]=useState<string|null>(null);
+  useEffect(()=>{
+    const fromHash=()=>{const id=window.location.hash.replace(/^#order-/,'');if(id)setOpenId(id);};
+    fromHash();window.addEventListener('hashchange',fromHash);
+    return()=>window.removeEventListener('hashchange',fromHash);
+  },[]);
+  if(resource.error)return <ErrorPanel error={resource.error} retry={resource.reload}/>;
+  if(!resource.data)return <Loading/>;
+  const open=openId?resource.data.find(o=>o.id===openId):null;
+  const openSmeName=open?(directorySmes[open.sme_id]||SME_OWNERS[open.sme_id]?.name||'Golden Bloom'):'';
+  const openSmeOwner=open?(SME_OWNERS[open.sme_id]?.owner||(openSmeName==='Lotus Trading'?'U Min Din':'Thiri Hnin')):'';
+  const statusLine=(o:SmeOrder)=>o.status==='pending'?'Awaiting warehouse approval. Tracking will appear after approval.':o.status==='rejected'?'Release request rejected; no delivery is scheduled.':o.status==='cancelled'?'Release request cancelled; no delivery is scheduled.':o.shipment_status?`Delivery status: ${human(o.shipment_status)}`:'Approved; preparing your delivery.';
+  return <Card className="my-5"><h2 className="text-lg font-semibold">{sme?'Your stock release requests':'Stock release requests'}</h2>{command.error&&<p role="alert">{command.error}</p>}{command.pending&&<Button type="button" disabled={command.busy} onClick={()=>void command.execute()}>Retry same action</Button>}
+  {!resource.data.length&&<p className="my-4">No release requests yet</p>}
+  <div className="orderRows">
   {resource.data.map(o => {
     const totalQty = o.payload.lines.reduce((sum, line) => sum + (line.expected_qty || 0), 0);
     const totalItems = o.payload.lines.length;
@@ -176,232 +190,254 @@ export function OrderList({sme=false,onChanged}:{sme?:boolean;onChanged?:()=>voi
     const smeOwner = SME_OWNERS[o.sme_id]?.owner || (smeName === 'Lotus Trading' ? 'U Min Din' : 'Thiri Hnin');
 
     return (
-      <article id={`order-${o.id}`} key={o.id} className="invoiceCard">
-        {/* Header with identity and status */}
-        <div className="invoiceCardHeader">
-          <div className="invoiceCardIdentity">
-            <div className="invoiceIconBadge" aria-hidden="true">
-              <ReceiptIcon size={22} weight="duotone" />
-            </div>
-            <div>
-              <div className="invoiceTitleRow">
-                <span className="invoiceCardLabel">Request ID</span>
-                <span className="invoiceDot">·</span>
-                <span className="invoiceId" data-user-content>ORD-{o.id.slice(0, 8).toUpperCase()}</span>
-              </div>
-              <div className="invoiceMetaRow">
-                <CalendarBlankIcon size={14} className="invoiceMetaIcon" />
-                <span>Request date:</span>
-                <time dateTime={o.created_at}>{dateTime(o.created_at)}</time>
-              </div>
-            </div>
-          </div>
-
-          <div className="invoiceStatusCluster">
-            <span className={`invoiceStatusBadge status-${o.status}`}>
-              {human(o.status)}
+      <article id={`order-${o.id}`} key={o.id} className="orderRowCard">
+        <button
+          type="button"
+          className={`orderRow${openId === o.id ? ' orderRowOpen' : ''}`}
+          aria-haspopup="dialog"
+          aria-expanded={openId === o.id}
+          onClick={() => setOpenId(o.id)}
+        >
+          <span className="invoiceIconBadge" aria-hidden="true">
+            <ReceiptIcon size={20} weight="duotone" />
+          </span>
+          <span className="orderRowBody">
+            <span className="orderRowTitle">
+              <span className="orderRowId">ORD-{o.id.slice(0, 8).toUpperCase()}</span>
+              <span className="orderRowSme" data-user-content>{smeName}</span>
             </span>
-            {o.shipment_status && (
-              <ShipmentStatus status={o.shipment_status} />
-            )}
-          </div>
-        </div>
-
-        {/* 4-Column Invoice Details Grid */}
-        <div className="invoiceDetailsGrid">
-          {/* Col 1: SME Name & Owner */}
-          <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">SME Name</span>
-            <div className="invoiceSmeName" data-user-content>
-              <StorefrontIcon size={16} className="text-primary flex-shrink-0" />
-              <span>{smeName}</span>
-            </div>
-            <div className="invoiceSmeOwner" data-user-content>
-              <span>Owner: </span>
-              <strong>{smeOwner}</strong>
-            </div>
-          </div>
-
-          {/* Col 2: SME location contact */}
-          <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">SME location contact</span>
-            <div className="invoiceCustomerName" data-user-content>
-              <UserCircleIcon size={16} className="text-muted-foreground flex-shrink-0" />
-              <span>{o.payload.customer_name}</span>
-            </div>
-            {o.payload.customer_phone && (
-              <a className="invoicePhoneLink" href={`tel:${o.payload.customer_phone}`}>
-                <PhoneIcon size={14} />
-                <span data-user-content>{o.payload.customer_phone}</span>
-              </a>
-            )}
-          </div>
-
-          {/* Col 3: SME location / shop */}
-          <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">SME location / shop</span>
-            <div className="invoiceAddress" data-user-content>{o.payload.address}</div>
-          </div>
-
-          {/* Col 4: Description & Notes */}
-          <div className="invoiceDetailBlock">
-            <span className="invoiceFieldLabel">Description & Instructions</span>
-            {o.payload.notes ? (
-              <div className="invoiceNotes" data-user-content>{o.payload.notes}</div>
-            ) : (
-              <span className="text-xs text-muted-foreground italic">No special instructions</span>
-            )}
-            {o.note && (
-              <div className="invoiceRejectionReason">
-                <strong>Note: </strong><span data-user-content>{o.note}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Requested items Table */}
-        <div className="invoiceItemsSection">
-          <div className="invoiceItemsHeader">
-            <span className="invoiceItemsTitle">
-              <PackageIcon size={16} />
-              Requested items
+            <span className="orderRowMeta">
+              <time dateTime={o.created_at}>{dateTime(o.created_at)}</time>
+              <span aria-hidden="true">·</span>
+              <span>{smeOwner}</span>
             </span>
-            <span className="invoiceItemsCount">
-              {totalItems} item{totalItems === 1 ? '' : 's'} · {totalQty} total unit{totalQty === 1 ? '' : 's'}
-            </span>
-          </div>
-
-          <div className="invoiceItemsTableWrap">
-            <table className="invoiceItemsTable">
-              <thead>
-                <tr>
-                  <th scope="col" className="colNum">#</th>
-                  <th scope="col" className="colDesc">Product Description</th>
-                  <th scope="col" className="colSku">SKU</th>
-                  <th scope="col" className="colQty">Requested quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {o.payload.lines.map((l, index) => (
-                  <tr key={l.product_id || index}>
-                    <td className="colNum">{String(index + 1).padStart(2, '0')}</td>
-                    <td className="colDesc">
-                      <span className="invoiceItemName" data-user-content>{l.name ?? 'Product'}</span>
-                    </td>
-                    <td className="colSku">
-                      <span className="invoiceSkuBadge" data-user-content>{l.sku || 'SKU-GENERAL'}</span>
-                    </td>
-                    <td className="colQty">
-                      <span className="invoiceQtyBadge">{l.expected_qty} pcs</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* SME Order Timeline if SME mode */}
-        {sme && (
-          <div className="invoiceTimelineSection">
-            <OrderTimeline order={o} />
-            <p role="status" className="invoiceTimelineStatus">
-              {o.status === 'pending'
-                ? 'Awaiting warehouse approval. Tracking will appear after approval.'
-                : o.status === 'rejected'
-                ? 'Release request rejected; no delivery is scheduled.'
-                : o.status === 'cancelled'
-                ? 'Release request cancelled; no delivery is scheduled.'
-                : o.shipment_status
-                ? `Delivery status: ${human(o.shipment_status)}`
-                : 'Approved; preparing your delivery.'}
-            </p>
-          </div>
-        )}
-
-        {/* Footer with action buttons */}
-        <div className="invoiceCardFooter">
-          <div className="invoiceActionButtons">
-            {o.shipment_id && (
-              <Link
-                className="invoiceBtnPrimary"
-                href={demo ? (sme ? '/demo/sme/tracking' : `/demo/warehouse/shipments/${o.shipment_id}`) : `${sme ? '/sme' : '/warehouse'}/shipments/${o.shipment_id}`}
-              >
-                <TruckIcon size={16} />
-                View shipment / tracking →
-              </Link>
-            )}
-
-            <a
-              className="invoiceBtnSecondary"
-              href={`https://www.google.com/maps/search/?api=1&query=${o.payload.latitude},${o.payload.longitude}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MapPinIcon size={16} />
-              View SME delivery pin ↗
-            </a>
-
-            {o.payload.maps_url && googleMapsUrl(o.payload.maps_url) && (
-              <a
-                className="invoiceBtnSecondary"
-                href={o.payload.maps_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <ArrowUpRightIcon size={16} />
-                SME Maps link ↗
-              </a>
-            )}
-          </div>
-
-          {/* Pending controls: Accept / Reject for warehouse staff, Cancel for SME */}
-          {o.status === 'pending' && (
-            <fieldset disabled={command.busy || !!command.pending || !command.ready} className="invoicePendingControls">
-              {sme ? (
-                <Button variant="outline" className="invoiceCancelBtn" onClick={() => void act(o.id, 'cancel')}>
-                  Cancel request
-                </Button>
-              ) : (
-                <div className="invoiceWarehouseActions">
-                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    <span>Delivery mode:</span>
-                    <select
-                      className="invoiceSelect"
-                      value={modes[o.id] ?? 'in_house'}
-                      onChange={e => setModes(v => ({ ...v, [o.id]: e.target.value as 'in_house' | 'third_party' }))}
-                    >
-                      <option value="in_house">In-house rider</option>
-                      <option value="third_party">Third-party courier</option>
-                    </select>
-                  </label>
-                  <Button className="invoiceAcceptBtn" onClick={() => void act(o.id, 'accept')}>
-                    Accept & create shipment
-                  </Button>
-                  <div className="invoiceRejectGroup">
-                    <Input
-                      placeholder="Reason for rejection…"
-                      className="invoiceRejectInput"
-                      value={reason[o.id] ?? ''}
-                      maxLength={2000}
-                      onChange={e => setReason(v => ({ ...v, [o.id]: e.target.value }))}
-                    />
-                    <Button
-                      variant="outline"
-                      className="invoiceRejectBtn"
-                      disabled={!reason[o.id]?.trim()}
-                      onClick={() => void act(o.id, 'reject')}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </fieldset>
-          )}
-        </div>
+          </span>
+          <span className="orderRowStatus">
+            <span className={`invoiceStatusBadge status-${o.status}`}>{human(o.status)}</span>
+            {o.shipment_status && <ShipmentStatus status={o.shipment_status} />}
+            <CaretRightIcon size={16} className="orderRowChevron" aria-hidden="true" />
+          </span>
+        </button>
       </article>
     );
   })}
+  </div>
+  <Dialog.Root open={open!==null} onOpenChange={next=>{if(!next)setOpenId(null);}}>
+    <Dialog.Portal>
+      <Dialog.Backdrop className="orderDrawerBackdrop"/>
+      <Dialog.Popup className="orderDrawer">
+        {open && (
+          <>
+            <Dialog.Title className="sr-only">Request ORD-{open.id.slice(0, 8).toUpperCase()}</Dialog.Title>
+            <div className="orderDrawerHeading">
+              <div className="invoiceCardIdentity">
+                <span className="invoiceIconBadge" aria-hidden="true">
+                  <ReceiptIcon size={22} weight="duotone" />
+                </span>
+                <div>
+                  <div className="invoiceTitleRow">
+                    <span className="invoiceCardLabel">Request ID</span>
+                    <span className="invoiceDot">·</span>
+                    <span className="invoiceId" data-user-content>ORD-{open.id.slice(0, 8).toUpperCase()}</span>
+                  </div>
+                  <div className="invoiceMetaRow">
+                    <CalendarBlankIcon size={14} className="invoiceMetaIcon" />
+                    <time dateTime={open.created_at}>{dateTime(open.created_at)}</time>
+                  </div>
+                </div>
+              </div>
+              <Dialog.Close className="iconButton" aria-label="Close request details"><XIcon size={16} /></Dialog.Close>
+            </div>
+            <div className="orderDrawerStatus">
+              <span className={`invoiceStatusBadge status-${open.status}`}>{human(open.status)}</span>
+              {open.shipment_status && <ShipmentStatus status={open.shipment_status} />}
+              <p role="status" className="orderDrawerStatusLine">{statusLine(open)}</p>
+            </div>
+            <div className="invoiceDetailsGrid">
+              {/* Col 1: SME Name & Owner */}
+              <div className="invoiceDetailBlock">
+                <span className="invoiceFieldLabel">SME Name</span>
+                <div className="invoiceSmeName" data-user-content>
+                  <StorefrontIcon size={16} className="text-primary flex-shrink-0" />
+                  <span>{openSmeName}</span>
+                </div>
+                <div className="invoiceSmeOwner" data-user-content>
+                  <span>Owner: </span>
+                  <strong>{openSmeOwner}</strong>
+                </div>
+              </div>
+
+              {/* Col 2: SME location contact */}
+              <div className="invoiceDetailBlock">
+                <span className="invoiceFieldLabel">SME location contact</span>
+                <div className="invoiceCustomerName" data-user-content>
+                  <UserCircleIcon size={16} className="text-muted-foreground flex-shrink-0" />
+                  <span>{open.payload.customer_name}</span>
+                </div>
+                {open.payload.customer_phone && (
+                  <a className="invoicePhoneLink" href={`tel:${open.payload.customer_phone}`}>
+                    <PhoneIcon size={14} />
+                    <span data-user-content>{open.payload.customer_phone}</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Col 3: SME location / shop */}
+              <div className="invoiceDetailBlock">
+                <span className="invoiceFieldLabel">SME location / shop</span>
+                <div className="invoiceAddress" data-user-content>{open.payload.address}</div>
+              </div>
+
+              {/* Col 4: Description & Notes */}
+              <div className="invoiceDetailBlock">
+                <span className="invoiceFieldLabel">Description & Instructions</span>
+                {open.payload.notes ? (
+                  <div className="invoiceNotes" data-user-content>{open.payload.notes}</div>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No special instructions</span>
+                )}
+                {open.note && (
+                  <div className="invoiceRejectionReason">
+                    <strong>Note: </strong><span data-user-content>{open.note}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Requested items Table */}
+            <div className="invoiceItemsSection">
+              <div className="invoiceItemsHeader">
+                <span className="invoiceItemsTitle">
+                  <PackageIcon size={16} />
+                  Requested items
+                </span>
+                <span className="invoiceItemsCount">
+                  {open.payload.lines.length} item{open.payload.lines.length === 1 ? '' : 's'} · {open.payload.lines.reduce((sum, line) => sum + (line.expected_qty || 0), 0)} total unit{open.payload.lines.reduce((sum, line) => sum + (line.expected_qty || 0), 0) === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              <div className="invoiceItemsTableWrap">
+                <table className="invoiceItemsTable">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="colNum">#</th>
+                      <th scope="col" className="colDesc">Product Description</th>
+                      <th scope="col" className="colSku">SKU</th>
+                      <th scope="col" className="colQty">Requested quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {open.payload.lines.map((l, index) => (
+                      <tr key={l.product_id || index}>
+                        <td className="colNum">{String(index + 1).padStart(2, '0')}</td>
+                        <td className="colDesc">
+                          <span className="invoiceItemName" data-user-content>{l.name ?? 'Product'}</span>
+                        </td>
+                        <td className="colSku">
+                          <span className="invoiceSkuBadge" data-user-content>{l.sku || 'SKU-GENERAL'}</span>
+                        </td>
+                        <td className="colQty">
+                          <span className="invoiceQtyBadge">{l.expected_qty} pcs</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SME Order Timeline if SME mode */}
+            {sme && (
+              <div className="invoiceTimelineSection">
+                <OrderTimeline order={open} />
+              </div>
+            )}
+
+            {/* Footer with action buttons */}
+            <div className="invoiceCardFooter">
+              <div className="invoiceActionButtons">
+                {open.shipment_id && (
+                  <Link
+                    className="invoiceBtnPrimary"
+                    href={demo ? (sme ? '/demo/sme/tracking' : `/demo/warehouse/shipments/${open.shipment_id}`) : `${sme ? '/sme' : '/warehouse'}/shipments/${open.shipment_id}`}
+                  >
+                    <TruckIcon size={16} />
+                    View shipment / tracking →
+                  </Link>
+                )}
+
+                <a
+                  className="invoiceBtnSecondary"
+                  href={`https://www.google.com/maps/search/?api=1&query=${open.payload.latitude},${open.payload.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MapPinIcon size={16} />
+                  View SME delivery pin ↗
+                </a>
+
+                {open.payload.maps_url && googleMapsUrl(open.payload.maps_url) && (
+                  <a
+                    className="invoiceBtnSecondary"
+                    href={open.payload.maps_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ArrowUpRightIcon size={16} />
+                    SME Maps link ↗
+                  </a>
+                )}
+              </div>
+
+              {/* Pending controls: Accept / Reject for warehouse staff, Cancel for SME */}
+              {open.status === 'pending' && (
+                <fieldset disabled={command.busy || !!command.pending || !command.ready} className="invoicePendingControls">
+                  {sme ? (
+                    <Button variant="outline" className="invoiceCancelBtn" onClick={() => void act(open.id, 'cancel')}>
+                      Cancel request
+                    </Button>
+                  ) : (
+                    <div className="invoiceWarehouseActions">
+                      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <span>Delivery mode:</span>
+                        <select
+                          className="invoiceSelect"
+                          value={modes[open.id] ?? 'in_house'}
+                          onChange={e => setModes(v => ({ ...v, [open.id]: e.target.value as 'in_house' | 'third_party' }))}
+                        >
+                          <option value="in_house">In-house rider</option>
+                          <option value="third_party">Third-party courier</option>
+                        </select>
+                      </label>
+                      <Button className="invoiceAcceptBtn" onClick={() => void act(open.id, 'accept')}>
+                        Accept & create shipment
+                      </Button>
+                      <div className="invoiceRejectGroup">
+                        <Input
+                          placeholder="Reason for rejection…"
+                          className="invoiceRejectInput"
+                          value={reason[open.id] ?? ''}
+                          maxLength={2000}
+                          onChange={e => setReason(v => ({ ...v, [open.id]: e.target.value }))}
+                        />
+                        <Button
+                          variant="outline"
+                          className="invoiceRejectBtn"
+                          disabled={!reason[open.id]?.trim()}
+                          onClick={() => void act(open.id, 'reject')}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
+              )}
+            </div>
+          </>
+        )}
+      </Dialog.Popup>
+    </Dialog.Portal>
+  </Dialog.Root>
  </Card>;
 }
